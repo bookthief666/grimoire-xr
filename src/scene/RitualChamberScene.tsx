@@ -626,7 +626,11 @@ function CardArc({
   onSelect,
   selectedId,
 }: {
-  onSelect: (card: CardData, position: [number, number, number], rotY: number) => void
+  onSelect: (
+    card: CardData,
+    position: [number, number, number],
+    rotY: number,
+  ) => void
   selectedId: number | null
 }) {
   const [hoveredId, setHoveredId] = useState<number | null>(null)
