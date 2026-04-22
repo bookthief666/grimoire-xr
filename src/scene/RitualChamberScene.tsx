@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react'
 import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -159,7 +159,43 @@ function Pillar({ x }: { x: number }) {
   )
 }
 
-function RearShrine() {
+function RearShrine({ ritualImpulseRef }: { ritualImpulseRef: MutableRefObject<number> }) {
+  const outerRingRef = useRef<THREE.MeshBasicMaterial>(null)
+  const innerDiskRef = useRef<THREE.MeshBasicMaterial>(null)
+  const centerRingRef = useRef<THREE.MeshBasicMaterial>(null)
+
+  const outerBase = useRef(new THREE.Color('#8f2c06'))
+  const outerPulse = useRef(new THREE.Color('#ff7a22'))
+
+  const diskBase = useRef(new THREE.Color('#3a1200'))
+  const diskPulse = useRef(new THREE.Color('#6f1d00'))
+
+  const centerBase = useRef(new THREE.Color('#ff7a22'))
+  const centerPulse = useRef(new THREE.Color('#ffd080'))
+
+  const tempOuter = useRef(new THREE.Color())
+  const tempDisk = useRef(new THREE.Color())
+  const tempCenter = useRef(new THREE.Color())
+
+  useFrame((_, delta) => {
+    const impulse = ritualImpulseRef.current
+
+    if (outerRingRef.current) {
+      tempOuter.current.copy(outerBase.current).lerp(outerPulse.current, impulse * 0.9)
+      outerRingRef.current.color.lerp(tempOuter.current, delta * 6)
+    }
+
+    if (innerDiskRef.current) {
+      tempDisk.current.copy(diskBase.current).lerp(diskPulse.current, impulse * 0.55)
+      innerDiskRef.current.color.lerp(tempDisk.current, delta * 4.5)
+    }
+
+    if (centerRingRef.current) {
+      tempCenter.current.copy(centerBase.current).lerp(centerPulse.current, impulse)
+      centerRingRef.current.color.lerp(tempCenter.current, delta * 7)
+    }
+  })
+
   return (
     <group position={[0, 0, -4.45]}>
       <mesh position={[0, 1.7, -0.16]}>
@@ -179,17 +215,17 @@ function RearShrine() {
 
       <mesh position={[0, 2.25, 0.05]}>
         <torusGeometry args={[0.92, 0.07, 16, 64]} />
-        <meshBasicMaterial color="#8f2c06" />
+        <meshBasicMaterial ref={outerRingRef} color="#8f2c06" />
       </mesh>
 
       <mesh position={[0, 2.25, 0.02]}>
         <circleGeometry args={[0.55, 36]} />
-        <meshBasicMaterial color="#3a1200" />
+        <meshBasicMaterial ref={innerDiskRef} color="#3a1200" />
       </mesh>
 
       <mesh position={[0, 2.25, 0.08]}>
         <ringGeometry args={[0.2, 0.28, 36]} />
-        <meshBasicMaterial color="#ff7a22" />
+        <meshBasicMaterial ref={centerRingRef} color="#ff7a22" />
       </mesh>
 
       <mesh position={[0, 2.95, 0.06]}>
@@ -206,17 +242,43 @@ function RearShrine() {
   )
 }
 
-function CeilingCrown() {
+function CeilingCrown({ ritualImpulseRef }: { ritualImpulseRef: MutableRefObject<number> }) {
+  const outerTorusRef = useRef<THREE.MeshBasicMaterial>(null)
+  const innerRingRef = useRef<THREE.MeshBasicMaterial>(null)
+
+  const torusBase = useRef(new THREE.Color('#4e0e00'))
+  const torusPulse = useRef(new THREE.Color('#b62d05'))
+
+  const ringBase = useRef(new THREE.Color('#270900'))
+  const ringPulse = useRef(new THREE.Color('#7d1e00'))
+
+  const tempTorus = useRef(new THREE.Color())
+  const tempRing = useRef(new THREE.Color())
+
+  useFrame((_, delta) => {
+    const impulse = ritualImpulseRef.current
+
+    if (outerTorusRef.current) {
+      tempTorus.current.copy(torusBase.current).lerp(torusPulse.current, impulse * 0.55)
+      outerTorusRef.current.color.lerp(tempTorus.current, delta * 4.8)
+    }
+
+    if (innerRingRef.current) {
+      tempRing.current.copy(ringBase.current).lerp(ringPulse.current, impulse * 0.7)
+      innerRingRef.current.color.lerp(tempRing.current, delta * 4.8)
+    }
+  })
+
   return (
     <group position={[0, 3.4, 0]}>
       <mesh rotation={[Math.PI / 2, 0, 0]}>
         <torusGeometry args={[3.15, 0.05, 16, 84]} />
-        <meshBasicMaterial color="#4e0e00" />
+        <meshBasicMaterial ref={outerTorusRef} color="#4e0e00" />
       </mesh>
 
       <mesh rotation={[Math.PI / 2, 0, 0]}>
         <ringGeometry args={[1.2, 1.28, 48]} />
-        <meshBasicMaterial color="#270900" transparent opacity={0.9} />
+        <meshBasicMaterial ref={innerRingRef} color="#270900" transparent opacity={0.9} />
       </mesh>
 
       {Array.from({ length: 6 }, (_, i) => {
@@ -234,7 +296,7 @@ function CeilingCrown() {
   )
 }
 
-function Embers() {
+function Embers({ ritualImpulseRef }: { ritualImpulseRef: MutableRefObject<number> }) {
   const emberRefs = useRef<(THREE.Mesh | null)[]>([])
 
   const emberData = useMemo(() => {
@@ -251,6 +313,7 @@ function Embers() {
 
   useFrame(({ clock }, delta) => {
     const t = clock.getElapsedTime()
+    const impulse = ritualImpulseRef.current
 
     for (let i = 0; i < emberRefs.current.length; i += 1) {
       const mesh = emberRefs.current[i]
@@ -258,15 +321,16 @@ function Embers() {
 
       if (!mesh) continue
 
-      mesh.position.y += d.drift * delta
-      mesh.position.x += Math.sin(t * d.sway + d.phase) * 0.0009
-      mesh.position.z += Math.cos(t * d.sway + d.phase) * 0.0006
+      const speedBoost = 1 + impulse * 0.5
+      mesh.position.y += d.drift * delta * speedBoost
+      mesh.position.x += Math.sin(t * d.sway + d.phase) * 0.0009 * (1 + impulse * 0.8)
+      mesh.position.z += Math.cos(t * d.sway + d.phase) * 0.0006 * (1 + impulse * 0.5)
 
       if (mesh.position.y > 3.4) {
         mesh.position.y = 0.15
       }
 
-      const pulse = 0.45 + Math.sin(t * 2.4 + d.phase) * 0.18
+      const pulse = 0.45 + Math.sin(t * 2.4 + d.phase) * 0.18 + impulse * 0.2
       const scale = d.size * (1 + pulse)
       mesh.scale.setScalar(scale)
     }
@@ -323,10 +387,19 @@ function TempleFloor() {
   )
 }
 
-function Altar({ manifest }: { manifest: ManifestState | null }) {
+function Altar({
+  manifest,
+  ritualImpulseRef,
+  onLanding,
+}: {
+  manifest: ManifestState | null
+  ritualImpulseRef: MutableRefObject<number>
+  onLanding: (activationId: number) => void
+}) {
   const manifestedCardRef = useRef<THREE.Group>(null)
   const altarRingMaterialRef = useRef<THREE.MeshBasicMaterial>(null)
   const altarHaloMaterialRef = useRef<THREE.MeshBasicMaterial>(null)
+  const landedActivationIdRef = useRef<number | null>(null)
 
   const dormantRingColor = useRef(new THREE.Color('#5a2410'))
   const restingRingColor = useRef(new THREE.Color('#cf4a14'))
@@ -335,6 +408,9 @@ function Altar({ manifest }: { manifest: ManifestState | null }) {
   const dormantHaloColor = useRef(new THREE.Color('#662100'))
   const restingHaloColor = useRef(new THREE.Color('#9f3a0d'))
   const flareHaloColor = useRef(new THREE.Color('#ffb04d'))
+
+  const tempRing = useRef(new THREE.Color())
+  const tempHalo = useRef(new THREE.Color())
 
   useEffect(() => {
     if (!manifest || !manifestedCardRef.current) return
@@ -347,6 +423,8 @@ function Altar({ manifest }: { manifest: ManifestState | null }) {
     manifestedCardRef.current.rotation.set(0, manifest.spawnRotationY, 0)
     manifestedCardRef.current.scale.set(0.82, 0.82, 0.82)
 
+    landedActivationIdRef.current = null
+
     if (altarRingMaterialRef.current) {
       altarRingMaterialRef.current.color.copy(flareRingColor.current)
     }
@@ -357,6 +435,8 @@ function Altar({ manifest }: { manifest: ManifestState | null }) {
   }, [manifest])
 
   useFrame((_, delta) => {
+    const impulse = ritualImpulseRef.current
+
     if (manifest && manifestedCardRef.current) {
       const card = manifestedCardRef.current
 
@@ -371,20 +451,36 @@ function Altar({ manifest }: { manifest: ManifestState | null }) {
       card.scale.x = THREE.MathUtils.lerp(card.scale.x, 1, delta * 4.2)
       card.scale.y = THREE.MathUtils.lerp(card.scale.y, 1, delta * 4.2)
       card.scale.z = THREE.MathUtils.lerp(card.scale.z, 1, delta * 4.2)
+
+      const closeEnough =
+        Math.abs(card.position.x) < 0.02 &&
+        Math.abs(card.position.y - 0.94) < 0.02 &&
+        Math.abs(card.position.z) < 0.02 &&
+        Math.abs(card.rotation.x + Math.PI / 2) < 0.03
+
+      if (
+        closeEnough &&
+        landedActivationIdRef.current !== manifest.activationId
+      ) {
+        landedActivationIdRef.current = manifest.activationId
+        onLanding(manifest.activationId)
+      }
     }
 
     if (altarRingMaterialRef.current) {
-      altarRingMaterialRef.current.color.lerp(
-        manifest ? restingRingColor.current : dormantRingColor.current,
-        delta * 3.2,
-      )
+      tempRing.current
+        .copy(manifest ? restingRingColor.current : dormantRingColor.current)
+        .lerp(flareRingColor.current, impulse * 0.7)
+
+      altarRingMaterialRef.current.color.lerp(tempRing.current, delta * 6)
     }
 
     if (altarHaloMaterialRef.current) {
-      altarHaloMaterialRef.current.color.lerp(
-        manifest ? restingHaloColor.current : dormantHaloColor.current,
-        delta * 2.8,
-      )
+      tempHalo.current
+        .copy(manifest ? restingHaloColor.current : dormantHaloColor.current)
+        .lerp(flareHaloColor.current, impulse * 0.85)
+
+      altarHaloMaterialRef.current.color.lerp(tempHalo.current, delta * 5.2)
     }
   })
 
@@ -477,11 +573,7 @@ function CardArc({
   onSelect,
   selectedId,
 }: {
-  onSelect: (
-    card: CardData,
-    position: [number, number, number],
-    rotY: number,
-  ) => void
+  onSelect: (card: CardData, position: [number, number, number], rotY: number) => void
   selectedId: number | null
 }) {
   const [hoveredId, setHoveredId] = useState<number | null>(null)
@@ -527,9 +619,7 @@ function CardArc({
               <boxGeometry args={[0.42, 0.72, 0.025]} />
               <meshStandardMaterial
                 color={isSelected ? '#3a1200' : '#120606'}
-                emissive={
-                  isHovered ? '#551400' : isSelected ? '#260700' : '#000000'
-                }
+                emissive={isHovered ? '#551400' : isSelected ? '#260700' : '#000000'}
               />
             </mesh>
 
@@ -563,6 +653,11 @@ function CardArc({
 export function RitualChamberScene() {
   const [manifest, setManifest] = useState<ManifestState | null>(null)
   const activationCounterRef = useRef(0)
+  const ritualImpulseRef = useRef(0)
+
+  useFrame((_, delta) => {
+    ritualImpulseRef.current = THREE.MathUtils.lerp(ritualImpulseRef.current, 0, delta * 2.35)
+  })
 
   const handleSelect = (
     card: CardData,
@@ -580,19 +675,20 @@ export function RitualChamberScene() {
     })
   }
 
+  const handleLanding = () => {
+    ritualImpulseRef.current = 1
+  }
+
   return (
     <group>
       <TempleFloor />
-      <RearShrine />
+      <RearShrine ritualImpulseRef={ritualImpulseRef} />
       <Pillar x={-2.1} />
       <Pillar x={2.1} />
-      <CeilingCrown />
-      <Embers />
-      <Altar manifest={manifest} />
-      <CardArc
-        selectedId={manifest?.card.id ?? null}
-        onSelect={handleSelect}
-      />
+      <CeilingCrown ritualImpulseRef={ritualImpulseRef} />
+      <Embers ritualImpulseRef={ritualImpulseRef} />
+      <Altar manifest={manifest} ritualImpulseRef={ritualImpulseRef} onLanding={handleLanding} />
+      <CardArc selectedId={manifest?.card.id ?? null} onSelect={handleSelect} />
 
       <Text
         position={[0, 3.05, -2.55]}
