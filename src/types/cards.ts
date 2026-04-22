@@ -1,4 +1,1 @@
-export type CardData = {
-  id: number
-  name: string
-}
+export type { GrimoireCard as CardData } from './grimoire'

@@ -8,12 +8,11 @@ import {
 import { Edges, Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { CARD_NAMES } from '../data/cards'
 import { PALETTE } from '../theme/palette'
-import type { CardData } from '../types/cards'
+import type { GrimoireCard } from '../types/grimoire'
 
 type ManifestState = {
-  card: CardData
+  card: GrimoireCard
   spawnPosition: [number, number, number]
   spawnRotationY: number
   activationId: number
@@ -623,11 +622,13 @@ function Altar({
 }
 
 function CardArc({
+  cards,
   onSelect,
   selectedId,
 }: {
+  cards: GrimoireCard[]
   onSelect: (
-    card: CardData,
+    card: GrimoireCard,
     position: [number, number, number],
     rotY: number,
   ) => void
@@ -635,11 +636,12 @@ function CardArc({
 }) {
   const [hoveredId, setHoveredId] = useState<number | null>(null)
 
-  const cards = useMemo(() => {
+  const cardSlots = useMemo(() => {
+    if (cards.length === 0) return []
     const radius = 2.08
 
-    return CARD_NAMES.map((card, index) => {
-      const t = -0.8 + (index / (CARD_NAMES.length - 1)) * 1.6
+    return cards.map((card, index) => {
+      const t = -0.8 + (index / Math.max(cards.length - 1, 1)) * 1.6
       const x = Math.sin(t) * radius
       const z = -2.02 - Math.cos(t) * radius * 0.32
       const y = 1.33
@@ -651,11 +653,11 @@ function CardArc({
         rotY,
       }
     })
-  }, [])
+  }, [cards])
 
   return (
     <group>
-      {cards.map((card) => {
+      {cardSlots.map((card) => {
         const isSelected = card.id === selectedId
         const isHovered = card.id === hoveredId
 
@@ -708,10 +710,28 @@ function CardArc({
   )
 }
 
-export function RitualChamberScene() {
+export function RitualChamberScene({
+  cards,
+  selectedCardId,
+  altarCard,
+  onCardActivate,
+  onAltarLanding,
+}: {
+  cards: GrimoireCard[]
+  selectedCardId: number | null
+  altarCard: GrimoireCard | null
+  onCardActivate: (card: GrimoireCard) => void
+  onAltarLanding: () => void
+}) {
   const [manifest, setManifest] = useState<ManifestState | null>(null)
   const activationCounterRef = useRef(0)
   const ritualImpulseRef = useRef(0)
+
+  useEffect(() => {
+    if (!altarCard) {
+      setManifest(null)
+    }
+  }, [altarCard])
 
   useFrame((_, delta) => {
     ritualImpulseRef.current = THREE.MathUtils.lerp(
@@ -722,12 +742,13 @@ export function RitualChamberScene() {
   })
 
   const handleSelect = (
-    card: CardData,
+    card: GrimoireCard,
     position: [number, number, number],
     rotY: number,
   ) => {
     playRitualSting()
     activationCounterRef.current += 1
+    onCardActivate(card)
 
     setManifest({
       card,
@@ -739,6 +760,7 @@ export function RitualChamberScene() {
 
   const handleLanding = () => {
     ritualImpulseRef.current = 1
+    onAltarLanding()
   }
 
   return (
@@ -755,7 +777,8 @@ export function RitualChamberScene() {
         onLanding={handleLanding}
       />
       <CardArc
-        selectedId={manifest?.card.id ?? null}
+        cards={cards}
+        selectedId={selectedCardId}
         onSelect={handleSelect}
       />
 
