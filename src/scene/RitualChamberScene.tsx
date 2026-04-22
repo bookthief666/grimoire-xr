@@ -1,8 +1,15 @@
-import { useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react'
-import { Text } from '@react-three/drei'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MutableRefObject,
+} from 'react'
+import { Edges, Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { CARD_NAMES } from '../data/cards'
+import { PALETTE } from '../theme/palette'
 import type { CardData } from '../types/cards'
 
 type ManifestState = {
@@ -19,7 +26,8 @@ function playRitualSting() {
 
   const AudioCtx =
     window.AudioContext ||
-    (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+    (window as typeof window & { webkitAudioContext?: typeof AudioContext })
+      .webkitAudioContext
 
   if (!AudioCtx) return
 
@@ -54,9 +62,9 @@ function playRitualSting() {
 function FloorBar({
   a,
   b,
-  color = '#552211',
-  opacity = 0.7,
-  width = 0.03,
+  color = PALETTE.glyphDim,
+  opacity = 0.8,
+  width = 0.035,
   y = 0.012,
 }: {
   a: [number, number]
@@ -72,7 +80,10 @@ function FloorBar({
   const angle = Math.atan2(dz, dx)
 
   return (
-    <mesh position={[(a[0] + b[0]) / 2, y, (a[1] + b[1]) / 2]} rotation={[-Math.PI / 2, 0, angle]}>
+    <mesh
+      position={[(a[0] + b[0]) / 2, y, (a[1] + b[1]) / 2]}
+      rotation={[-Math.PI / 2, 0, angle]}
+    >
       <planeGeometry args={[length, width]} />
       <meshBasicMaterial color={color} transparent opacity={opacity} />
     </mesh>
@@ -83,19 +94,19 @@ function HexagramSeal() {
   const points = useMemo<[number, number][]>(() => {
     return Array.from({ length: 6 }, (_, i) => {
       const angle = -Math.PI / 2 + (i * Math.PI) / 3
-      return [Math.cos(angle) * 1.02, Math.sin(angle) * 1.02]
+      return [Math.cos(angle) * 1.04, Math.sin(angle) * 1.04]
     })
   }, [])
 
   return (
     <group>
-      <FloorBar a={points[0]} b={points[2]} color="#8a2d08" opacity={0.85} width={0.035} />
-      <FloorBar a={points[2]} b={points[4]} color="#8a2d08" opacity={0.85} width={0.035} />
-      <FloorBar a={points[4]} b={points[0]} color="#8a2d08" opacity={0.85} width={0.035} />
+      <FloorBar a={points[0]} b={points[2]} color={PALETTE.glyph} opacity={0.92} width={0.04} />
+      <FloorBar a={points[2]} b={points[4]} color={PALETTE.glyph} opacity={0.92} width={0.04} />
+      <FloorBar a={points[4]} b={points[0]} color={PALETTE.glyph} opacity={0.92} width={0.04} />
 
-      <FloorBar a={points[1]} b={points[3]} color="#8a2d08" opacity={0.85} width={0.035} />
-      <FloorBar a={points[3]} b={points[5]} color="#8a2d08" opacity={0.85} width={0.035} />
-      <FloorBar a={points[5]} b={points[1]} color="#8a2d08" opacity={0.85} width={0.035} />
+      <FloorBar a={points[1]} b={points[3]} color={PALETTE.glyph} opacity={0.92} width={0.04} />
+      <FloorBar a={points[3]} b={points[5]} color={PALETTE.glyph} opacity={0.92} width={0.04} />
+      <FloorBar a={points[5]} b={points[1]} color={PALETTE.glyph} opacity={0.92} width={0.04} />
     </group>
   )
 }
@@ -104,8 +115,14 @@ function RadialMarks() {
   const bars = useMemo(() => {
     return Array.from({ length: 12 }, (_, i) => {
       const angle = (i / 12) * Math.PI * 2
-      const inner: [number, number] = [Math.cos(angle) * 1.35, Math.sin(angle) * 1.35]
-      const outer: [number, number] = [Math.cos(angle) * 1.9, Math.sin(angle) * 1.9]
+      const inner: [number, number] = [
+        Math.cos(angle) * 1.38,
+        Math.sin(angle) * 1.38,
+      ]
+      const outer: [number, number] = [
+        Math.cos(angle) * 2.04,
+        Math.sin(angle) * 2.04,
+      ]
       return { inner, outer }
     })
   }, [])
@@ -117,9 +134,9 @@ function RadialMarks() {
           key={i}
           a={bar.inner}
           b={bar.outer}
-          color="#441100"
-          opacity={0.55}
-          width={0.025}
+          color={PALETTE.glyphDim}
+          opacity={0.68}
+          width={0.03}
           y={0.011}
         />
       ))}
@@ -131,27 +148,35 @@ function Pillar({ x }: { x: number }) {
   return (
     <group position={[x, 0, -3.55]}>
       <mesh position={[0, 0.18, 0]}>
-        <cylinderGeometry args={[0.3, 0.38, 0.36, 18]} />
-        <meshStandardMaterial color="#0d0b0b" roughness={0.9} metalness={0.1} />
+        <cylinderGeometry args={[0.3, 0.38, 0.36, 12]} />
+        <meshLambertMaterial color={PALETTE.massDark} flatShading />
+        <Edges color={PALETTE.outlineDark} />
       </mesh>
 
       <mesh position={[0, 1.55, 0]}>
-        <cylinderGeometry args={[0.18, 0.22, 2.4, 18]} />
-        <meshStandardMaterial color="#161212" roughness={0.88} metalness={0.08} />
+        <cylinderGeometry args={[0.18, 0.22, 2.4, 12]} />
+        <meshLambertMaterial color={PALETTE.mass} flatShading />
+        <Edges color={PALETTE.outlineDark} />
       </mesh>
 
       <mesh position={[0, 2.84, 0]}>
-        <cylinderGeometry args={[0.34, 0.22, 0.18, 18]} />
-        <meshStandardMaterial color="#0f0d0d" roughness={0.85} />
+        <cylinderGeometry args={[0.34, 0.22, 0.18, 12]} />
+        <meshLambertMaterial color={PALETTE.massLift} flatShading />
+        <Edges color={PALETTE.outlineDark} />
       </mesh>
 
       <mesh position={[0, 2.62, 0]}>
-        <torusGeometry args={[0.23, 0.025, 10, 40]} />
-        <meshBasicMaterial color="#7a2100" />
+        <torusGeometry args={[0.23, 0.025, 10, 28]} />
+        <meshBasicMaterial color={PALETTE.ember} />
       </mesh>
 
       <mesh position={[0, 1.82, 0.19]}>
-        <Text fontSize={0.14} color="#b83812" anchorX="center" anchorY="middle">
+        <Text
+          fontSize={0.14}
+          color={PALETTE.gold}
+          anchorX="center"
+          anchorY="middle"
+        >
           93
         </Text>
       </mesh>
@@ -159,19 +184,23 @@ function Pillar({ x }: { x: number }) {
   )
 }
 
-function RearShrine({ ritualImpulseRef }: { ritualImpulseRef: MutableRefObject<number> }) {
+function RearShrine({
+  ritualImpulseRef,
+}: {
+  ritualImpulseRef: MutableRefObject<number>
+}) {
   const outerRingRef = useRef<THREE.MeshBasicMaterial>(null)
   const innerDiskRef = useRef<THREE.MeshBasicMaterial>(null)
   const centerRingRef = useRef<THREE.MeshBasicMaterial>(null)
 
-  const outerBase = useRef(new THREE.Color('#8f2c06'))
-  const outerPulse = useRef(new THREE.Color('#ff7a22'))
+  const outerBase = useRef(new THREE.Color(PALETTE.ember))
+  const outerPulse = useRef(new THREE.Color(PALETTE.gold))
 
-  const diskBase = useRef(new THREE.Color('#3a1200'))
-  const diskPulse = useRef(new THREE.Color('#6f1d00'))
+  const diskBase = useRef(new THREE.Color(PALETTE.bloodDim))
+  const diskPulse = useRef(new THREE.Color(PALETTE.blood))
 
-  const centerBase = useRef(new THREE.Color('#ff7a22'))
-  const centerPulse = useRef(new THREE.Color('#ffd080'))
+  const centerBase = useRef(new THREE.Color(PALETTE.emberBright))
+  const centerPulse = useRef(new THREE.Color(PALETTE.sacred))
 
   const tempOuter = useRef(new THREE.Color())
   const tempDisk = useRef(new THREE.Color())
@@ -181,18 +210,18 @@ function RearShrine({ ritualImpulseRef }: { ritualImpulseRef: MutableRefObject<n
     const impulse = ritualImpulseRef.current
 
     if (outerRingRef.current) {
-      tempOuter.current.copy(outerBase.current).lerp(outerPulse.current, impulse * 0.9)
-      outerRingRef.current.color.lerp(tempOuter.current, delta * 6)
+      tempOuter.current.copy(outerBase.current).lerp(outerPulse.current, impulse * 0.92)
+      outerRingRef.current.color.lerp(tempOuter.current, delta * 7)
     }
 
     if (innerDiskRef.current) {
       tempDisk.current.copy(diskBase.current).lerp(diskPulse.current, impulse * 0.55)
-      innerDiskRef.current.color.lerp(tempDisk.current, delta * 4.5)
+      innerDiskRef.current.color.lerp(tempDisk.current, delta * 5)
     }
 
     if (centerRingRef.current) {
       tempCenter.current.copy(centerBase.current).lerp(centerPulse.current, impulse)
-      centerRingRef.current.color.lerp(tempCenter.current, delta * 7)
+      centerRingRef.current.color.lerp(tempCenter.current, delta * 7.5)
     }
   })
 
@@ -200,41 +229,49 @@ function RearShrine({ ritualImpulseRef }: { ritualImpulseRef: MutableRefObject<n
     <group position={[0, 0, -4.45]}>
       <mesh position={[0, 1.7, -0.16]}>
         <boxGeometry args={[5.5, 3.9, 0.35]} />
-        <meshStandardMaterial color="#0c0707" roughness={0.96} />
+        <meshLambertMaterial color={PALETTE.massDark} flatShading />
+        <Edges color={PALETTE.outlineDark} />
       </mesh>
 
       <mesh position={[0, 0.4, 0.45]}>
         <boxGeometry args={[2.2, 0.3, 1.2]} />
-        <meshStandardMaterial color="#080606" roughness={0.95} />
+        <meshLambertMaterial color={PALETTE.massDark} flatShading />
+        <Edges color={PALETTE.outlineDark} />
       </mesh>
 
       <mesh position={[0, 0.9, 0.15]}>
         <boxGeometry args={[1.6, 0.7, 0.7]} />
-        <meshStandardMaterial color="#0a0808" roughness={0.93} />
+        <meshLambertMaterial color={PALETTE.mass} flatShading />
+        <Edges color={PALETTE.outlineDark} />
       </mesh>
 
       <mesh position={[0, 2.25, 0.05]}>
-        <torusGeometry args={[0.92, 0.07, 16, 64]} />
-        <meshBasicMaterial ref={outerRingRef} color="#8f2c06" />
+        <torusGeometry args={[0.92, 0.07, 12, 36]} />
+        <meshBasicMaterial ref={outerRingRef} color={PALETTE.ember} />
       </mesh>
 
       <mesh position={[0, 2.25, 0.02]}>
-        <circleGeometry args={[0.55, 36]} />
-        <meshBasicMaterial ref={innerDiskRef} color="#3a1200" />
+        <circleGeometry args={[0.55, 24]} />
+        <meshBasicMaterial ref={innerDiskRef} color={PALETTE.bloodDim} />
       </mesh>
 
       <mesh position={[0, 2.25, 0.08]}>
-        <ringGeometry args={[0.2, 0.28, 36]} />
-        <meshBasicMaterial ref={centerRingRef} color="#ff7a22" />
+        <ringGeometry args={[0.2, 0.28, 24]} />
+        <meshBasicMaterial ref={centerRingRef} color={PALETTE.emberBright} />
       </mesh>
 
       <mesh position={[0, 2.95, 0.06]}>
-        <coneGeometry args={[0.18, 0.34, 5]} />
-        <meshBasicMaterial color="#aa3300" />
+        <coneGeometry args={[0.18, 0.34, 4]} />
+        <meshBasicMaterial color={PALETTE.ember} />
       </mesh>
 
       <mesh position={[0, 2.65, 0.1]}>
-        <Text fontSize={0.12} color="#ffb280" anchorX="center" anchorY="middle">
+        <Text
+          fontSize={0.12}
+          color={PALETTE.sacred}
+          anchorX="center"
+          anchorY="middle"
+        >
           THELEMA
         </Text>
       </mesh>
@@ -242,15 +279,19 @@ function RearShrine({ ritualImpulseRef }: { ritualImpulseRef: MutableRefObject<n
   )
 }
 
-function CeilingCrown({ ritualImpulseRef }: { ritualImpulseRef: MutableRefObject<number> }) {
+function CeilingCrown({
+  ritualImpulseRef,
+}: {
+  ritualImpulseRef: MutableRefObject<number>
+}) {
   const outerTorusRef = useRef<THREE.MeshBasicMaterial>(null)
   const innerRingRef = useRef<THREE.MeshBasicMaterial>(null)
 
-  const torusBase = useRef(new THREE.Color('#4e0e00'))
-  const torusPulse = useRef(new THREE.Color('#b62d05'))
+  const torusBase = useRef(new THREE.Color(PALETTE.bloodDim))
+  const torusPulse = useRef(new THREE.Color(PALETTE.emberBright))
 
-  const ringBase = useRef(new THREE.Color('#270900'))
-  const ringPulse = useRef(new THREE.Color('#7d1e00'))
+  const ringBase = useRef(new THREE.Color(PALETTE.outlineDark))
+  const ringPulse = useRef(new THREE.Color(PALETTE.ember))
 
   const tempTorus = useRef(new THREE.Color())
   const tempRing = useRef(new THREE.Color())
@@ -259,26 +300,31 @@ function CeilingCrown({ ritualImpulseRef }: { ritualImpulseRef: MutableRefObject
     const impulse = ritualImpulseRef.current
 
     if (outerTorusRef.current) {
-      tempTorus.current.copy(torusBase.current).lerp(torusPulse.current, impulse * 0.55)
-      outerTorusRef.current.color.lerp(tempTorus.current, delta * 4.8)
+      tempTorus.current.copy(torusBase.current).lerp(torusPulse.current, impulse * 0.65)
+      outerTorusRef.current.color.lerp(tempTorus.current, delta * 5)
     }
 
     if (innerRingRef.current) {
-      tempRing.current.copy(ringBase.current).lerp(ringPulse.current, impulse * 0.7)
-      innerRingRef.current.color.lerp(tempRing.current, delta * 4.8)
+      tempRing.current.copy(ringBase.current).lerp(ringPulse.current, impulse * 0.75)
+      innerRingRef.current.color.lerp(tempRing.current, delta * 5)
     }
   })
 
   return (
     <group position={[0, 3.4, 0]}>
       <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[3.15, 0.05, 16, 84]} />
-        <meshBasicMaterial ref={outerTorusRef} color="#4e0e00" />
+        <torusGeometry args={[3.15, 0.05, 12, 48]} />
+        <meshBasicMaterial ref={outerTorusRef} color={PALETTE.bloodDim} />
       </mesh>
 
       <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[1.2, 1.28, 48]} />
-        <meshBasicMaterial ref={innerRingRef} color="#270900" transparent opacity={0.9} />
+        <ringGeometry args={[1.2, 1.28, 32]} />
+        <meshBasicMaterial
+          ref={innerRingRef}
+          color={PALETTE.outlineDark}
+          transparent
+          opacity={0.95}
+        />
       </mesh>
 
       {Array.from({ length: 6 }, (_, i) => {
@@ -288,7 +334,7 @@ function CeilingCrown({ ritualImpulseRef }: { ritualImpulseRef: MutableRefObject
         return (
           <mesh key={i} position={[x, 0, z]} rotation={[Math.PI, 0, 0]}>
             <coneGeometry args={[0.08, 0.24, 4]} />
-            <meshBasicMaterial color="#7d1e00" />
+            <meshBasicMaterial color={PALETTE.ember} />
           </mesh>
         )
       })}
@@ -296,7 +342,11 @@ function CeilingCrown({ ritualImpulseRef }: { ritualImpulseRef: MutableRefObject
   )
 }
 
-function Embers({ ritualImpulseRef }: { ritualImpulseRef: MutableRefObject<number> }) {
+function Embers({
+  ritualImpulseRef,
+}: {
+  ritualImpulseRef: MutableRefObject<number>
+}) {
   const emberRefs = useRef<(THREE.Mesh | null)[]>([])
 
   const emberData = useMemo(() => {
@@ -321,7 +371,7 @@ function Embers({ ritualImpulseRef }: { ritualImpulseRef: MutableRefObject<numbe
 
       if (!mesh) continue
 
-      const speedBoost = 1 + impulse * 0.5
+      const speedBoost = 1 + impulse * 0.55
       mesh.position.y += d.drift * delta * speedBoost
       mesh.position.x += Math.sin(t * d.sway + d.phase) * 0.0009 * (1 + impulse * 0.8)
       mesh.position.z += Math.cos(t * d.sway + d.phase) * 0.0006 * (1 + impulse * 0.5)
@@ -330,7 +380,7 @@ function Embers({ ritualImpulseRef }: { ritualImpulseRef: MutableRefObject<numbe
         mesh.position.y = 0.15
       }
 
-      const pulse = 0.45 + Math.sin(t * 2.4 + d.phase) * 0.18 + impulse * 0.2
+      const pulse = 0.45 + Math.sin(t * 2.4 + d.phase) * 0.18 + impulse * 0.24
       const scale = d.size * (1 + pulse)
       mesh.scale.setScalar(scale)
     }
@@ -346,11 +396,11 @@ function Embers({ ritualImpulseRef }: { ritualImpulseRef: MutableRefObject<numbe
           }}
           position={[d.x, d.y, d.z]}
         >
-          <sphereGeometry args={[d.size, 6, 6]} />
+          <sphereGeometry args={[d.size, 5, 5]} />
           <meshBasicMaterial
-            color={i % 3 === 0 ? '#ff9a3d' : '#a82200'}
+            color={i % 3 === 0 ? PALETTE.emberBright : PALETTE.blood}
             transparent
-            opacity={0.55}
+            opacity={0.58}
           />
         </mesh>
       ))}
@@ -362,23 +412,23 @@ function TempleFloor() {
   return (
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <circleGeometry args={[6, 64]} />
-        <meshLambertMaterial color="#090000" />
+        <circleGeometry args={[6, 48]} />
+        <meshLambertMaterial color={PALETTE.floor} flatShading />
       </mesh>
 
       <mesh position={[0, 0.004, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[2.45, 2.62, 64]} />
-        <meshBasicMaterial color="#2a0900" />
+        <ringGeometry args={[2.45, 2.62, 48]} />
+        <meshBasicMaterial color={PALETTE.floorOuter} />
       </mesh>
 
       <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[1.98, 2.03, 64]} />
-        <meshBasicMaterial color="#672100" />
+        <ringGeometry args={[1.98, 2.03, 48]} />
+        <meshBasicMaterial color={PALETTE.floorMid} />
       </mesh>
 
       <mesh position={[0, 0.006, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[1.28, 1.32, 64]} />
-        <meshBasicMaterial color="#5b1600" />
+        <ringGeometry args={[1.28, 1.32, 48]} />
+        <meshBasicMaterial color={PALETTE.floorInner} />
       </mesh>
 
       <HexagramSeal />
@@ -401,13 +451,13 @@ function Altar({
   const altarHaloMaterialRef = useRef<THREE.MeshBasicMaterial>(null)
   const landedActivationIdRef = useRef<number | null>(null)
 
-  const dormantRingColor = useRef(new THREE.Color('#5a2410'))
-  const restingRingColor = useRef(new THREE.Color('#cf4a14'))
-  const flareRingColor = useRef(new THREE.Color('#ff7a22'))
+  const dormantRingColor = useRef(new THREE.Color(PALETTE.glyphDim))
+  const restingRingColor = useRef(new THREE.Color(PALETTE.ember))
+  const flareRingColor = useRef(new THREE.Color(PALETTE.gold))
 
-  const dormantHaloColor = useRef(new THREE.Color('#662100'))
-  const restingHaloColor = useRef(new THREE.Color('#9f3a0d'))
-  const flareHaloColor = useRef(new THREE.Color('#ffb04d'))
+  const dormantHaloColor = useRef(new THREE.Color(PALETTE.goldDim))
+  const restingHaloColor = useRef(new THREE.Color(PALETTE.ember))
+  const flareHaloColor = useRef(new THREE.Color(PALETTE.sacred))
 
   const tempRing = useRef(new THREE.Color())
   const tempHalo = useRef(new THREE.Color())
@@ -470,17 +520,17 @@ function Altar({
     if (altarRingMaterialRef.current) {
       tempRing.current
         .copy(manifest ? restingRingColor.current : dormantRingColor.current)
-        .lerp(flareRingColor.current, impulse * 0.7)
+        .lerp(flareRingColor.current, impulse * 0.95)
 
-      altarRingMaterialRef.current.color.lerp(tempRing.current, delta * 6)
+      altarRingMaterialRef.current.color.lerp(tempRing.current, delta * 7)
     }
 
     if (altarHaloMaterialRef.current) {
       tempHalo.current
         .copy(manifest ? restingHaloColor.current : dormantHaloColor.current)
-        .lerp(flareHaloColor.current, impulse * 0.85)
+        .lerp(flareHaloColor.current, impulse * 0.95)
 
-      altarHaloMaterialRef.current.color.lerp(tempHalo.current, delta * 5.2)
+      altarHaloMaterialRef.current.color.lerp(tempHalo.current, delta * 6)
     }
   })
 
@@ -488,30 +538,32 @@ function Altar({
     <group position={[0, 0, -1.0]}>
       <mesh position={[0, 0.16, 0.16]}>
         <boxGeometry args={[1.5, 0.12, 0.95]} />
-        <meshStandardMaterial color="#080707" roughness={0.95} />
+        <meshLambertMaterial color={PALETTE.massDark} flatShading />
+        <Edges color={PALETTE.outlineDark} />
       </mesh>
 
       <mesh position={[0, 0.52, 0]}>
         <boxGeometry args={[1.2, 0.72, 0.6]} />
-        <meshStandardMaterial color="#0a0a0a" roughness={0.82} metalness={0.12} />
+        <meshLambertMaterial color={PALETTE.mass} flatShading />
+        <Edges color={PALETTE.outlineDark} />
       </mesh>
 
       <mesh position={[0, 0.91, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.42, 32]} />
-        <meshBasicMaterial color="#260c05" />
+        <circleGeometry args={[0.42, 24]} />
+        <meshBasicMaterial color={PALETTE.cardFace} />
       </mesh>
 
       <mesh position={[0, 0.913, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.3, 0.37, 48]} />
+        <ringGeometry args={[0.3, 0.37, 36]} />
         <meshBasicMaterial
           ref={altarRingMaterialRef}
-          color={manifest ? '#cf4a14' : '#5a2410'}
+          color={manifest ? PALETTE.ember : PALETTE.glyphDim}
         />
       </mesh>
 
       <mesh position={[0, 1.28, -0.09]}>
-        <torusGeometry args={[0.24, 0.02, 10, 40]} />
-        <meshBasicMaterial ref={altarHaloMaterialRef} color="#662100" />
+        <torusGeometry args={[0.24, 0.02, 10, 28]} />
+        <meshBasicMaterial ref={altarHaloMaterialRef} color={PALETTE.goldDim} />
       </mesh>
 
       {manifest ? (
@@ -519,24 +571,25 @@ function Altar({
           <group ref={manifestedCardRef}>
             <mesh>
               <boxGeometry args={[0.52, 0.86, 0.03]} />
-              <meshStandardMaterial color="#3a1200" emissive="#2a0700" />
+              <meshLambertMaterial color={PALETTE.cardBody} flatShading />
+              <Edges color={PALETTE.outlineHot} />
             </mesh>
 
             <mesh position={[0, 0, 0.018]}>
               <planeGeometry args={[0.44, 0.74]} />
-              <meshBasicMaterial color="#1b0904" />
+              <meshBasicMaterial color={PALETTE.cardFace} />
             </mesh>
 
             <mesh position={[0, 0.26, 0.019]}>
-              <ringGeometry args={[0.07, 0.11, 24]} />
-              <meshBasicMaterial color="#8f2c06" />
+              <ringGeometry args={[0.07, 0.11, 20]} />
+              <meshBasicMaterial color={PALETTE.gold} />
             </mesh>
 
             <Text
               position={[0, -0.3, 0.03]}
               fontSize={0.05}
               maxWidth={0.34}
-              color="#ffddaa"
+              color={PALETTE.textPrimary}
               anchorX="center"
               anchorY="middle"
             >
@@ -546,8 +599,8 @@ function Altar({
 
           <Text
             position={[0, 1.22, 0]}
-            fontSize={0.08}
-            color="#ffcc88"
+            fontSize={0.075}
+            color={PALETTE.textPrimary}
             anchorX="center"
             anchorY="middle"
           >
@@ -557,8 +610,8 @@ function Altar({
       ) : (
         <Text
           position={[0, 1.18, 0]}
-          fontSize={0.075}
-          color="#bb8b6a"
+          fontSize={0.068}
+          color={PALETTE.textIdle}
           anchorX="center"
           anchorY="middle"
         >
@@ -617,27 +670,28 @@ function CardArc({
           >
             <mesh>
               <boxGeometry args={[0.42, 0.72, 0.025]} />
-              <meshStandardMaterial
-                color={isSelected ? '#3a1200' : '#120606'}
-                emissive={isHovered ? '#551400' : isSelected ? '#260700' : '#000000'}
+              <meshLambertMaterial
+                color={isSelected ? PALETTE.cardBody : PALETTE.cardBodyDim}
+                flatShading
               />
+              <Edges color={isHovered ? PALETTE.outlineHot : PALETTE.outlineDark} />
             </mesh>
 
             <mesh position={[0, 0, 0.014]}>
               <planeGeometry args={[0.35, 0.59]} />
-              <meshBasicMaterial color={isSelected ? '#241008' : '#160808'} />
+              <meshBasicMaterial color={isSelected ? PALETTE.cardFace : PALETTE.massDark} />
             </mesh>
 
             <mesh position={[0, 0.22, 0.015]}>
-              <ringGeometry args={[0.045, 0.07, 20]} />
-              <meshBasicMaterial color={isSelected ? '#aa3300' : '#662100'} />
+              <ringGeometry args={[0.045, 0.07, 16]} />
+              <meshBasicMaterial color={isSelected ? PALETTE.gold : PALETTE.goldDim} />
             </mesh>
 
             <Text
               position={[0, -0.26, 0.026]}
               fontSize={0.04}
               maxWidth={0.28}
-              color={isSelected ? '#ffddaa' : '#ff8888'}
+              color={isSelected ? PALETTE.textPrimary : PALETTE.textSecondary}
               anchorX="center"
               anchorY="middle"
             >
@@ -656,7 +710,11 @@ export function RitualChamberScene() {
   const ritualImpulseRef = useRef(0)
 
   useFrame((_, delta) => {
-    ritualImpulseRef.current = THREE.MathUtils.lerp(ritualImpulseRef.current, 0, delta * 2.35)
+    ritualImpulseRef.current = THREE.MathUtils.lerp(
+      ritualImpulseRef.current,
+      0,
+      delta * 2.35,
+    )
   })
 
   const handleSelect = (
@@ -687,13 +745,20 @@ export function RitualChamberScene() {
       <Pillar x={2.1} />
       <CeilingCrown ritualImpulseRef={ritualImpulseRef} />
       <Embers ritualImpulseRef={ritualImpulseRef} />
-      <Altar manifest={manifest} ritualImpulseRef={ritualImpulseRef} onLanding={handleLanding} />
-      <CardArc selectedId={manifest?.card.id ?? null} onSelect={handleSelect} />
+      <Altar
+        manifest={manifest}
+        ritualImpulseRef={ritualImpulseRef}
+        onLanding={handleLanding}
+      />
+      <CardArc
+        selectedId={manifest?.card.id ?? null}
+        onSelect={handleSelect}
+      />
 
       <Text
         position={[0, 3.05, -2.55]}
         fontSize={0.12}
-        color="#ff5d33"
+        color={PALETTE.gold}
         anchorX="center"
         anchorY="middle"
       >
@@ -703,7 +768,7 @@ export function RitualChamberScene() {
       <Text
         position={[0, 2.78, -2.58]}
         fontSize={0.08}
-        color="#d1714a"
+        color={PALETTE.textSecondary}
         anchorX="center"
         anchorY="middle"
       >
