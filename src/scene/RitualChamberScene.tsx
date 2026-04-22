@@ -1,21 +1,16 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import type { Mesh } from 'three'
+import * as THREE from 'three'
+import { CARD_NAMES } from '../data/cards'
+import type { CardData } from '../types/cards'
 
-type CardData = {
-  id: number
-  name: string
+type ManifestState = {
+  card: CardData
+  spawnPosition: [number, number, number]
+  spawnRotationY: number
+  activationId: number
 }
-
-const CARD_NAMES: CardData[] = [
-  { id: 0, name: 'The Spark' },
-  { id: 1, name: 'The Veil' },
-  { id: 2, name: 'The Chalice' },
-  { id: 3, name: 'The Gate' },
-  { id: 4, name: 'The Serpent' },
-  { id: 5, name: 'The Lamp' },
-]
 
 let ritualAudioCtx: AudioContext | null = null
 
@@ -240,7 +235,7 @@ function CeilingCrown() {
 }
 
 function Embers() {
-  const emberRefs = useRef<(Mesh | null)[]>([])
+  const emberRefs = useRef<(THREE.Mesh | null)[]>([])
 
   const emberData = useMemo(() => {
     return Array.from({ length: 22 }, (_, i) => ({
@@ -257,9 +252,11 @@ function Embers() {
   useFrame(({ clock }, delta) => {
     const t = clock.getElapsedTime()
 
-    emberRefs.current.forEach((mesh, i) => {
+    for (let i = 0; i < emberRefs.current.length; i += 1) {
+      const mesh = emberRefs.current[i]
       const d = emberData[i]
-      if (!mesh) return
+
+      if (!mesh) continue
 
       mesh.position.y += d.drift * delta
       mesh.position.x += Math.sin(t * d.sway + d.phase) * 0.0009
@@ -270,8 +267,9 @@ function Embers() {
       }
 
       const pulse = 0.45 + Math.sin(t * 2.4 + d.phase) * 0.18
-      mesh.scale.setScalar(d.size * (1 + pulse))
-    })
+      const scale = d.size * (1 + pulse)
+      mesh.scale.setScalar(scale)
+    }
   })
 
   return (
@@ -285,7 +283,11 @@ function Embers() {
           position={[d.x, d.y, d.z]}
         >
           <sphereGeometry args={[d.size, 6, 6]} />
-          <meshBasicMaterial color={i % 3 === 0 ? '#ff9a3d' : '#a82200'} transparent opacity={0.55} />
+          <meshBasicMaterial
+            color={i % 3 === 0 ? '#ff9a3d' : '#a82200'}
+            transparent
+            opacity={0.55}
+          />
         </mesh>
       ))}
     </group>
@@ -321,7 +323,71 @@ function TempleFloor() {
   )
 }
 
-function Altar({ selectedCard }: { selectedCard: CardData | null }) {
+function Altar({ manifest }: { manifest: ManifestState | null }) {
+  const manifestedCardRef = useRef<THREE.Group>(null)
+  const altarRingMaterialRef = useRef<THREE.MeshBasicMaterial>(null)
+  const altarHaloMaterialRef = useRef<THREE.MeshBasicMaterial>(null)
+
+  const dormantRingColor = useRef(new THREE.Color('#5a2410'))
+  const restingRingColor = useRef(new THREE.Color('#cf4a14'))
+  const flareRingColor = useRef(new THREE.Color('#ff7a22'))
+
+  const dormantHaloColor = useRef(new THREE.Color('#662100'))
+  const restingHaloColor = useRef(new THREE.Color('#9f3a0d'))
+  const flareHaloColor = useRef(new THREE.Color('#ffb04d'))
+
+  useEffect(() => {
+    if (!manifest || !manifestedCardRef.current) return
+
+    const localSpawnX = manifest.spawnPosition[0]
+    const localSpawnY = manifest.spawnPosition[1]
+    const localSpawnZ = manifest.spawnPosition[2] + 1
+
+    manifestedCardRef.current.position.set(localSpawnX, localSpawnY, localSpawnZ)
+    manifestedCardRef.current.rotation.set(0, manifest.spawnRotationY, 0)
+    manifestedCardRef.current.scale.set(0.82, 0.82, 0.82)
+
+    if (altarRingMaterialRef.current) {
+      altarRingMaterialRef.current.color.copy(flareRingColor.current)
+    }
+
+    if (altarHaloMaterialRef.current) {
+      altarHaloMaterialRef.current.color.copy(flareHaloColor.current)
+    }
+  }, [manifest])
+
+  useFrame((_, delta) => {
+    if (manifest && manifestedCardRef.current) {
+      const card = manifestedCardRef.current
+
+      card.position.x = THREE.MathUtils.lerp(card.position.x, 0, delta * 4.2)
+      card.position.y = THREE.MathUtils.lerp(card.position.y, 0.94, delta * 4.4)
+      card.position.z = THREE.MathUtils.lerp(card.position.z, 0, delta * 4.6)
+
+      card.rotation.x = THREE.MathUtils.lerp(card.rotation.x, -Math.PI / 2, delta * 4.2)
+      card.rotation.y = THREE.MathUtils.lerp(card.rotation.y, 0, delta * 4.2)
+      card.rotation.z = THREE.MathUtils.lerp(card.rotation.z, 0, delta * 4.2)
+
+      card.scale.x = THREE.MathUtils.lerp(card.scale.x, 1, delta * 4.2)
+      card.scale.y = THREE.MathUtils.lerp(card.scale.y, 1, delta * 4.2)
+      card.scale.z = THREE.MathUtils.lerp(card.scale.z, 1, delta * 4.2)
+    }
+
+    if (altarRingMaterialRef.current) {
+      altarRingMaterialRef.current.color.lerp(
+        manifest ? restingRingColor.current : dormantRingColor.current,
+        delta * 3.2,
+      )
+    }
+
+    if (altarHaloMaterialRef.current) {
+      altarHaloMaterialRef.current.color.lerp(
+        manifest ? restingHaloColor.current : dormantHaloColor.current,
+        delta * 2.8,
+      )
+    }
+  })
+
   return (
     <group position={[0, 0, -1.0]}>
       <mesh position={[0, 0.16, 0.16]}>
@@ -341,17 +407,20 @@ function Altar({ selectedCard }: { selectedCard: CardData | null }) {
 
       <mesh position={[0, 0.913, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.3, 0.37, 48]} />
-        <meshBasicMaterial color={selectedCard ? '#cf4a14' : '#5a2410'} />
+        <meshBasicMaterial
+          ref={altarRingMaterialRef}
+          color={manifest ? '#cf4a14' : '#5a2410'}
+        />
       </mesh>
 
       <mesh position={[0, 1.28, -0.09]}>
         <torusGeometry args={[0.24, 0.02, 10, 40]} />
-        <meshBasicMaterial color="#662100" />
+        <meshBasicMaterial ref={altarHaloMaterialRef} color="#662100" />
       </mesh>
 
-      {selectedCard ? (
+      {manifest ? (
         <>
-          <group position={[0, 0.94, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <group ref={manifestedCardRef}>
             <mesh>
               <boxGeometry args={[0.52, 0.86, 0.03]} />
               <meshStandardMaterial color="#3a1200" emissive="#2a0700" />
@@ -375,25 +444,25 @@ function Altar({ selectedCard }: { selectedCard: CardData | null }) {
               anchorX="center"
               anchorY="middle"
             >
-              {selectedCard.name}
+              {manifest.card.name}
             </Text>
           </group>
 
           <Text
             position={[0, 1.22, 0]}
-            fontSize={0.085}
+            fontSize={0.08}
             color="#ffcc88"
             anchorX="center"
             anchorY="middle"
           >
-            {selectedCard.name}
+            {manifest.card.name}
           </Text>
         </>
       ) : (
         <Text
-          position={[0, 1.22, 0]}
-          fontSize={0.095}
-          color="#ffcc88"
+          position={[0, 1.18, 0]}
+          fontSize={0.075}
+          color="#bb8b6a"
           anchorX="center"
           anchorY="middle"
         >
@@ -408,7 +477,11 @@ function CardArc({
   onSelect,
   selectedId,
 }: {
-  onSelect: (c: CardData) => void
+  onSelect: (
+    card: CardData,
+    position: [number, number, number],
+    rotY: number,
+  ) => void
   selectedId: number | null
 }) {
   const [hoveredId, setHoveredId] = useState<number | null>(null)
@@ -442,7 +515,7 @@ function CardArc({
             key={card.id}
             position={card.position}
             rotation={[0, card.rotY, 0]}
-            onClick={() => onSelect(card)}
+            onClick={() => onSelect(card, card.position, card.rotY)}
             onPointerOver={(e) => {
               e.stopPropagation()
               setHoveredId(card.id)
@@ -454,7 +527,9 @@ function CardArc({
               <boxGeometry args={[0.42, 0.72, 0.025]} />
               <meshStandardMaterial
                 color={isSelected ? '#3a1200' : '#120606'}
-                emissive={isHovered ? '#551400' : isSelected ? '#260700' : '#000000'}
+                emissive={
+                  isHovered ? '#551400' : isSelected ? '#260700' : '#000000'
+                }
               />
             </mesh>
 
@@ -486,11 +561,23 @@ function CardArc({
 }
 
 export function RitualChamberScene() {
-  const [selected, setSelected] = useState<CardData | null>(null)
+  const [manifest, setManifest] = useState<ManifestState | null>(null)
+  const activationCounterRef = useRef(0)
 
-  const handleSelect = (card: CardData) => {
+  const handleSelect = (
+    card: CardData,
+    position: [number, number, number],
+    rotY: number,
+  ) => {
     playRitualSting()
-    setSelected(card)
+    activationCounterRef.current += 1
+
+    setManifest({
+      card,
+      spawnPosition: position,
+      spawnRotationY: rotY,
+      activationId: activationCounterRef.current,
+    })
   }
 
   return (
@@ -501,8 +588,11 @@ export function RitualChamberScene() {
       <Pillar x={2.1} />
       <CeilingCrown />
       <Embers />
-      <Altar selectedCard={selected} />
-      <CardArc selectedId={selected?.id ?? null} onSelect={handleSelect} />
+      <Altar manifest={manifest} />
+      <CardArc
+        selectedId={manifest?.card.id ?? null}
+        onSelect={handleSelect}
+      />
 
       <Text
         position={[0, 3.05, -2.55]}
