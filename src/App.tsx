@@ -1,4 +1,4 @@
-import { Canvas } from '@react-three/fiber'
+5import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import { XR, createXRStore, useXR } from '@react-three/xr'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
@@ -102,6 +102,7 @@ function RitualControlPanel({
   onToneChange,
   onTechLevelChange,
   onIntentChange,
+  onSuggestedQuestionClick,
   onBegin,
   onClear,
   loading,
@@ -125,6 +126,7 @@ function RitualControlPanel({
   onToneChange: (tone: Tone) => void
   onTechLevelChange: (techLevel: TechLevel) => void
   onIntentChange: (intent: string) => void
+  onSuggestedQuestionClick: (question: string) => void
   onBegin: () => Promise<void>
   onClear: () => void
   loading: boolean
@@ -350,8 +352,9 @@ function RitualControlPanel({
               <InfoBlock>
                 <div style={{ display: 'grid', gap: 8 }}>
                   {suggestedQuestions.map((question, index) => (
-                    <div
+                    <button
                       key={`${question}-${index}`}
+                      onClick={() => onSuggestedQuestionClick(question)}
                       style={{
                         fontSize: 12,
                         lineHeight: 1.4,
@@ -359,10 +362,12 @@ function RitualControlPanel({
                         border: '1px solid rgba(143,91,0,0.25)',
                         padding: '8px 10px',
                         background: 'rgba(90,26,13,0.12)',
+                        textAlign: 'left',
+                        cursor: 'pointer',
                       }}
                     >
                       {question}
-                    </div>
+                    </button>
                   ))}
                 </div>
               </InfoBlock>
@@ -588,6 +593,7 @@ export default function App() {
             onToneChange={engine.setTone}
             onTechLevelChange={engine.setTechLevel}
             onIntentChange={engine.setIntent}
+            onSuggestedQuestionClick={engine.setIntent}
             onBegin={engine.beginRitual}
             onClear={engine.clearRitual}
             loading={engine.loading}
