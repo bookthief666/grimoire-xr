@@ -108,9 +108,11 @@ function RitualControlPanel({
   subject,
   tradition,
   tone,
+  intent,
   onSubjectChange,
   onTraditionChange,
   onToneChange,
+  onIntentChange,
   onBegin,
   onClear,
   loading,
@@ -126,9 +128,11 @@ function RitualControlPanel({
   subject: string
   tradition: Tradition
   tone: Tone
+  intent: string
   onSubjectChange: (subject: string) => void
   onTraditionChange: (tradition: Tradition) => void
   onToneChange: (tone: Tone) => void
+  onIntentChange: (intent: string) => void
   onBegin: () => Promise<void>
   onClear: () => void
   loading: boolean
@@ -185,13 +189,42 @@ function RitualControlPanel({
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
         <div>
           <SectionLabel>Tradition</SectionLabel>
-          <SelectField value={tradition} onChange={onTraditionChange} options={TRADITION_OPTIONS} />
+          <SelectField
+            value={tradition}
+            onChange={onTraditionChange}
+            options={TRADITION_OPTIONS}
+          />
         </div>
 
         <div>
           <SectionLabel>Tone</SectionLabel>
-          <SelectField value={tone} onChange={onToneChange} options={TONE_OPTIONS} />
+          <SelectField
+            value={tone}
+            onChange={onToneChange}
+            options={TONE_OPTIONS}
+          />
         </div>
+      </div>
+
+      <div style={{ marginBottom: 12 }}>
+        <SectionLabel>Intent / Query</SectionLabel>
+        <textarea
+          value={intent}
+          onChange={(event) => onIntentChange(event.target.value)}
+          placeholder="Optional: what specifically should the oracle reveal, diagnose, or clarify?"
+          rows={3}
+          style={{
+            width: '100%',
+            boxSizing: 'border-box',
+            padding: '10px 12px',
+            background: '#120707',
+            border: '1px solid #6a2b10',
+            color: '#ffe0a6',
+            outline: 'none',
+            resize: 'vertical',
+            fontFamily: 'monospace',
+          }}
+        />
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
@@ -234,6 +267,11 @@ function RitualControlPanel({
         <div style={{ fontSize: 11, color: '#d89b6b', marginBottom: 4 }}>
           Tone: {tone}
         </div>
+        {intent ? (
+          <div style={{ fontSize: 11, color: '#d89b6b', marginBottom: 4 }}>
+            Intent: {intent}
+          </div>
+        ) : null}
         {deckName ? (
           <div style={{ fontSize: 12, color: '#ffb000' }}>Active deck: {deckName}</div>
         ) : null}
@@ -487,9 +525,11 @@ export default function App() {
             subject={engine.subject}
             tradition={engine.tradition}
             tone={engine.tone}
+            intent={engine.intent}
             onSubjectChange={engine.setSubject}
             onTraditionChange={engine.setTradition}
             onToneChange={engine.setTone}
+            onIntentChange={engine.setIntent}
             onBegin={engine.beginRitual}
             onClear={engine.clearRitual}
             loading={engine.loading}

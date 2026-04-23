@@ -22,6 +22,7 @@ export const ritualConfigSchema = z.object({
   subject: z.string().min(2),
   tradition: traditionSchema,
   tone: toneSchema,
+  intent: z.string().min(4).max(400).optional(),
 })
 
 export const cardMetadataSchema = z.object({
@@ -36,6 +37,10 @@ export const grimoireCardSchema = z.object({
   name: z.string().min(2),
   sigil: z.string().min(2),
   exegesis: z.string().min(12),
+
+  // Transitional: add later in backend once intent is stable
+  ritualFunction: z.string().min(12).optional(),
+
   metadata: cardMetadataSchema,
 })
 
@@ -44,8 +49,6 @@ export const subjectDossierSchema = z.object({
   archetype: z.string().min(2),
   omen: z.string().min(2),
   summary: z.string().min(12),
-
-  // Transitional: keep optional until the backend is updated
   magicalDiagnosis: z.string().min(12).optional(),
   operativeAdvice: z.string().min(12).optional(),
 })

@@ -130,6 +130,10 @@ function normalizeCard(raw: unknown, index: number, subject: string) {
       source.exegesis,
       `${subject} encounters a sealed current here. Symbolic discipline is required.`,
     ),
+    ritualFunction: ensureString(
+      source.ritualFunction,
+      `This arcanum concentrates one operative aspect of the working and shows how the subject must be handled with precision.`,
+    ),
     metadata: normalizeMetadata(maybeParseJsonString(source.metadata), subject),
   }
 }
@@ -193,7 +197,7 @@ function traditionDirective(tradition: Tradition) {
     case 'goetic':
       return 'Use severe ceremonial and pact-oriented vocabulary, emphasizing negotiation, compulsion, hierarchy, danger, and command.'
     case 'tarot':
-      return 'Use precise tarot-oriented symbolic vocabulary, emphasizing archetypes, spread logic, thresholds, and inner patterns.'
+      return 'Use precise tarot-oriented symbolic vocabulary, emphasizing archetypes, thresholds, inversion, spread logic, and psychic patterning.'
     case 'kabbalistic':
       return 'Use Qabalistic vocabulary, emphasizing emanation, path, sephirothic structure, ascent, and symbolic discipline.'
     case 'tantric':
@@ -218,7 +222,12 @@ function toneDirective(tone: Tone) {
   }
 }
 
-function buildPrompt(subject: string, tradition: Tradition, tone: Tone) {
+function buildPrompt(
+  subject: string,
+  tradition: Tradition,
+  tone: Tone,
+  intent?: string,
+) {
   return [
     'Return exactly one JSON object.',
     'Do not return markdown.',
@@ -249,6 +258,7 @@ function buildPrompt(subject: string, tradition: Tradition, tone: Tone) {
     '      "name": "string",',
     '      "sigil": "string",',
     '      "exegesis": "string",',
+    '      "ritualFunction": "string",',
     '      "metadata": {',
     '        "element": "string",',
     '        "planet": "string",',
@@ -265,11 +275,13 @@ function buildPrompt(subject: string, tradition: Tradition, tone: Tone) {
     '- The deck must feel internally coherent',
     '- The dossier must diagnose the subject clearly',
     '- The operative advice must be actionable, disciplined, and non-generic',
-    '- Card names and exegeses must feel specific to the subject, tradition, and tone',
+    '- Each card must have a ritualFunction explaining its operative role inside the reading',
+    '- Card names and exegeses must feel specific to the subject, tradition, tone, and stated question',
     '',
     `Subject: ${subject}`,
     `Tradition: ${tradition}`,
     `Tone: ${tone}`,
+    intent && intent.trim() ? `Intent / Query: ${intent.trim()}` : 'Intent / Query: none explicitly provided',
   ].join('\n')
 }
 
@@ -277,6 +289,7 @@ async function forgeOnce(
   subject: string,
   tradition: Tradition,
   tone: Tone,
+  intent: string | undefined,
   startTime: number,
 ) {
   if (!apiKey) {
@@ -285,11 +298,11 @@ async function forgeOnce(
 
   const ai = new GoogleGenAI({ apiKey })
 
-  logForge('Gemini call started', startTime, { subject, tradition, tone })
+  logForge('Gemini call started', startTime, { subject, tradition, tone, intent })
 
   const response = await ai.models.generateContent({
     model,
-    contents: buildPrompt(subject, tradition, tone),
+    contents: buildPrompt(subject, tradition, tone, intent),
     config: {
       temperature: 0.5,
       responseMimeType: 'application/json',
@@ -360,10 +373,10 @@ export default {
       )
     }
 
-    const { subject, tradition, tone } = parsedConfig.data
+    const { subject, tradition, tone, intent } = parsedConfig.data
 
     try {
-      const deck = await forgeOnce(subject, tradition, tone, startTime)
+      const deck = await forgeOnce(subject, tradition, tone, intent, startTime)
       return Response.json({ ok: true, deck }, { status: 200 })
     } catch (error: any) {
       logForge('Forge process failed', startTime, {

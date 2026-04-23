@@ -14,6 +14,7 @@ type GrimoireEngineState = {
   subject: string
   tradition: Tradition
   tone: Tone
+  intent: string
   forgePhase: ForgePhase
   deck: GrimoireDeck | null
   dossier: SubjectDossier | null
@@ -31,6 +32,7 @@ export type GrimoireEngine = GrimoireEngineState & {
   setSubject: (subject: string) => void
   setTradition: (tradition: Tradition) => void
   setTone: (tone: Tone) => void
+  setIntent: (intent: string) => void
   beginRitual: () => Promise<void>
   activateCard: (cardId: number) => void
   clearRitual: () => void
@@ -46,6 +48,7 @@ export function useGrimoireEngine(): GrimoireEngine {
   const [subject, setSubjectState] = useState('')
   const [tradition, setTraditionState] = useState<Tradition>('thelemic')
   const [tone, setToneState] = useState<Tone>('oracular')
+  const [intent, setIntentState] = useState('')
   const [forgePhase, setForgePhase] = useState<ForgePhase>('idle')
   const [deck, setDeck] = useState<GrimoireDeck | null>(null)
   const [dossier, setDossier] = useState<SubjectDossier | null>(null)
@@ -81,6 +84,11 @@ export function useGrimoireEngine(): GrimoireEngine {
     if (error) setError(null)
   }
 
+  const setIntent = (nextIntent: string) => {
+    setIntentState(nextIntent)
+    if (error) setError(null)
+  }
+
   const beginRitual = async () => {
     if (!subject.trim()) {
       setError('Enter a ritual subject before beginning the forge.')
@@ -100,6 +108,7 @@ export function useGrimoireEngine(): GrimoireEngine {
         subject,
         tradition,
         tone,
+        intent: intent.trim() || undefined,
       })
       setDeck(generatedDeck)
       setDossier(generatedDeck.dossier)
@@ -133,6 +142,7 @@ export function useGrimoireEngine(): GrimoireEngine {
     subject,
     tradition,
     tone,
+    intent,
     forgePhase,
     deck,
     dossier,
@@ -147,6 +157,7 @@ export function useGrimoireEngine(): GrimoireEngine {
     setSubject,
     setTradition,
     setTone,
+    setIntent,
     beginRitual,
     activateCard,
     clearRitual,
