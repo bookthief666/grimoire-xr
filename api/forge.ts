@@ -79,6 +79,25 @@ function ensureString(value: unknown, fallback: string) {
   return typeof value === 'string' && value.trim() ? value.trim() : fallback
 }
 
+function ensureOptionalString(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined
+}
+
+function ensureOptionalGematria(value: unknown) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.max(0, Math.round(value))
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number.parseInt(value.trim(), 10)
+    if (Number.isFinite(parsed)) {
+      return Math.max(0, parsed)
+    }
+  }
+
+  return undefined
+}
+
 function ensureKeywords(value: unknown, subject: string) {
   if (Array.isArray(value)) {
     const keywords = value
@@ -130,12 +149,24 @@ function normalizeMetadata(raw: unknown, subject: string) {
       ? source.polarity
       : 'balanced'
 
-  return {
+  const metadata: Record<string, unknown> = {
     element: ensureString(source.element, 'Aether'),
     planet: ensureString(source.planet, 'Saturn'),
     polarity,
     keywords: ensureKeywords(source.keywords, subject),
   }
+
+  const alchemical = ensureOptionalString(source.alchemical)
+  const hebrew = ensureOptionalString(source.hebrew)
+  const daimon = ensureOptionalString(source.daimon)
+  const gematria = ensureOptionalGematria(source.gematria)
+
+  if (alchemical) metadata.alchemical = alchemical
+  if (hebrew) metadata.hebrew = hebrew
+  if (daimon) metadata.daimon = daimon
+  if (gematria !== undefined) metadata.gematria = gematria
+
+  return metadata
 }
 
 function normalizeCard(raw: unknown, index: number, subject: string) {
@@ -246,6 +277,17 @@ function techLevelDirective(techLevel: TechLevel) {
   return TECH_LEVELS[techLevel].instruction
 }
 
+function correspondenceDirective(techLevel: TechLevel) {
+  switch (techLevel) {
+    case 'neophyte':
+      return 'Keep correspondences light and readable. Use the extra metadata only when it genuinely clarifies the reading.'
+    case 'adept':
+      return 'Use moderate esoteric density. Include alchemical and Hebrew correspondences where they materially sharpen the interpretation.'
+    case 'magus':
+      return 'Use high-magick density. For each card, strongly prefer including alchemical, hebrew, daimon, and gematria correspondences in a meaningful, non-random way.'
+  }
+}
+
 function buildPrompt(
   subject: string,
   tradition: Tradition,
@@ -265,6 +307,7 @@ function buildPrompt(
     traditionDirective(tradition),
     toneDirective(tone),
     techLevelDirective(techLevel),
+    correspondenceDirective(techLevel),
     'Avoid generic mystical platitudes.',
     'Make the text symbolically exact, occult, and operational rather than vague.',
     '',
@@ -294,7 +337,11 @@ function buildPrompt(
     '        "element": "string",',
     '        "planet": "string",',
     '        "polarity": "ascending | descending | balanced",',
-    '        "keywords": ["string", "string", "string", "string"]',
+    '        "keywords": ["string", "string", "string", "string"],',
+    '        "alchemical": "string",',
+    '        "hebrew": "string",',
+    '        "daimon": "string",',
+    '        "gematria": 111',
     '      }',
     '    }',
     '  ]',
@@ -310,6 +357,7 @@ function buildPrompt(
     '- Each card must have a ritualFunction explaining its operative role inside the reading',
     '- Card names and exegeses must feel specific to the subject, tradition, tone, tech level, and stated query',
     '- If an intent/query is provided, the dossier and card logic must respond directly to it',
+    '- For magus, card metadata should become visibly more technical and correspondence-heavy',
     '',
     `Subject: ${subject}`,
     `Tradition: ${tradition}`,

@@ -390,6 +390,10 @@ function ActiveCardPanel({
   keywords,
   element,
   planet,
+  alchemical,
+  hebrew,
+  daimon,
+  gematria,
 }: {
   cardName: string | null
   exegesis: string | null
@@ -397,6 +401,10 @@ function ActiveCardPanel({
   keywords: string[]
   element: string | null
   planet: string | null
+  alchemical: string | null
+  hebrew: string | null
+  daimon: string | null
+  gematria: number | null
 }) {
   return (
     <div
@@ -405,7 +413,7 @@ function ActiveCardPanel({
         left: 16,
         bottom: 16,
         zIndex: 12,
-        width: 420,
+        width: 440,
         padding: 14,
         border: '1px solid rgba(191, 123, 39, 0.35)',
         background:
@@ -443,49 +451,91 @@ function ActiveCardPanel({
             </div>
           ) : null}
 
-          <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
-            {element ? (
-              <InfoBlock>
-                <div style={{ fontSize: 10, color: '#c58a53', marginBottom: 4 }}>
-                  Element
-                </div>
-                <div style={{ fontSize: 12 }}>{element}</div>
-              </InfoBlock>
-            ) : null}
+          {(element || planet || alchemical || hebrew || daimon || gematria !== null) ? (
+            <div style={{ marginTop: 10 }}>
+              <SectionLabel>Correspondences</SectionLabel>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: 10,
+                }}
+              >
+                {element ? (
+                  <InfoBlock>
+                    <div style={{ fontSize: 10, color: '#c58a53', marginBottom: 4 }}>Element</div>
+                    <div style={{ fontSize: 12 }}>{element}</div>
+                  </InfoBlock>
+                ) : null}
 
-            {planet ? (
-              <InfoBlock>
-                <div style={{ fontSize: 10, color: '#c58a53', marginBottom: 4 }}>
-                  Planet
-                </div>
-                <div style={{ fontSize: 12 }}>{planet}</div>
-              </InfoBlock>
-            ) : null}
-          </div>
+                {planet ? (
+                  <InfoBlock>
+                    <div style={{ fontSize: 10, color: '#c58a53', marginBottom: 4 }}>Planet</div>
+                    <div style={{ fontSize: 12 }}>{planet}</div>
+                  </InfoBlock>
+                ) : null}
+
+                {alchemical ? (
+                  <InfoBlock>
+                    <div style={{ fontSize: 10, color: '#c58a53', marginBottom: 4 }}>
+                      Alchemical
+                    </div>
+                    <div style={{ fontSize: 12 }}>{alchemical}</div>
+                  </InfoBlock>
+                ) : null}
+
+                {hebrew ? (
+                  <InfoBlock>
+                    <div style={{ fontSize: 10, color: '#c58a53', marginBottom: 4 }}>Hebrew</div>
+                    <div style={{ fontSize: 12 }}>{hebrew}</div>
+                  </InfoBlock>
+                ) : null}
+
+                {daimon ? (
+                  <InfoBlock>
+                    <div style={{ fontSize: 10, color: '#c58a53', marginBottom: 4 }}>Daimon</div>
+                    <div style={{ fontSize: 12 }}>{daimon}</div>
+                  </InfoBlock>
+                ) : null}
+
+                {gematria !== null ? (
+                  <InfoBlock>
+                    <div style={{ fontSize: 10, color: '#c58a53', marginBottom: 4 }}>
+                      Gematria
+                    </div>
+                    <div style={{ fontSize: 12 }}>{gematria}</div>
+                  </InfoBlock>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
 
           {keywords.length > 0 ? (
-            <div style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {keywords.map((keyword) => (
-                <div
-                  key={keyword}
-                  style={{
-                    padding: '5px 8px',
-                    border: '1px solid rgba(143,91,0,0.35)',
-                    background: 'rgba(90,26,13,0.22)',
-                    fontSize: 11,
-                    color: '#e6c48f',
-                  }}
-                >
-                  {keyword}
-                </div>
-              ))}
+            <div style={{ marginTop: 10 }}>
+              <SectionLabel>Keywords</SectionLabel>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {keywords.map((keyword) => (
+                  <div
+                    key={keyword}
+                    style={{
+                      padding: '5px 8px',
+                      border: '1px solid rgba(143,91,0,0.35)',
+                      background: 'rgba(90,26,13,0.22)',
+                      fontSize: 11,
+                      color: '#e6c48f',
+                    }}
+                  >
+                    {keyword}
+                  </div>
+                ))}
+              </div>
             </div>
           ) : null}
         </>
       ) : (
         <InfoBlock>
           <div style={{ fontSize: 12, lineHeight: 1.45, color: '#bfa788' }}>
-            Select a card to reveal its exegesis and operative role.
+            Select a card to reveal its exegesis, operative role, and correspondences.
           </div>
         </InfoBlock>
       )}
@@ -615,6 +665,10 @@ export default function App() {
             keywords={activeKeywords}
             element={engine.focusedCard?.metadata.element ?? null}
             planet={engine.focusedCard?.metadata.planet ?? null}
+            alchemical={engine.focusedCard?.metadata.alchemical ?? null}
+            hebrew={engine.focusedCard?.metadata.hebrew ?? null}
+            daimon={engine.focusedCard?.metadata.daimon ?? null}
+            gematria={engine.focusedCard?.metadata.gematria ?? null}
           />
         </>
       )}
