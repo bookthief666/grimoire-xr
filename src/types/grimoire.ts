@@ -71,6 +71,34 @@ export const grimoireDeckSchema = z.object({
   cards: z.array(grimoireCardSchema).min(3),
 })
 
+export const oracleDrawnCardSchema = z.object({
+  cardId: z.number().int().positive(),
+  cardName: z.string().min(2),
+  position: z.string().min(2),
+  interpretation: z.string().min(12),
+  operativeInstruction: z.string().min(12),
+})
+
+export const oracleReadingSchema = z.object({
+  id: z.string().min(8),
+  question: z.string().min(3),
+  createdAt: z.string().datetime(),
+  spreadName: z.string().min(2),
+  answer: z.string().min(24),
+  diagnosis: z.string().min(12),
+  prescription: z.string().min(12),
+  warning: z.string().min(12).optional(),
+  drawnCards: z.array(oracleDrawnCardSchema).min(1).max(4),
+  keywords: z.array(z.string().min(2)).min(2).max(8),
+})
+
+export const oracleConsultationRequestSchema = z.object({
+  config: ritualConfigSchema,
+  deck: grimoireDeckSchema,
+  question: z.string().min(3).max(800),
+  selectedCardIds: z.array(z.number().int().positive()).min(1).max(4).optional(),
+})
+
 export const forgePhaseSchema = z.enum(['idle', 'forging', 'ready', 'error'])
 
 export const ritualSelectionSchema = z.object({
@@ -87,5 +115,10 @@ export type CardMetadata = z.infer<typeof cardMetadataSchema>
 export type GrimoireCard = z.infer<typeof grimoireCardSchema>
 export type SubjectDossier = z.infer<typeof subjectDossierSchema>
 export type GrimoireDeck = z.infer<typeof grimoireDeckSchema>
+
+export type OracleDrawnCard = z.infer<typeof oracleDrawnCardSchema>
+export type OracleReading = z.infer<typeof oracleReadingSchema>
+export type OracleConsultationRequest = z.infer<typeof oracleConsultationRequestSchema>
+
 export type ForgePhase = z.infer<typeof forgePhaseSchema>
 export type RitualSelection = z.infer<typeof ritualSelectionSchema>
