@@ -344,12 +344,14 @@ function RitualControlPanel({
 function ActiveCardPanel({
   cardName,
   exegesis,
+  ritualFunction,
   keywords,
   element,
   planet,
 }: {
   cardName: string | null
   exegesis: string | null
+  ritualFunction: string | null
   keywords: string[]
   element: string | null
   planet: string | null
@@ -384,6 +386,17 @@ function ActiveCardPanel({
                 {exegesis}
               </div>
             </InfoBlock>
+          ) : null}
+
+          {ritualFunction ? (
+            <div style={{ marginTop: 10 }}>
+              <SectionLabel>Ritual Function</SectionLabel>
+              <InfoBlock>
+                <div style={{ fontSize: 12, lineHeight: 1.5, color: '#d8bf9b' }}>
+                  {ritualFunction}
+                </div>
+              </InfoBlock>
+            </div>
           ) : null}
 
           <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
@@ -424,7 +437,7 @@ function ActiveCardPanel({
       ) : (
         <InfoBlock>
           <div style={{ fontSize: 12, lineHeight: 1.45, color: '#bfa788' }}>
-            Select a card to reveal its exegesis and correspondences.
+            Select a card to reveal its exegesis and operative role.
           </div>
         </InfoBlock>
       )}
@@ -546,6 +559,7 @@ export default function App() {
           <ActiveCardPanel
             cardName={engine.focusedCard?.name ?? null}
             exegesis={engine.focusedCard?.exegesis ?? null}
+            ritualFunction={engine.focusedCard?.ritualFunction ?? null}
             keywords={activeKeywords}
             element={engine.focusedCard?.metadata.element ?? null}
             planet={engine.focusedCard?.metadata.planet ?? null}
