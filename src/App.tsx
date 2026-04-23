@@ -1,4 +1,4 @@
-5import { Canvas } from '@react-three/fiber'
+import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import { XR, createXRStore, useXR } from '@react-three/xr'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
