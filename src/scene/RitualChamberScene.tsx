@@ -9,7 +9,8 @@ import { Edges, Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { PALETTE } from '../theme/palette'
-import type { GrimoireCard } from '../types/grimoire'
+import type { GrimoireCard, SubjectDossier } from '../types/grimoire'
+import { InWorldOraclePanels } from './InWorldOraclePanels'
 
 type ManifestState = {
   card: GrimoireCard
@@ -714,12 +715,18 @@ export function RitualChamberScene({
   cards,
   selectedCardId,
   altarCard,
+  focusedCard = null,
+  dossier = null,
+  showInWorldPanels = true,
   onCardActivate,
   onAltarLanding,
 }: {
   cards: GrimoireCard[]
   selectedCardId: number | null
   altarCard: GrimoireCard | null
+  focusedCard?: GrimoireCard | null
+  dossier?: SubjectDossier | null
+  showInWorldPanels?: boolean
   onCardActivate: (card: GrimoireCard) => void
   onAltarLanding: () => void
 }) {
@@ -758,10 +765,13 @@ export function RitualChamberScene({
     })
   }
 
-  const handleLanding = () => {
+  const handleLanding = (_activationId: number) => {
     ritualImpulseRef.current = 1
     onAltarLanding()
   }
+
+  const shouldShowOraclePanels =
+    showInWorldPanels && (Boolean(dossier) || Boolean(focusedCard))
 
   return (
     <group>
@@ -781,6 +791,10 @@ export function RitualChamberScene({
         selectedId={selectedCardId}
         onSelect={handleSelect}
       />
+
+      {shouldShowOraclePanels ? (
+        <InWorldOraclePanels dossier={dossier ?? null} focusedCard={focusedCard ?? null} />
+      ) : null}
 
       <Text
         position={[0, 3.05, -2.55]}
