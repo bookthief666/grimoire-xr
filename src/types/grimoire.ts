@@ -37,6 +37,10 @@ export const cardMetadataSchema = z.object({
   planet: z.string().min(2),
   polarity: z.enum(['ascending', 'descending', 'balanced']),
   keywords: z.array(z.string().min(2)).min(2).max(6),
+  alchemical: z.string().min(2).optional(),
+  hebrew: z.string().min(1).optional(),
+  daimon: z.string().min(2).optional(),
+  gematria: z.number().int().nonnegative().optional(),
 })
 
 export const grimoireCardSchema = z.object({
