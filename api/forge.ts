@@ -1,7 +1,6 @@
 import { GoogleGenAI } from '@google/genai'
+import { zodToJsonSchema } from 'zod-to-json-schema'
 import { grimoireDeckSchema } from '../src/types/grimoire.js'
-import { grimoireDeckSchema } from '../src/types/grimoire'
-
 const apiKey = process.env.GEMINI_API_KEY
 const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
 
