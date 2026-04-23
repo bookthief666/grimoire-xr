@@ -6,10 +6,14 @@ import {
   type GrimoireDeck,
   type RitualSelection,
   type SubjectDossier,
+  type Tone,
+  type Tradition,
 } from '../types/grimoire'
 
 type GrimoireEngineState = {
   subject: string
+  tradition: Tradition
+  tone: Tone
   forgePhase: ForgePhase
   deck: GrimoireDeck | null
   dossier: SubjectDossier | null
@@ -25,6 +29,8 @@ export type GrimoireEngine = GrimoireEngineState & {
   focusedCard: GrimoireCard | null
   altarCard: GrimoireCard | null
   setSubject: (subject: string) => void
+  setTradition: (tradition: Tradition) => void
+  setTone: (tone: Tone) => void
   beginRitual: () => Promise<void>
   activateCard: (cardId: number) => void
   clearRitual: () => void
@@ -38,6 +44,8 @@ const INITIAL_SELECTION: RitualSelection = {
 
 export function useGrimoireEngine(): GrimoireEngine {
   const [subject, setSubjectState] = useState('')
+  const [tradition, setTraditionState] = useState<Tradition>('thelemic')
+  const [tone, setToneState] = useState<Tone>('oracular')
   const [forgePhase, setForgePhase] = useState<ForgePhase>('idle')
   const [deck, setDeck] = useState<GrimoireDeck | null>(null)
   const [dossier, setDossier] = useState<SubjectDossier | null>(null)
@@ -63,6 +71,16 @@ export function useGrimoireEngine(): GrimoireEngine {
     if (forgePhase === 'error') setForgePhase(deck ? 'ready' : 'idle')
   }
 
+  const setTradition = (nextTradition: Tradition) => {
+    setTraditionState(nextTradition)
+    if (error) setError(null)
+  }
+
+  const setTone = (nextTone: Tone) => {
+    setToneState(nextTone)
+    if (error) setError(null)
+  }
+
   const beginRitual = async () => {
     if (!subject.trim()) {
       setError('Enter a ritual subject before beginning the forge.')
@@ -78,7 +96,11 @@ export function useGrimoireEngine(): GrimoireEngine {
     setSelection(INITIAL_SELECTION)
 
     try {
-      const generatedDeck = await generateDeck(subject)
+      const generatedDeck = await generateDeck({
+        subject,
+        tradition,
+        tone,
+      })
       setDeck(generatedDeck)
       setDossier(generatedDeck.dossier)
       setForgePhase('ready')
@@ -109,6 +131,8 @@ export function useGrimoireEngine(): GrimoireEngine {
 
   return {
     subject,
+    tradition,
+    tone,
     forgePhase,
     deck,
     dossier,
@@ -121,6 +145,8 @@ export function useGrimoireEngine(): GrimoireEngine {
     focusedCard,
     altarCard,
     setSubject,
+    setTradition,
+    setTone,
     beginRitual,
     activateCard,
     clearRitual,

@@ -1,8 +1,10 @@
 import {
   grimoireCardSchema,
   grimoireDeckSchema,
+  ritualConfigSchema,
   type GrimoireCard,
   type GrimoireDeck,
+  type RitualConfig,
   type SubjectDossier,
 } from '../types/grimoire'
 
@@ -18,13 +20,15 @@ type ForgeFailure = {
 
 type ForgeResponse = ForgeSuccess | ForgeFailure
 
-export async function generateDeck(subject: string): Promise<GrimoireDeck> {
+export async function generateDeck(config: RitualConfig): Promise<GrimoireDeck> {
+  const validatedConfig = ritualConfigSchema.parse(config)
+
   const response = await fetch('/api/forge', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ subject }),
+    body: JSON.stringify(validatedConfig),
   })
 
   let payload: ForgeResponse | null = null
@@ -47,13 +51,13 @@ export async function generateDeck(subject: string): Promise<GrimoireDeck> {
 }
 
 export async function generateSubjectDossier(
-  subject: string
+  config: RitualConfig,
 ): Promise<SubjectDossier> {
-  const deck = await generateDeck(subject)
+  const deck = await generateDeck(config)
   return deck.dossier
 }
 
-export async function generateCardExegesis(card: GrimoireCard, _subject: string) {
+export async function generateCardExegesis(card: GrimoireCard, _config: RitualConfig) {
   return grimoireCardSchema.parse(card).exegesis
 }
 

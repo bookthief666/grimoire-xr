@@ -1,6 +1,11 @@
 import { GoogleGenAI } from '@google/genai'
 import * as z from 'zod'
-import { grimoireDeckSchema } from '../src/types/grimoire.js'
+import {
+  grimoireDeckSchema,
+  ritualConfigSchema,
+  type Tone,
+  type Tradition,
+} from '../src/types/grimoire.js'
 
 export const maxDuration = 60
 
@@ -137,6 +142,14 @@ function normalizeDossier(raw: unknown, subject: string) {
     archetype: ensureString(source.archetype, 'Witness of the Inner Threshold'),
     omen: ensureString(source.omen, 'The altar answers in a language of embers.'),
     summary: ensureString(source.summary, `${subject} enters the forge. The ritual demands clarity.`),
+    magicalDiagnosis: ensureString(
+      source.magicalDiagnosis,
+      `${subject} is entangled in a formative symbolic pressure that must be interpreted before it can be directed.`,
+    ),
+    operativeAdvice: ensureString(
+      source.operativeAdvice,
+      `Proceed with precision, restraint, and exact intention. Do not force what has not yet been ritually clarified.`,
+    ),
   }
 }
 
@@ -171,10 +184,51 @@ function coerceDeckPayload(raw: unknown, subject: string) {
   }
 }
 
-function buildPrompt(subject: string) {
+function traditionDirective(tradition: Tradition) {
+  switch (tradition) {
+    case 'thelemic':
+      return 'Use Thelemic vocabulary, emphasizing will, ordeal, initiation, star, law, and magical attainment.'
+    case 'hermetic':
+      return 'Use Hermetic vocabulary, emphasizing correspondence, mental transmutation, balance, and the subtle architecture of reality.'
+    case 'goetic':
+      return 'Use severe ceremonial and pact-oriented vocabulary, emphasizing negotiation, compulsion, hierarchy, danger, and command.'
+    case 'tarot':
+      return 'Use precise tarot-oriented symbolic vocabulary, emphasizing archetypes, spread logic, thresholds, and inner patterns.'
+    case 'kabbalistic':
+      return 'Use Qabalistic vocabulary, emphasizing emanation, path, sephirothic structure, ascent, and symbolic discipline.'
+    case 'tantric':
+      return 'Use initiatory tantric vocabulary, emphasizing energy, polarity, disciplined transformation, embodied gnosis, and sacred intensity.'
+    case 'chaos_magick':
+      return 'Use operative chaos magick vocabulary, emphasizing belief as tool, sigils, paradigm shifting, directed intent, and results.'
+  }
+}
+
+function toneDirective(tone: Tone) {
+  switch (tone) {
+    case 'scholarly':
+      return 'Write with analytic clarity, precision, and restraint. Avoid melodrama.'
+    case 'oracular':
+      return 'Write with gnomic gravity, prophetic cadence, and solemn symbolic authority.'
+    case 'visionary':
+      return 'Write with luminous imaginal intensity, but remain coherent and exact.'
+    case 'severe':
+      return 'Write with austerity, directness, and ritual seriousness. Avoid ornament unless symbolically necessary.'
+    case 'ecstatic':
+      return 'Write with heightened spiritual and initiatory intensity, but keep the language disciplined and non-generic.'
+  }
+}
+
+function buildPrompt(subject: string, tradition: Tradition, tone: Tone) {
   return [
     'Return exactly one JSON object.',
-    'Do not return markdown. Do not wrap the object in quotes.',
+    'Do not return markdown.',
+    'Do not wrap the object in quotes.',
+    'Do not stringify nested objects.',
+    traditionDirective(tradition),
+    toneDirective(tone),
+    'Avoid generic mystical platitudes.',
+    'Make the text feel symbolically exact, occult, and operational rather than vague.',
+    '',
     'The output must be a plain JSON object with this exact top-level shape:',
     '{',
     '  "id": "string",',
@@ -185,7 +239,9 @@ function buildPrompt(subject: string) {
     '    "subject": "string",',
     '    "archetype": "string",',
     '    "omen": "string",',
-    '    "summary": "string"',
+    '    "summary": "string",',
+    '    "magicalDiagnosis": "string",',
+    '    "operativeAdvice": "string"',
     '  },',
     '  "cards": [',
     '    {',
@@ -206,23 +262,34 @@ function buildPrompt(subject: string) {
     'Requirements:',
     '- Create exactly 4 cards',
     '- Card ids must be integers 1 through 4',
-    '- Use a serious occult tone',
+    '- The deck must feel internally coherent',
+    '- The dossier must diagnose the subject clearly',
+    '- The operative advice must be actionable, disciplined, and non-generic',
+    '- Card names and exegeses must feel specific to the subject, tradition, and tone',
+    '',
     `Subject: ${subject}`,
+    `Tradition: ${tradition}`,
+    `Tone: ${tone}`,
   ].join('\n')
 }
 
-async function forgeOnce(subject: string, startTime: number) {
+async function forgeOnce(
+  subject: string,
+  tradition: Tradition,
+  tone: Tone,
+  startTime: number,
+) {
   if (!apiKey) {
     throw new Error('Missing GEMINI_API_KEY')
   }
 
   const ai = new GoogleGenAI({ apiKey })
 
-  logForge('Gemini call started', startTime, { subject })
+  logForge('Gemini call started', startTime, { subject, tradition, tone })
 
   const response = await ai.models.generateContent({
     model,
-    contents: buildPrompt(subject),
+    contents: buildPrompt(subject, tradition, tone),
     config: {
       temperature: 0.5,
       responseMimeType: 'application/json',
@@ -284,20 +351,19 @@ export default {
       return Response.json({ ok: false, error: 'Invalid JSON body.' }, { status: 400 })
     }
 
-    const subject =
-      body && typeof body === 'object' && 'subject' in body
-        ? String((body as { subject?: unknown }).subject ?? '').trim()
-        : ''
+    const parsedConfig = ritualConfigSchema.safeParse(body)
 
-    if (subject.length < 2) {
+    if (!parsedConfig.success) {
       return Response.json(
-        { ok: false, error: 'Subject must be at least 2 characters.' },
+        { ok: false, error: 'Invalid ritual configuration.' },
         { status: 400 },
       )
     }
 
+    const { subject, tradition, tone } = parsedConfig.data
+
     try {
-      const deck = await forgeOnce(subject, startTime)
+      const deck = await forgeOnce(subject, tradition, tone, startTime)
       return Response.json({ ok: true, deck }, { status: 200 })
     } catch (error: any) {
       logForge('Forge process failed', startTime, {

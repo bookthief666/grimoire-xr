@@ -1,5 +1,29 @@
 import { z } from 'zod'
 
+export const traditionSchema = z.enum([
+  'thelemic',
+  'hermetic',
+  'goetic',
+  'tarot',
+  'kabbalistic',
+  'tantric',
+  'chaos_magick',
+])
+
+export const toneSchema = z.enum([
+  'scholarly',
+  'oracular',
+  'visionary',
+  'severe',
+  'ecstatic',
+])
+
+export const ritualConfigSchema = z.object({
+  subject: z.string().min(2),
+  tradition: traditionSchema,
+  tone: toneSchema,
+})
+
 export const cardMetadataSchema = z.object({
   element: z.string().min(2),
   planet: z.string().min(2),
@@ -20,6 +44,10 @@ export const subjectDossierSchema = z.object({
   archetype: z.string().min(2),
   omen: z.string().min(2),
   summary: z.string().min(12),
+
+  // Transitional: keep optional until the backend is updated
+  magicalDiagnosis: z.string().min(12).optional(),
+  operativeAdvice: z.string().min(12).optional(),
 })
 
 export const grimoireDeckSchema = z.object({
@@ -37,6 +65,10 @@ export const ritualSelectionSchema = z.object({
   focusedCardId: z.number().int().positive().nullable(),
   altarCardId: z.number().int().positive().nullable(),
 })
+
+export type Tradition = z.infer<typeof traditionSchema>
+export type Tone = z.infer<typeof toneSchema>
+export type RitualConfig = z.infer<typeof ritualConfigSchema>
 
 export type CardMetadata = z.infer<typeof cardMetadataSchema>
 export type GrimoireCard = z.infer<typeof grimoireCardSchema>

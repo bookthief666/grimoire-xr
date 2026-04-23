@@ -4,6 +4,7 @@ import { XR, createXRStore, useXR } from '@react-three/xr'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useGrimoireEngine } from './engine/useGrimoireEngine'
 import { RitualChamberScene } from './scene/RitualChamberScene'
+import type { Tone, Tradition } from './types/grimoire'
 import './index.css'
 
 const xrStore = createXRStore()
@@ -52,9 +53,64 @@ function InfoBlock({ children }: { children: ReactNode }) {
   )
 }
 
+function SelectField<T extends string>({
+  value,
+  onChange,
+  options,
+}: {
+  value: T
+  onChange: (value: T) => void
+  options: Array<{ value: T; label: string }>
+}) {
+  return (
+    <select
+      value={value}
+      onChange={(event) => onChange(event.target.value as T)}
+      style={{
+        width: '100%',
+        boxSizing: 'border-box',
+        padding: '10px 12px',
+        background: '#120707',
+        border: '1px solid #6a2b10',
+        color: '#ffe0a6',
+        outline: 'none',
+        fontFamily: 'monospace',
+      }}
+    >
+      {options.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
+        </option>
+      ))}
+    </select>
+  )
+}
+
+const TRADITION_OPTIONS: Array<{ value: Tradition; label: string }> = [
+  { value: 'thelemic', label: 'Thelemic' },
+  { value: 'hermetic', label: 'Hermetic' },
+  { value: 'goetic', label: 'Goetic' },
+  { value: 'tarot', label: 'Tarot' },
+  { value: 'kabbalistic', label: 'Kabbalistic' },
+  { value: 'tantric', label: 'Tantric' },
+  { value: 'chaos_magick', label: 'Chaos Magick' },
+]
+
+const TONE_OPTIONS: Array<{ value: Tone; label: string }> = [
+  { value: 'scholarly', label: 'Scholarly' },
+  { value: 'oracular', label: 'Oracular' },
+  { value: 'visionary', label: 'Visionary' },
+  { value: 'severe', label: 'Severe' },
+  { value: 'ecstatic', label: 'Ecstatic' },
+]
+
 function RitualControlPanel({
   subject,
+  tradition,
+  tone,
   onSubjectChange,
+  onTraditionChange,
+  onToneChange,
   onBegin,
   onClear,
   loading,
@@ -64,9 +120,15 @@ function RitualControlPanel({
   dossierSummary,
   omen,
   archetype,
+  magicalDiagnosis,
+  operativeAdvice,
 }: {
   subject: string
+  tradition: Tradition
+  tone: Tone
   onSubjectChange: (subject: string) => void
+  onTraditionChange: (tradition: Tradition) => void
+  onToneChange: (tone: Tone) => void
   onBegin: () => Promise<void>
   onClear: () => void
   loading: boolean
@@ -76,6 +138,8 @@ function RitualControlPanel({
   dossierSummary: string | null
   omen: string | null
   archetype: string | null
+  magicalDiagnosis?: string | null
+  operativeAdvice?: string | null
 }) {
   return (
     <div
@@ -84,7 +148,9 @@ function RitualControlPanel({
         top: 16,
         right: 16,
         zIndex: 12,
-        width: 360,
+        width: 380,
+        maxHeight: 'calc(100vh - 32px)',
+        overflowY: 'auto',
         padding: 14,
         border: '1px solid rgba(191, 123, 39, 0.45)',
         background:
@@ -100,7 +166,6 @@ function RitualControlPanel({
       </div>
 
       <SectionLabel>Subject</SectionLabel>
-
       <input
         value={subject}
         onChange={(event) => onSubjectChange(event.target.value)}
@@ -116,6 +181,18 @@ function RitualControlPanel({
           outline: 'none',
         }}
       />
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+        <div>
+          <SectionLabel>Tradition</SectionLabel>
+          <SelectField value={tradition} onChange={onTraditionChange} options={TRADITION_OPTIONS} />
+        </div>
+
+        <div>
+          <SectionLabel>Tone</SectionLabel>
+          <SelectField value={tone} onChange={onToneChange} options={TONE_OPTIONS} />
+        </div>
+      </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
         <button
@@ -151,6 +228,12 @@ function RitualControlPanel({
         <div style={{ fontSize: 11, color: '#d89b6b', marginBottom: 4 }}>
           Forge phase: {phase}
         </div>
+        <div style={{ fontSize: 11, color: '#d89b6b', marginBottom: 4 }}>
+          Tradition: {tradition}
+        </div>
+        <div style={{ fontSize: 11, color: '#d89b6b', marginBottom: 4 }}>
+          Tone: {tone}
+        </div>
         {deckName ? (
           <div style={{ fontSize: 12, color: '#ffb000' }}>Active deck: {deckName}</div>
         ) : null}
@@ -184,6 +267,28 @@ function RitualControlPanel({
               <InfoBlock>
                 <div style={{ fontSize: 12, lineHeight: 1.45, color: '#d8bf9b' }}>
                   {omen}
+                </div>
+              </InfoBlock>
+            </div>
+          ) : null}
+
+          {magicalDiagnosis ? (
+            <div>
+              <SectionLabel>Magical Diagnosis</SectionLabel>
+              <InfoBlock>
+                <div style={{ fontSize: 12, lineHeight: 1.45, color: '#d8bf9b' }}>
+                  {magicalDiagnosis}
+                </div>
+              </InfoBlock>
+            </div>
+          ) : null}
+
+          {operativeAdvice ? (
+            <div>
+              <SectionLabel>Operative Advice</SectionLabel>
+              <InfoBlock>
+                <div style={{ fontSize: 12, lineHeight: 1.45, color: '#d8bf9b' }}>
+                  {operativeAdvice}
                 </div>
               </InfoBlock>
             </div>
@@ -380,7 +485,11 @@ export default function App() {
         <>
           <RitualControlPanel
             subject={engine.subject}
+            tradition={engine.tradition}
+            tone={engine.tone}
             onSubjectChange={engine.setSubject}
+            onTraditionChange={engine.setTradition}
+            onToneChange={engine.setTone}
             onBegin={engine.beginRitual}
             onClear={engine.clearRitual}
             loading={engine.loading}
@@ -390,6 +499,8 @@ export default function App() {
             dossierSummary={engine.dossier?.summary ?? null}
             omen={engine.dossier?.omen ?? null}
             archetype={engine.dossier?.archetype ?? null}
+            magicalDiagnosis={engine.dossier?.magicalDiagnosis ?? null}
+            operativeAdvice={engine.dossier?.operativeAdvice ?? null}
           />
 
           <ActiveCardPanel
