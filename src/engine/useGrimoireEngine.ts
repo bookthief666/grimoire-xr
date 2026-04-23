@@ -27,6 +27,7 @@ export type GrimoireEngine = GrimoireEngineState & {
   setSubject: (subject: string) => void
   beginRitual: () => Promise<void>
   activateCard: (cardId: number) => void
+  clearRitual: () => void
   acknowledgeAltarLanding: () => void
 }
 
@@ -36,7 +37,7 @@ const INITIAL_SELECTION: RitualSelection = {
 }
 
 export function useGrimoireEngine(): GrimoireEngine {
-  const [subject, setSubject] = useState('')
+  const [subject, setSubjectState] = useState('')
   const [forgePhase, setForgePhase] = useState<ForgePhase>('idle')
   const [deck, setDeck] = useState<GrimoireDeck | null>(null)
   const [dossier, setDossier] = useState<SubjectDossier | null>(null)
@@ -55,6 +56,12 @@ export function useGrimoireEngine(): GrimoireEngine {
     () => cards.find((card) => card.id === selection.altarCardId) ?? null,
     [cards, selection.altarCardId],
   )
+
+  const setSubject = (nextSubject: string) => {
+    setSubjectState(nextSubject)
+    if (error) setError(null)
+    if (forgePhase === 'error') setForgePhase(deck ? 'ready' : 'idle')
+  }
 
   const beginRitual = async () => {
     if (!subject.trim()) {
@@ -87,6 +94,15 @@ export function useGrimoireEngine(): GrimoireEngine {
     setSelection({ focusedCardId: cardId, altarCardId: cardId })
   }
 
+  const clearRitual = () => {
+    setDeck(null)
+    setDossier(null)
+    setSelection(INITIAL_SELECTION)
+    setForgePhase('idle')
+    setError(null)
+    setLoading(false)
+  }
+
   const acknowledgeAltarLanding = () => {
     // Placeholder hook for future oracle/archive side effects.
   }
@@ -107,6 +123,7 @@ export function useGrimoireEngine(): GrimoireEngine {
     setSubject,
     beginRitual,
     activateCard,
+    clearRitual,
     acknowledgeAltarLanding,
   }
 }
