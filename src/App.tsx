@@ -4,7 +4,12 @@ import { XR, createXRStore, useXR } from '@react-three/xr'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useGrimoireEngine } from './engine/useGrimoireEngine'
 import { RitualChamberScene } from './scene/RitualChamberScene'
-import type { Tone, Tradition } from './types/grimoire'
+import type { TechLevel, Tone, Tradition } from './types/grimoire'
+import {
+  TECH_LEVEL_OPTIONS,
+  TONE_OPTIONS,
+  TRADITION_OPTIONS,
+} from './constants/ritualOptions'
 import './index.css'
 
 const xrStore = createXRStore()
@@ -60,7 +65,7 @@ function SelectField<T extends string>({
 }: {
   value: T
   onChange: (value: T) => void
-  options: Array<{ value: T; label: string }>
+  options: ReadonlyArray<{ value: T; label: string }>
 }) {
   return (
     <select
@@ -86,32 +91,16 @@ function SelectField<T extends string>({
   )
 }
 
-const TRADITION_OPTIONS: Array<{ value: Tradition; label: string }> = [
-  { value: 'thelemic', label: 'Thelemic' },
-  { value: 'hermetic', label: 'Hermetic' },
-  { value: 'goetic', label: 'Goetic' },
-  { value: 'tarot', label: 'Tarot' },
-  { value: 'kabbalistic', label: 'Kabbalistic' },
-  { value: 'tantric', label: 'Tantric' },
-  { value: 'chaos_magick', label: 'Chaos Magick' },
-]
-
-const TONE_OPTIONS: Array<{ value: Tone; label: string }> = [
-  { value: 'scholarly', label: 'Scholarly' },
-  { value: 'oracular', label: 'Oracular' },
-  { value: 'visionary', label: 'Visionary' },
-  { value: 'severe', label: 'Severe' },
-  { value: 'ecstatic', label: 'Ecstatic' },
-]
-
 function RitualControlPanel({
   subject,
   tradition,
   tone,
+  techLevel,
   intent,
   onSubjectChange,
   onTraditionChange,
   onToneChange,
+  onTechLevelChange,
   onIntentChange,
   onBegin,
   onClear,
@@ -124,14 +113,17 @@ function RitualControlPanel({
   archetype,
   magicalDiagnosis,
   operativeAdvice,
+  suggestedQuestions,
 }: {
   subject: string
   tradition: Tradition
   tone: Tone
+  techLevel: TechLevel
   intent: string
   onSubjectChange: (subject: string) => void
   onTraditionChange: (tradition: Tradition) => void
   onToneChange: (tone: Tone) => void
+  onTechLevelChange: (techLevel: TechLevel) => void
   onIntentChange: (intent: string) => void
   onBegin: () => Promise<void>
   onClear: () => void
@@ -144,6 +136,7 @@ function RitualControlPanel({
   archetype: string | null
   magicalDiagnosis?: string | null
   operativeAdvice?: string | null
+  suggestedQuestions?: string[]
 }) {
   return (
     <div
@@ -152,7 +145,7 @@ function RitualControlPanel({
         top: 16,
         right: 16,
         zIndex: 12,
-        width: 380,
+        width: 400,
         maxHeight: 'calc(100vh - 32px)',
         overflowY: 'auto',
         padding: 14,
@@ -186,7 +179,14 @@ function RitualControlPanel({
         }}
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: 10,
+          marginBottom: 12,
+        }}
+      >
         <div>
           <SectionLabel>Tradition</SectionLabel>
           <SelectField
@@ -204,6 +204,15 @@ function RitualControlPanel({
             options={TONE_OPTIONS}
           />
         </div>
+      </div>
+
+      <div style={{ marginBottom: 12 }}>
+        <SectionLabel>Tech Level</SectionLabel>
+        <SelectField
+          value={techLevel}
+          onChange={onTechLevelChange}
+          options={TECH_LEVEL_OPTIONS}
+        />
       </div>
 
       <div style={{ marginBottom: 12 }}>
@@ -267,6 +276,9 @@ function RitualControlPanel({
         <div style={{ fontSize: 11, color: '#d89b6b', marginBottom: 4 }}>
           Tone: {tone}
         </div>
+        <div style={{ fontSize: 11, color: '#d89b6b', marginBottom: 4 }}>
+          Tech level: {techLevel}
+        </div>
         {intent ? (
           <div style={{ fontSize: 11, color: '#d89b6b', marginBottom: 4 }}>
             Intent: {intent}
@@ -288,7 +300,7 @@ function RitualControlPanel({
         </div>
       ) : null}
 
-      {(archetype || omen) ? (
+      {(archetype || omen || magicalDiagnosis || operativeAdvice) ? (
         <div style={{ marginTop: 12, display: 'grid', gap: 10 }}>
           {archetype ? (
             <div>
@@ -327,6 +339,31 @@ function RitualControlPanel({
               <InfoBlock>
                 <div style={{ fontSize: 12, lineHeight: 1.45, color: '#d8bf9b' }}>
                   {operativeAdvice}
+                </div>
+              </InfoBlock>
+            </div>
+          ) : null}
+
+          {suggestedQuestions && suggestedQuestions.length > 0 ? (
+            <div>
+              <SectionLabel>Suggested Questions</SectionLabel>
+              <InfoBlock>
+                <div style={{ display: 'grid', gap: 8 }}>
+                  {suggestedQuestions.map((question, index) => (
+                    <div
+                      key={`${question}-${index}`}
+                      style={{
+                        fontSize: 12,
+                        lineHeight: 1.4,
+                        color: '#d8bf9b',
+                        border: '1px solid rgba(143,91,0,0.25)',
+                        padding: '8px 10px',
+                        background: 'rgba(90,26,13,0.12)',
+                      }}
+                    >
+                      {question}
+                    </div>
+                  ))}
                 </div>
               </InfoBlock>
             </div>
@@ -378,7 +415,9 @@ function ActiveCardPanel({
 
       {cardName ? (
         <>
-          <div style={{ fontSize: 16, color: '#ffcf7c', marginBottom: 10 }}>{cardName}</div>
+          <div style={{ fontSize: 16, color: '#ffcf7c', marginBottom: 10 }}>
+            {cardName}
+          </div>
 
           {exegesis ? (
             <InfoBlock>
@@ -402,14 +441,18 @@ function ActiveCardPanel({
           <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
             {element ? (
               <InfoBlock>
-                <div style={{ fontSize: 10, color: '#c58a53', marginBottom: 4 }}>Element</div>
+                <div style={{ fontSize: 10, color: '#c58a53', marginBottom: 4 }}>
+                  Element
+                </div>
                 <div style={{ fontSize: 12 }}>{element}</div>
               </InfoBlock>
             ) : null}
 
             {planet ? (
               <InfoBlock>
-                <div style={{ fontSize: 10, color: '#c58a53', marginBottom: 4 }}>Planet</div>
+                <div style={{ fontSize: 10, color: '#c58a53', marginBottom: 4 }}>
+                  Planet
+                </div>
                 <div style={{ fontSize: 12 }}>{planet}</div>
               </InfoBlock>
             ) : null}
@@ -538,10 +581,12 @@ export default function App() {
             subject={engine.subject}
             tradition={engine.tradition}
             tone={engine.tone}
+            techLevel={engine.techLevel}
             intent={engine.intent}
             onSubjectChange={engine.setSubject}
             onTraditionChange={engine.setTradition}
             onToneChange={engine.setTone}
+            onTechLevelChange={engine.setTechLevel}
             onIntentChange={engine.setIntent}
             onBegin={engine.beginRitual}
             onClear={engine.clearRitual}
@@ -554,6 +599,7 @@ export default function App() {
             archetype={engine.dossier?.archetype ?? null}
             magicalDiagnosis={engine.dossier?.magicalDiagnosis ?? null}
             operativeAdvice={engine.dossier?.operativeAdvice ?? null}
+            suggestedQuestions={engine.dossier?.suggestedQuestions ?? []}
           />
 
           <ActiveCardPanel

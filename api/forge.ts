@@ -1,8 +1,10 @@
 import { GoogleGenAI } from '@google/genai'
 import * as z from 'zod'
+import { TECH_LEVELS } from '../src/constants/ritualOptions.js'
 import {
   grimoireDeckSchema,
   ritualConfigSchema,
+  type TechLevel,
   type Tone,
   type Tradition,
 } from '../src/types/grimoire.js'
@@ -101,6 +103,23 @@ function ensureKeywords(value: unknown, subject: string) {
   return [firstWord, 'Threshold', 'Discipline', 'Will']
 }
 
+function ensureSuggestedQuestions(value: unknown, subject: string) {
+  if (Array.isArray(value)) {
+    const questions = value
+      .map((item) => (typeof item === 'string' ? item.trim() : ''))
+      .filter(Boolean)
+      .slice(0, 3)
+
+    if (questions.length > 0) return questions
+  }
+
+  return [
+    `What hidden current is shaping ${subject}?`,
+    `What must be renounced or disciplined in ${subject}?`,
+    `What operation would bring ${subject} into clearer manifestation?`,
+  ]
+}
+
 function normalizeMetadata(raw: unknown, subject: string) {
   const source = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
 
@@ -154,6 +173,7 @@ function normalizeDossier(raw: unknown, subject: string) {
       source.operativeAdvice,
       `Proceed with precision, restraint, and exact intention. Do not force what has not yet been ritually clarified.`,
     ),
+    suggestedQuestions: ensureSuggestedQuestions(source.suggestedQuestions, subject),
   }
 }
 
@@ -191,19 +211,19 @@ function coerceDeckPayload(raw: unknown, subject: string) {
 function traditionDirective(tradition: Tradition) {
   switch (tradition) {
     case 'thelemic':
-      return 'Use Thelemic vocabulary, emphasizing will, ordeal, initiation, star, law, and magical attainment.'
+      return 'Use Thelemic vocabulary, emphasizing will, ordeal, initiation, star, law, attainment, Babalon, and magical ascent.'
     case 'hermetic':
-      return 'Use Hermetic vocabulary, emphasizing correspondence, mental transmutation, balance, and the subtle architecture of reality.'
+      return 'Use Hermetic vocabulary, emphasizing correspondence, balance, alchemical process, subtle architecture, and mental transmutation.'
     case 'goetic':
-      return 'Use severe ceremonial and pact-oriented vocabulary, emphasizing negotiation, compulsion, hierarchy, danger, and command.'
+      return 'Use severe ceremonial and pact-oriented vocabulary, emphasizing hierarchy, command, negotiation, danger, compulsion, and constrained power.'
     case 'tarot':
-      return 'Use precise tarot-oriented symbolic vocabulary, emphasizing archetypes, thresholds, inversion, spread logic, and psychic patterning.'
+      return 'Use precise tarot-oriented symbolic vocabulary, emphasizing archetypes, thresholds, inversion, psychic patterning, and divinatory structure.'
     case 'kabbalistic':
-      return 'Use Qabalistic vocabulary, emphasizing emanation, path, sephirothic structure, ascent, and symbolic discipline.'
+      return 'Use Qabalistic vocabulary, emphasizing emanation, path, sephirothic structure, ascent, descent, and symbolic discipline.'
     case 'tantric':
-      return 'Use initiatory tantric vocabulary, emphasizing energy, polarity, disciplined transformation, embodied gnosis, and sacred intensity.'
+      return 'Use initiatory tantric vocabulary, emphasizing energy, polarity, disciplined transformation, embodied gnosis, sacred intensity, and union.'
     case 'chaos_magick':
-      return 'Use operative chaos magick vocabulary, emphasizing belief as tool, sigils, paradigm shifting, directed intent, and results.'
+      return 'Use operative chaos magick vocabulary, emphasizing sigils, paradigm shifting, belief as instrument, directed intent, and concrete results.'
   }
 }
 
@@ -222,10 +242,15 @@ function toneDirective(tone: Tone) {
   }
 }
 
+function techLevelDirective(techLevel: TechLevel) {
+  return TECH_LEVELS[techLevel].instruction
+}
+
 function buildPrompt(
   subject: string,
   tradition: Tradition,
   tone: Tone,
+  techLevel: TechLevel,
   intent?: string,
 ) {
   return [
@@ -233,10 +258,15 @@ function buildPrompt(
     'Do not return markdown.',
     'Do not wrap the object in quotes.',
     'Do not stringify nested objects.',
+    '',
+    'CRITICAL INSTRUCTIONS:',
+    `You MUST visibly obey Tradition=${tradition}, Tone=${tone}, and TechLevel=${techLevel}.`,
+    'The result must not read like a generic mystical reading that could fit any system.',
     traditionDirective(tradition),
     toneDirective(tone),
+    techLevelDirective(techLevel),
     'Avoid generic mystical platitudes.',
-    'Make the text feel symbolically exact, occult, and operational rather than vague.',
+    'Make the text symbolically exact, occult, and operational rather than vague.',
     '',
     'The output must be a plain JSON object with this exact top-level shape:',
     '{',
@@ -250,7 +280,8 @@ function buildPrompt(
     '    "omen": "string",',
     '    "summary": "string",',
     '    "magicalDiagnosis": "string",',
-    '    "operativeAdvice": "string"',
+    '    "operativeAdvice": "string",',
+    '    "suggestedQuestions": ["string", "string", "string"]',
     '  },',
     '  "cards": [',
     '    {',
@@ -275,13 +306,18 @@ function buildPrompt(
     '- The deck must feel internally coherent',
     '- The dossier must diagnose the subject clearly',
     '- The operative advice must be actionable, disciplined, and non-generic',
+    '- suggestedQuestions must be short, sharp, and useful follow-up questions for consultation',
     '- Each card must have a ritualFunction explaining its operative role inside the reading',
-    '- Card names and exegeses must feel specific to the subject, tradition, tone, and stated question',
+    '- Card names and exegeses must feel specific to the subject, tradition, tone, tech level, and stated query',
+    '- If an intent/query is provided, the dossier and card logic must respond directly to it',
     '',
     `Subject: ${subject}`,
     `Tradition: ${tradition}`,
     `Tone: ${tone}`,
-    intent && intent.trim() ? `Intent / Query: ${intent.trim()}` : 'Intent / Query: none explicitly provided',
+    `TechLevel: ${techLevel}`,
+    intent && intent.trim()
+      ? `Intent / Query: ${intent.trim()}`
+      : 'Intent / Query: none explicitly provided',
   ].join('\n')
 }
 
@@ -289,6 +325,7 @@ async function forgeOnce(
   subject: string,
   tradition: Tradition,
   tone: Tone,
+  techLevel: TechLevel,
   intent: string | undefined,
   startTime: number,
 ) {
@@ -298,11 +335,17 @@ async function forgeOnce(
 
   const ai = new GoogleGenAI({ apiKey })
 
-  logForge('Gemini call started', startTime, { subject, tradition, tone, intent })
+  logForge('Gemini call started', startTime, {
+    subject,
+    tradition,
+    tone,
+    techLevel,
+    intent,
+  })
 
   const response = await ai.models.generateContent({
     model,
-    contents: buildPrompt(subject, tradition, tone, intent),
+    contents: buildPrompt(subject, tradition, tone, techLevel, intent),
     config: {
       temperature: 0.5,
       responseMimeType: 'application/json',
@@ -373,10 +416,17 @@ export default {
       )
     }
 
-    const { subject, tradition, tone, intent } = parsedConfig.data
+    const { subject, tradition, tone, techLevel, intent } = parsedConfig.data
 
     try {
-      const deck = await forgeOnce(subject, tradition, tone, intent, startTime)
+      const deck = await forgeOnce(
+        subject,
+        tradition,
+        tone,
+        techLevel,
+        intent,
+        startTime,
+      )
       return Response.json({ ok: true, deck }, { status: 200 })
     } catch (error: any) {
       logForge('Forge process failed', startTime, {

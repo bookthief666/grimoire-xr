@@ -6,6 +6,7 @@ import {
   type GrimoireDeck,
   type RitualSelection,
   type SubjectDossier,
+  type TechLevel,
   type Tone,
   type Tradition,
 } from '../types/grimoire'
@@ -14,6 +15,7 @@ type GrimoireEngineState = {
   subject: string
   tradition: Tradition
   tone: Tone
+  techLevel: TechLevel
   intent: string
   forgePhase: ForgePhase
   deck: GrimoireDeck | null
@@ -32,6 +34,7 @@ export type GrimoireEngine = GrimoireEngineState & {
   setSubject: (subject: string) => void
   setTradition: (tradition: Tradition) => void
   setTone: (tone: Tone) => void
+  setTechLevel: (techLevel: TechLevel) => void
   setIntent: (intent: string) => void
   beginRitual: () => Promise<void>
   activateCard: (cardId: number) => void
@@ -48,6 +51,7 @@ export function useGrimoireEngine(): GrimoireEngine {
   const [subject, setSubjectState] = useState('')
   const [tradition, setTraditionState] = useState<Tradition>('thelemic')
   const [tone, setToneState] = useState<Tone>('oracular')
+  const [techLevel, setTechLevelState] = useState<TechLevel>('adept')
   const [intent, setIntentState] = useState('')
   const [forgePhase, setForgePhase] = useState<ForgePhase>('idle')
   const [deck, setDeck] = useState<GrimoireDeck | null>(null)
@@ -84,6 +88,11 @@ export function useGrimoireEngine(): GrimoireEngine {
     if (error) setError(null)
   }
 
+  const setTechLevel = (nextTechLevel: TechLevel) => {
+    setTechLevelState(nextTechLevel)
+    if (error) setError(null)
+  }
+
   const setIntent = (nextIntent: string) => {
     setIntentState(nextIntent)
     if (error) setError(null)
@@ -108,8 +117,10 @@ export function useGrimoireEngine(): GrimoireEngine {
         subject,
         tradition,
         tone,
+        techLevel,
         intent: intent.trim() || undefined,
       })
+
       setDeck(generatedDeck)
       setDossier(generatedDeck.dossier)
       setForgePhase('ready')
@@ -142,6 +153,7 @@ export function useGrimoireEngine(): GrimoireEngine {
     subject,
     tradition,
     tone,
+    techLevel,
     intent,
     forgePhase,
     deck,
@@ -157,6 +169,7 @@ export function useGrimoireEngine(): GrimoireEngine {
     setSubject,
     setTradition,
     setTone,
+    setTechLevel,
     setIntent,
     beginRitual,
     activateCard,

@@ -18,10 +18,17 @@ export const toneSchema = z.enum([
   'ecstatic',
 ])
 
+export const techLevelSchema = z.enum([
+  'neophyte',
+  'adept',
+  'magus',
+])
+
 export const ritualConfigSchema = z.object({
   subject: z.string().min(2),
   tradition: traditionSchema,
   tone: toneSchema,
+  techLevel: techLevelSchema,
   intent: z.string().min(4).max(400).optional(),
 })
 
@@ -37,10 +44,7 @@ export const grimoireCardSchema = z.object({
   name: z.string().min(2),
   sigil: z.string().min(2),
   exegesis: z.string().min(12),
-
-  // Transitional: add later in backend once intent is stable
   ritualFunction: z.string().min(12).optional(),
-
   metadata: cardMetadataSchema,
 })
 
@@ -51,6 +55,7 @@ export const subjectDossierSchema = z.object({
   summary: z.string().min(12),
   magicalDiagnosis: z.string().min(12).optional(),
   operativeAdvice: z.string().min(12).optional(),
+  suggestedQuestions: z.array(z.string().min(8)).max(3).optional(),
 })
 
 export const grimoireDeckSchema = z.object({
@@ -71,6 +76,7 @@ export const ritualSelectionSchema = z.object({
 
 export type Tradition = z.infer<typeof traditionSchema>
 export type Tone = z.infer<typeof toneSchema>
+export type TechLevel = z.infer<typeof techLevelSchema>
 export type RitualConfig = z.infer<typeof ritualConfigSchema>
 
 export type CardMetadata = z.infer<typeof cardMetadataSchema>
