@@ -28,6 +28,20 @@ function XRSessionBridge({
   return null
 }
 
+function formatSavedAt(value: string | null) {
+  if (!value) return 'None'
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+
+  return date.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
     <div
@@ -91,6 +105,34 @@ function SelectField<T extends string>({
   )
 }
 
+function SmallButton({
+  children,
+  onClick,
+  disabled = false,
+}: {
+  children: ReactNode
+  onClick: () => void
+  disabled?: boolean
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        padding: '8px 9px',
+        background: disabled ? '#1b0b07' : '#140b0b',
+        color: disabled ? '#735b43' : '#d7b891',
+        border: '1px solid rgba(143,91,0,0.4)',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        fontFamily: 'monospace',
+        fontSize: 11,
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
 function RitualControlPanel({
   subject,
   tradition,
@@ -105,6 +147,9 @@ function RitualControlPanel({
   onSuggestedQuestionClick,
   onBegin,
   onClear,
+  onSaveRitual,
+  onLoadArchive,
+  onClearArchive,
   loading,
   phase,
   error,
@@ -115,6 +160,11 @@ function RitualControlPanel({
   magicalDiagnosis,
   operativeAdvice,
   suggestedQuestions,
+  hasSavedRitual,
+  lastSavedAt,
+  archiveMessage,
+  showInWorldPanels,
+  onShowInWorldPanelsChange,
 }: {
   subject: string
   tradition: Tradition
@@ -129,6 +179,9 @@ function RitualControlPanel({
   onSuggestedQuestionClick: (question: string) => void
   onBegin: () => Promise<void>
   onClear: () => void
+  onSaveRitual: () => void
+  onLoadArchive: () => void
+  onClearArchive: () => void
   loading: boolean
   phase: string
   error: string | null
@@ -139,14 +192,15 @@ function RitualControlPanel({
   magicalDiagnosis?: string | null
   operativeAdvice?: string | null
   suggestedQuestions?: string[]
+  hasSavedRitual: boolean
+  lastSavedAt: string | null
+  archiveMessage: string | null
+  showInWorldPanels: boolean
+  onShowInWorldPanelsChange: (visible: boolean) => void
 }) {
   return (
     <div
       style={{
-        position: 'fixed',
-        top: 16,
-        right: 16,
-        zIndex: 12,
         width: 400,
         maxHeight: 'calc(100vh - 32px)',
         overflowY: 'auto',
@@ -281,6 +335,9 @@ function RitualControlPanel({
         <div style={{ fontSize: 11, color: '#d89b6b', marginBottom: 4 }}>
           Tech level: {techLevel}
         </div>
+        <div style={{ fontSize: 11, color: '#d89b6b', marginBottom: 4 }}>
+          VR panels: {showInWorldPanels ? 'visible' : 'hidden'}
+        </div>
         {intent ? (
           <div style={{ fontSize: 11, color: '#d89b6b', marginBottom: 4 }}>
             Intent: {intent}
@@ -290,6 +347,55 @@ function RitualControlPanel({
           <div style={{ fontSize: 12, color: '#ffb000' }}>Active deck: {deckName}</div>
         ) : null}
       </InfoBlock>
+
+      <div style={{ marginTop: 12 }}>
+        <SectionLabel>Archive</SectionLabel>
+        <InfoBlock>
+          <div style={{ fontSize: 11, color: '#d89b6b', marginBottom: 8 }}>
+            Saved ritual: {hasSavedRitual ? 'yes' : 'no'}
+          </div>
+          <div style={{ fontSize: 11, color: '#d89b6b', marginBottom: 10 }}>
+            Last saved: {formatSavedAt(lastSavedAt)}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+            <SmallButton onClick={onSaveRitual} disabled={!deckName}>
+              Save
+            </SmallButton>
+            <SmallButton onClick={onLoadArchive} disabled={!hasSavedRitual}>
+              Load Last
+            </SmallButton>
+            <SmallButton onClick={onClearArchive} disabled={!hasSavedRitual}>
+              Clear Saved
+            </SmallButton>
+          </div>
+
+          <label
+            style={{
+              marginTop: 10,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              fontSize: 11,
+              color: '#d8bf9b',
+              cursor: 'pointer',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={showInWorldPanels}
+              onChange={(event) => onShowInWorldPanelsChange(event.target.checked)}
+            />
+            Show in-world oracle panels
+          </label>
+
+          {archiveMessage ? (
+            <div style={{ marginTop: 8, fontSize: 11, color: '#bfa788', lineHeight: 1.35 }}>
+              {archiveMessage}
+            </div>
+          ) : null}
+        </InfoBlock>
+      </div>
 
       {dossierSummary ? (
         <div style={{ marginTop: 12 }}>
@@ -409,10 +515,6 @@ function ActiveCardPanel({
   return (
     <div
       style={{
-        position: 'fixed',
-        left: 16,
-        bottom: 16,
-        zIndex: 12,
         width: 440,
         padding: 14,
         border: '1px solid rgba(191, 123, 39, 0.35)',
@@ -463,14 +565,18 @@ function ActiveCardPanel({
               >
                 {element ? (
                   <InfoBlock>
-                    <div style={{ fontSize: 10, color: '#c58a53', marginBottom: 4 }}>Element</div>
+                    <div style={{ fontSize: 10, color: '#c58a53', marginBottom: 4 }}>
+                      Element
+                    </div>
                     <div style={{ fontSize: 12 }}>{element}</div>
                   </InfoBlock>
                 ) : null}
 
                 {planet ? (
                   <InfoBlock>
-                    <div style={{ fontSize: 10, color: '#c58a53', marginBottom: 4 }}>Planet</div>
+                    <div style={{ fontSize: 10, color: '#c58a53', marginBottom: 4 }}>
+                      Planet
+                    </div>
                     <div style={{ fontSize: 12 }}>{planet}</div>
                   </InfoBlock>
                 ) : null}
@@ -486,14 +592,18 @@ function ActiveCardPanel({
 
                 {hebrew ? (
                   <InfoBlock>
-                    <div style={{ fontSize: 10, color: '#c58a53', marginBottom: 4 }}>Hebrew</div>
+                    <div style={{ fontSize: 10, color: '#c58a53', marginBottom: 4 }}>
+                      Hebrew
+                    </div>
                     <div style={{ fontSize: 12 }}>{hebrew}</div>
                   </InfoBlock>
                 ) : null}
 
                 {daimon ? (
                   <InfoBlock>
-                    <div style={{ fontSize: 10, color: '#c58a53', marginBottom: 4 }}>Daimon</div>
+                    <div style={{ fontSize: 10, color: '#c58a53', marginBottom: 4 }}>
+                      Daimon
+                    </div>
                     <div style={{ fontSize: 12 }}>{daimon}</div>
                   </InfoBlock>
                 ) : null}
@@ -592,6 +702,9 @@ function CeremonyOverlay({
 
 export default function App() {
   const [isVR, setIsVR] = useState(false)
+  const [showRitualPanel, setShowRitualPanel] = useState(true)
+  const [showActiveCardPanel, setShowActiveCardPanel] = useState(true)
+  const [showInWorldPanels, setShowInWorldPanels] = useState(true)
   const engine = useGrimoireEngine()
 
   const activeKeywords = useMemo(
@@ -632,44 +745,138 @@ export default function App() {
 
       {!isVR && (
         <>
-          <RitualControlPanel
-            subject={engine.subject}
-            tradition={engine.tradition}
-            tone={engine.tone}
-            techLevel={engine.techLevel}
-            intent={engine.intent}
-            onSubjectChange={engine.setSubject}
-            onTraditionChange={engine.setTradition}
-            onToneChange={engine.setTone}
-            onTechLevelChange={engine.setTechLevel}
-            onIntentChange={engine.setIntent}
-            onSuggestedQuestionClick={engine.setIntent}
-            onBegin={engine.beginRitual}
-            onClear={engine.clearRitual}
-            loading={engine.loading}
-            phase={engine.forgePhase}
-            error={engine.error}
-            deckName={engine.deck?.name ?? null}
-            dossierSummary={engine.dossier?.summary ?? null}
-            omen={engine.dossier?.omen ?? null}
-            archetype={engine.dossier?.archetype ?? null}
-            magicalDiagnosis={engine.dossier?.magicalDiagnosis ?? null}
-            operativeAdvice={engine.dossier?.operativeAdvice ?? null}
-            suggestedQuestions={engine.dossier?.suggestedQuestions ?? []}
-          />
+          {showRitualPanel ? (
+            <div style={{ position: 'fixed', top: 16, right: 16, zIndex: 13 }}>
+              <button
+                onClick={() => setShowRitualPanel(false)}
+                style={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  zIndex: 14,
+                  background: '#120707',
+                  color: '#d7b891',
+                  border: '1px solid rgba(143,91,0,0.4)',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  fontFamily: 'monospace',
+                }}
+              >
+                ×
+              </button>
 
-          <ActiveCardPanel
-            cardName={engine.focusedCard?.name ?? null}
-            exegesis={engine.focusedCard?.exegesis ?? null}
-            ritualFunction={engine.focusedCard?.ritualFunction ?? null}
-            keywords={activeKeywords}
-            element={engine.focusedCard?.metadata.element ?? null}
-            planet={engine.focusedCard?.metadata.planet ?? null}
-            alchemical={engine.focusedCard?.metadata.alchemical ?? null}
-            hebrew={engine.focusedCard?.metadata.hebrew ?? null}
-            daimon={engine.focusedCard?.metadata.daimon ?? null}
-            gematria={engine.focusedCard?.metadata.gematria ?? null}
-          />
+              <RitualControlPanel
+                subject={engine.subject}
+                tradition={engine.tradition}
+                tone={engine.tone}
+                techLevel={engine.techLevel}
+                intent={engine.intent}
+                onSubjectChange={engine.setSubject}
+                onTraditionChange={engine.setTradition}
+                onToneChange={engine.setTone}
+                onTechLevelChange={engine.setTechLevel}
+                onIntentChange={engine.setIntent}
+                onSuggestedQuestionClick={engine.setIntent}
+                onBegin={engine.beginRitual}
+                onClear={engine.clearRitual}
+                onSaveRitual={() => {
+                  engine.saveCurrentRitual()
+                }}
+                onLoadArchive={() => {
+                  engine.loadMostRecentArchive()
+                }}
+                onClearArchive={() => {
+                  engine.clearArchive()
+                }}
+                loading={engine.loading}
+                phase={engine.forgePhase}
+                error={engine.error}
+                deckName={engine.deck?.name ?? null}
+                dossierSummary={engine.dossier?.summary ?? null}
+                omen={engine.dossier?.omen ?? null}
+                archetype={engine.dossier?.archetype ?? null}
+                magicalDiagnosis={engine.dossier?.magicalDiagnosis ?? null}
+                operativeAdvice={engine.dossier?.operativeAdvice ?? null}
+                suggestedQuestions={engine.dossier?.suggestedQuestions ?? []}
+                hasSavedRitual={engine.hasSavedRitual}
+                lastSavedAt={engine.lastSavedAt}
+                archiveMessage={engine.archivePlaceholder}
+                showInWorldPanels={showInWorldPanels}
+                onShowInWorldPanelsChange={setShowInWorldPanels}
+              />
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowRitualPanel(true)}
+              style={{
+                position: 'fixed',
+                top: 16,
+                right: 16,
+                zIndex: 13,
+                padding: '10px 12px',
+                background: '#120000',
+                color: '#ffcf7c',
+                border: '1px solid rgba(191,123,39,0.45)',
+                fontFamily: 'monospace',
+                cursor: 'pointer',
+              }}
+            >
+              Open Ritual Panel
+            </button>
+          )}
+
+          {showActiveCardPanel ? (
+            <div style={{ position: 'fixed', left: 16, bottom: 16, zIndex: 13 }}>
+              <button
+                onClick={() => setShowActiveCardPanel(false)}
+                style={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  zIndex: 14,
+                  background: '#120707',
+                  color: '#d7b891',
+                  border: '1px solid rgba(143,91,0,0.4)',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  fontFamily: 'monospace',
+                }}
+              >
+                ×
+              </button>
+
+              <ActiveCardPanel
+                cardName={engine.focusedCard?.name ?? null}
+                exegesis={engine.focusedCard?.exegesis ?? null}
+                ritualFunction={engine.focusedCard?.ritualFunction ?? null}
+                keywords={activeKeywords}
+                element={engine.focusedCard?.metadata.element ?? null}
+                planet={engine.focusedCard?.metadata.planet ?? null}
+                alchemical={engine.focusedCard?.metadata.alchemical ?? null}
+                hebrew={engine.focusedCard?.metadata.hebrew ?? null}
+                daimon={engine.focusedCard?.metadata.daimon ?? null}
+                gematria={engine.focusedCard?.metadata.gematria ?? null}
+              />
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowActiveCardPanel(true)}
+              style={{
+                position: 'fixed',
+                left: 16,
+                bottom: 16,
+                zIndex: 13,
+                padding: '10px 12px',
+                background: '#120000',
+                color: '#ffcf7c',
+                border: '1px solid rgba(191,123,39,0.45)',
+                fontFamily: 'monospace',
+                cursor: 'pointer',
+              }}
+            >
+              Open Active Card
+            </button>
+          )}
         </>
       )}
 
@@ -689,6 +896,9 @@ export default function App() {
             cards={engine.cards}
             selectedCardId={engine.selection.focusedCardId}
             altarCard={engine.altarCard}
+            focusedCard={engine.focusedCard}
+            dossier={engine.dossier}
+            showInWorldPanels={showInWorldPanels}
             onCardActivate={(card) => engine.activateCard(card.id)}
             onAltarLanding={engine.acknowledgeAltarLanding}
           />
