@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai'
-import { zodToJsonSchema } from 'zod-to-json-schema'
+import * as z from 'zod'
 import { grimoireDeckSchema } from '../src/types/grimoire.js'
 
 const apiKey = process.env.GEMINI_API_KEY
@@ -22,7 +22,7 @@ function stripJsonSchemaNoise(value: unknown): unknown {
   return value
 }
 
-const responseSchema = stripJsonSchemaNoise(zodToJsonSchema(grimoireDeckSchema))
+const responseJsonSchema = stripJsonSchemaNoise(z.toJSONSchema(grimoireDeckSchema))
 
 function cleanJsonText(text: string) {
   return text
@@ -228,7 +228,7 @@ async function forgeOnce(subject: string) {
     config: {
       temperature: 0.5,
       responseMimeType: 'application/json',
-      responseSchema,
+      responseJsonSchema,
     },
   })
 
