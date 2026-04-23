@@ -164,13 +164,36 @@ export default async function handler(request: Request): Promise<Response> {
     return Response.json({ ok: false, error: 'Method not allowed.' }, { status: 405 })
   }
 
-  let body: unknown
-  try {
-    body = await request.json()
-    logForge('Body parsed successfully', startTime)
-  } catch {
-    return Response.json({ ok: false, error: 'Invalid JSON body.' }, { status: 400 })
-  }
+let body: unknown
+let rawBody = ''
+
+try {
+  logForge('About to read raw body', startTime, {
+    method: request.method,
+    contentType: request.headers.get('content-type'),
+  })
+
+  rawBody = await request.text()
+
+  logForge('Raw body received', startTime, {
+    length: rawBody.length,
+    preview: rawBody.slice(0, 200),
+  })
+
+  body = rawBody ? JSON.parse(rawBody) : {}
+
+  logForge('Body JSON parsed successfully', startTime)
+} catch (error: any) {
+  logForge('Body parse failed', startTime, {
+    message: error?.message || String(error),
+    rawBodyPreview: rawBody.slice(0, 200),
+  })
+
+  return Response.json(
+    { ok: false, error: 'Invalid JSON body.' },
+    { status: 400 },
+  )
+}
 
   const subject = body && typeof body === 'object' && 'subject' in body
       ? String((body as { subject?: unknown }).subject ?? '').trim()
