@@ -1,78 +1,120 @@
-import type { ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { Text } from '@react-three/drei'
 import type { GrimoireCard, OracleReading, SubjectDossier } from '../types/grimoire'
 
-function trimText(text: string | undefined | null, max = 220) {
-  if (!text) return ''
-  return text.length > max ? `${text.slice(0, max - 1)}…` : text
+type PanelPage = {
+  heading: string
+  body: string
+  color?: string
+}
+
+const PAGE_CHAR_LIMIT = 360
+
+function cleanText(text: string | undefined | null) {
+  return (text ?? '').replace(/\s+/g, ' ').trim()
+}
+
+function chunkText(text: string | undefined | null, limit = PAGE_CHAR_LIMIT) {
+  const cleaned = cleanText(text)
+  if (!cleaned) return []
+
+  const chunks: string[] = []
+  let remaining = cleaned
+
+  while (remaining.length > limit) {
+    const slice = remaining.slice(0, limit)
+    const breakPoint = Math.max(slice.lastIndexOf('. '), slice.lastIndexOf('; '), slice.lastIndexOf(', '), slice.lastIndexOf(' '))
+
+    const end = breakPoint > limit * 0.55 ? breakPoint + 1 : limit
+    chunks.push(remaining.slice(0, end).trim())
+    remaining = remaining.slice(end).trim()
+  }
+
+  if (remaining) chunks.push(remaining)
+  return chunks
+}
+
+function makeSectionPages(
+  sections: Array<{
+    heading: string
+    body?: string | null
+    color?: string
+    limit?: number
+  }>,
+) {
+  const pages: PanelPage[] = []
+
+  for (const section of sections) {
+    const chunks = chunkText(section.body, section.limit ?? PAGE_CHAR_LIMIT)
+
+    chunks.forEach((chunk, index) => {
+      pages.push({
+        heading:
+          chunks.length > 1
+            ? `${section.heading} ${index + 1}/${chunks.length}`
+            : section.heading,
+        body: chunk,
+        color: section.color,
+      })
+    })
+  }
+
+  return pages
 }
 
 function formatDrawnCards(reading: OracleReading) {
   if (!reading.drawnCards.length) return ''
 
   return reading.drawnCards
-    .map((card) => `${card.position}: ${card.cardName}`)
+    .map((card) => {
+      return `${card.position}: ${card.cardName}. ${card.interpretation} Operative instruction: ${card.operativeInstruction}`
+    })
+    .join('\n\n')
+}
+
+function formatCorrespondences(card: GrimoireCard) {
+  return [
+    card.metadata.element ? `Element: ${card.metadata.element}` : '',
+    card.metadata.planet ? `Planet: ${card.metadata.planet}` : '',
+    card.metadata.polarity ? `Polarity: ${card.metadata.polarity}` : '',
+    card.metadata.alchemical ? `Alchemy: ${card.metadata.alchemical}` : '',
+    card.metadata.hebrew ? `Hebrew: ${card.metadata.hebrew}` : '',
+    card.metadata.daimon ? `Daimon: ${card.metadata.daimon}` : '',
+    card.metadata.gematria !== undefined ? `Gematria: ${card.metadata.gematria}` : '',
+    card.metadata.keywords.length ? `Keywords: ${card.metadata.keywords.join(', ')}` : '',
+  ]
+    .filter(Boolean)
     .join(' • ')
 }
 
-function Field({
-  title,
-  value,
-  y,
-  color = '#f2d4a2',
-  maxWidth = 1.8,
-  fontSize = 0.05,
-}: {
-  title: string
-  value: string
-  y: number
-  color?: string
-  maxWidth?: number
-  fontSize?: number
-}) {
-  if (!value) return null
-
-  return (
-    <>
-      <Text
-        position={[-0.9, y, 0.01]}
-        anchorX="left"
-        anchorY="top"
-        fontSize={0.055}
-        color="#c58a53"
-        maxWidth={maxWidth}
-      >
-        {title.toUpperCase()}
-      </Text>
-
-      <Text
-        position={[-0.9, y - 0.09, 0.01]}
-        anchorX="left"
-        anchorY="top"
-        fontSize={fontSize}
-        color={color}
-        maxWidth={maxWidth}
-        lineHeight={1.35}
-      >
-        {value}
-      </Text>
-    </>
-  )
-}
-
-function PanelBase({
+function PanelShell({
   position,
   rotation,
   title,
+  pageIndex,
+  pageCount,
+  onNextPage,
   children,
 }: {
   position: [number, number, number]
   rotation?: [number, number, number]
   title: string
+  pageIndex: number
+  pageCount: number
+  onNextPage: () => void
   children: ReactNode
 }) {
+  const hasPages = pageCount > 1
+
   return (
-    <group position={position} rotation={rotation}>
+    <group
+      position={position}
+      rotation={rotation}
+      onClick={(event) => {
+        event.stopPropagation()
+        if (hasPages) onNextPage()
+      }}
+    >
       <mesh>
         <planeGeometry args={[2.1, 2.5]} />
         <meshStandardMaterial
@@ -106,7 +148,84 @@ function PanelBase({
       </Text>
 
       {children}
+
+      <Text
+        position={[0, -1.12, 0.02]}
+        anchorX="center"
+        anchorY="middle"
+        fontSize={0.04}
+        color={hasPages ? '#ffcf7c' : '#8b6a45'}
+        maxWidth={1.8}
+      >
+        {hasPages
+          ? `TAP / SELECT PANEL FOR NEXT PAGE ${pageIndex + 1}/${pageCount}`
+          : `PAGE ${pageIndex + 1}/${pageCount}`}
+      </Text>
     </group>
+  )
+}
+
+function PagedPanel({
+  position,
+  rotation,
+  title,
+  pages,
+  pageIndex,
+  onNextPage,
+}: {
+  position: [number, number, number]
+  rotation?: [number, number, number]
+  title: string
+  pages: PanelPage[]
+  pageIndex: number
+  onNextPage: () => void
+}) {
+  const safePages =
+    pages.length > 0
+      ? pages
+      : [
+          {
+            heading: 'No Data',
+            body: 'No readable content is currently available for this panel.',
+            color: '#d8bf9b',
+          },
+        ]
+
+  const safeIndex = pageIndex % safePages.length
+  const page = safePages[safeIndex]
+
+  return (
+    <PanelShell
+      position={position}
+      rotation={rotation}
+      title={title}
+      pageIndex={safeIndex}
+      pageCount={safePages.length}
+      onNextPage={onNextPage}
+    >
+      <Text
+        position={[-0.9, 0.86, 0.02]}
+        anchorX="left"
+        anchorY="top"
+        fontSize={0.055}
+        color="#c58a53"
+        maxWidth={1.8}
+      >
+        {page.heading.toUpperCase()}
+      </Text>
+
+      <Text
+        position={[-0.9, 0.72, 0.02]}
+        anchorX="left"
+        anchorY="top"
+        fontSize={0.049}
+        color={page.color ?? '#f2d4a2'}
+        maxWidth={1.8}
+        lineHeight={1.34}
+      >
+        {page.body}
+      </Text>
+    </PanelShell>
   )
 }
 
@@ -119,109 +238,165 @@ export function InWorldOraclePanels({
   focusedCard: GrimoireCard | null
   oracleReading?: OracleReading | null
 }) {
+  const [dossierPageIndex, setDossierPageIndex] = useState(0)
+  const [cardPageIndex, setCardPageIndex] = useState(0)
+  const [oraclePageIndex, setOraclePageIndex] = useState(0)
+
+  const dossierPages = useMemo(() => {
+    if (!dossier) return []
+
+    return makeSectionPages([
+      {
+        heading: 'Subject',
+        body: dossier.subject,
+        color: '#ffcf7c',
+        limit: 260,
+      },
+      {
+        heading: 'Archetype',
+        body: dossier.archetype,
+        color: '#f2d4a2',
+        limit: 320,
+      },
+      {
+        heading: 'Omen',
+        body: dossier.omen,
+        color: '#f2d4a2',
+      },
+      {
+        heading: 'Summary',
+        body: dossier.summary,
+        color: '#d8bf9b',
+      },
+      {
+        heading: 'Magical Diagnosis',
+        body: dossier.magicalDiagnosis,
+        color: '#d8bf9b',
+      },
+      {
+        heading: 'Operative Advice',
+        body: dossier.operativeAdvice,
+        color: '#ffcf7c',
+      },
+      {
+        heading: 'Suggested Questions',
+        body: dossier.suggestedQuestions?.join(' • '),
+        color: '#d8bf9b',
+      },
+    ])
+  }, [dossier])
+
+  const cardPages = useMemo(() => {
+    if (!focusedCard) return []
+
+    return makeSectionPages([
+      {
+        heading: 'Exegesis',
+        body: focusedCard.exegesis,
+        color: '#f2d4a2',
+      },
+      {
+        heading: 'Ritual Function',
+        body: focusedCard.ritualFunction,
+        color: '#ffcf7c',
+      },
+      {
+        heading: 'Correspondences',
+        body: formatCorrespondences(focusedCard),
+        color: '#d8bf9b',
+      },
+    ])
+  }, [focusedCard])
+
+  const oraclePages = useMemo(() => {
+    if (!oracleReading) return []
+
+    return makeSectionPages([
+      {
+        heading: 'Question',
+        body: oracleReading.question,
+        color: '#ffcf7c',
+        limit: 260,
+      },
+      {
+        heading: 'Answer',
+        body: oracleReading.answer,
+        color: '#f2d4a2',
+      },
+      {
+        heading: 'Diagnosis',
+        body: oracleReading.diagnosis,
+        color: '#d8bf9b',
+      },
+      {
+        heading: 'Prescription',
+        body: oracleReading.prescription,
+        color: '#ffcf7c',
+      },
+      {
+        heading: 'Warning',
+        body: oracleReading.warning,
+        color: '#ff9b7a',
+      },
+      {
+        heading: 'Drawn Cards',
+        body: formatDrawnCards(oracleReading),
+        color: '#d8bf9b',
+      },
+      {
+        heading: 'Keywords',
+        body: oracleReading.keywords.join(', '),
+        color: '#d8bf9b',
+        limit: 260,
+      },
+    ])
+  }, [oracleReading])
+
   return (
     <group>
       {dossier ? (
-        <PanelBase
+        <PagedPanel
           position={[-2.2, 1.65, -1.65]}
           rotation={[0, 0.42, 0]}
           title="Dossier"
-        >
-          <Field title="Subject" value={trimText(dossier.subject, 50)} y={0.9} />
-          <Field title="Archetype" value={trimText(dossier.archetype, 80)} y={0.63} />
-          <Field title="Omen" value={trimText(dossier.omen, 90)} y={0.34} />
-          <Field title="Summary" value={trimText(dossier.summary, 220)} y={0.0} />
-          <Field
-            title="Diagnosis"
-            value={trimText(dossier.magicalDiagnosis ?? '', 220)}
-            y={-0.62}
-          />
-        </PanelBase>
+          pages={dossierPages}
+          pageIndex={dossierPageIndex}
+          onNextPage={() => {
+            setDossierPageIndex((current) =>
+              dossierPages.length ? (current + 1) % dossierPages.length : 0,
+            )
+          }}
+        />
       ) : null}
 
       {focusedCard ? (
-        <PanelBase
+        <PagedPanel
           position={[2.2, 1.65, -1.65]}
           rotation={[0, -0.42, 0]}
           title={focusedCard.name}
-        >
-          <Field title="Exegesis" value={trimText(focusedCard.exegesis, 220)} y={0.9} />
-
-          <Field
-            title="Ritual Function"
-            value={trimText(focusedCard.ritualFunction ?? '', 150)}
-            y={0.18}
-          />
-
-          <Field
-            title="Correspondences"
-            value={trimText(
-              [
-                focusedCard.metadata.element ? `Element: ${focusedCard.metadata.element}` : '',
-                focusedCard.metadata.planet ? `Planet: ${focusedCard.metadata.planet}` : '',
-                focusedCard.metadata.alchemical
-                  ? `Alchemy: ${focusedCard.metadata.alchemical}`
-                  : '',
-                focusedCard.metadata.hebrew ? `Hebrew: ${focusedCard.metadata.hebrew}` : '',
-                focusedCard.metadata.daimon ? `Daimon: ${focusedCard.metadata.daimon}` : '',
-                focusedCard.metadata.gematria !== undefined
-                  ? `Gematria: ${focusedCard.metadata.gematria}`
-                  : '',
-              ]
-                .filter(Boolean)
-                .join(' • '),
-              180,
-            )}
-            y={-0.5}
-          />
-        </PanelBase>
+          pages={cardPages}
+          pageIndex={cardPageIndex}
+          onNextPage={() => {
+            setCardPageIndex((current) =>
+              cardPages.length ? (current + 1) % cardPages.length : 0,
+            )
+          }}
+        />
       ) : null}
 
       {oracleReading ? (
-        <PanelBase
+        <PagedPanel
           position={[0, 2.05, -2.62]}
           rotation={[0, 0, 0]}
           title="Oracle"
-        >
-          <Field
-            title="Question"
-            value={trimText(oracleReading.question, 120)}
-            y={0.9}
-            color="#ffcf7c"
-          />
-
-          <Field
-            title="Answer"
-            value={trimText(oracleReading.answer, 240)}
-            y={0.48}
-            color="#f2d4a2"
-          />
-
-          <Field
-            title="Prescription"
-            value={trimText(oracleReading.prescription, 190)}
-            y={-0.2}
-            color="#ffcf7c"
-          />
-
-          <Field
-            title="Drawn Cards"
-            value={trimText(formatDrawnCards(oracleReading), 180)}
-            y={-0.78}
-            color="#d8bf9b"
-            fontSize={0.045}
-          />
-
-          {oracleReading.warning ? (
-            <Field
-              title="Warning"
-              value={trimText(oracleReading.warning, 110)}
-              y={-1.08}
-              color="#ff9b7a"
-              fontSize={0.043}
-            />
-          ) : null}
-        </PanelBase>
+          pages={oraclePages}
+          pageIndex={oraclePageIndex}
+          onNextPage={() => {
+            setOraclePageIndex((current) =>
+              oraclePages.length ? (current + 1) % oraclePages.length : 0,
+            )
+          }}
+        />
       ) : null}
     </group>
   )
