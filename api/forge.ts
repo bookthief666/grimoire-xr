@@ -9,7 +9,7 @@ import {
   type Tradition,
 } from '../src/types/grimoire.js'
 
-export const runtime = 'edge'
+export const maxDuration = 60
 
 const apiKey = process.env.GEMINI_API_KEY
 const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
@@ -428,39 +428,102 @@ async function forgeOnce(
   return finalDeck
 }
 
-export default async function handler(request: Request): Promise<Response> {
+type NodeApiRequest = {
+  method?: string
+  headers?: Record<string, string | string[] | undefined>
+  body?: unknown
+}
+
+type NodeApiResponse = {
+  setHeader?: (name: string, value: string | string[]) => void
+  status: (statusCode: number) => NodeApiResponse
+  json: (body: unknown) => void
+}
+
+function getHeader(request: NodeApiRequest, name: string) {
+  const key = name.toLowerCase()
+  const value = request.headers?.[key] ?? request.headers?.[name]
+
+  if (Array.isArray(value)) return value.join(', ')
+  return typeof value === 'string' ? value : 'unknown'
+}
+
+function sendJson(response: NodeApiResponse, statusCode: number, payload: unknown) {
+  response.setHeader?.('Cache-Control', 'no-store')
+  return response.status(statusCode).json(payload)
+}
+
+async function readJsonBody(request: NodeApiRequest): Promise<unknown> {
+  const body = request.body
+
+  if (body !== undefined && body !== null) {
+    if (typeof body === 'string') {
+      return JSON.parse(body)
+    }
+
+    if (body instanceof Uint8Array) {
+      return JSON.parse(new TextDecoder().decode(body))
+    }
+
+    return body
+  }
+
+  let raw = ''
+  const stream = request as unknown as AsyncIterable<Uint8Array | string>
+
+  if (typeof stream[Symbol.asyncIterator] === 'function') {
+    for await (const chunk of stream) {
+      raw += typeof chunk === 'string' ? chunk : new TextDecoder().decode(chunk)
+    }
+  }
+
+  if (!raw.trim()) return {}
+  return JSON.parse(raw)
+}
+
+export default async function handler(
+  request: NodeApiRequest,
+  response: NodeApiResponse,
+): Promise<void> {
   const startTime = Date.now()
 
   logForge('Request received', startTime, {
     method: request.method,
-    contentType:
-      request && request.headers && typeof request.headers.get === 'function'
-        ? request.headers.get('content-type')
-        : 'unknown',
+    contentType: getHeader(request, 'content-type'),
   })
 
   if (request.method !== 'POST') {
-    return Response.json({ ok: false, error: 'Method not allowed.' }, { status: 405 })
+    return sendJson(response, 405, {
+      ok: false,
+      error: 'Method not allowed.',
+    })
   }
 
   let body: unknown
+
   try {
-    body = await request.json()
+    body = await readJsonBody(request)
     logForge('Body parsed successfully', startTime)
   } catch (error: any) {
     logForge('Body parse failed', startTime, {
       message: error?.message || String(error),
     })
-    return Response.json({ ok: false, error: 'Invalid JSON body.' }, { status: 400 })
+
+    return sendJson(response, 400, {
+      ok: false,
+      error: 'Invalid JSON body.',
+    })
   }
 
   const parsedConfig = ritualConfigSchema.safeParse(body)
 
   if (!parsedConfig.success) {
-    return Response.json(
-      { ok: false, error: 'Invalid ritual configuration.' },
-      { status: 400 },
-    )
+    logForge('Invalid ritual configuration', startTime, parsedConfig.error.flatten())
+
+    return sendJson(response, 400, {
+      ok: false,
+      error: 'Invalid ritual configuration.',
+    })
   }
 
   const { subject, tradition, tone, techLevel, intent } = parsedConfig.data
@@ -475,15 +538,18 @@ export default async function handler(request: Request): Promise<Response> {
       startTime,
     )
 
-    return Response.json({ ok: true, deck }, { status: 200 })
+    return sendJson(response, 200, {
+      ok: true,
+      deck,
+    })
   } catch (error: any) {
     logForge('Forge process failed', startTime, {
       message: error?.message || String(error),
     })
 
-    return Response.json(
-      { ok: false, error: 'The forge failed to assemble a valid deck. Check server logs.' },
-      { status: 502 },
-    )
+    return sendJson(response, 502, {
+      ok: false,
+      error: 'The forge failed to assemble a valid deck. Check server logs.',
+    })
   }
 }
