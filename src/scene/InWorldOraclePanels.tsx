@@ -1,131 +1,296 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Text } from '@react-three/drei'
+import { useFrame } from '@react-three/fiber'
+import * as THREE from 'three'
 import type { GrimoireCard, OracleReading, SubjectDossier } from '../types/grimoire'
 
-type PanelPage = {
-  heading: string
-  body: string
-  color?: string
+type InWorldOraclePanelsProps = {
+  dossier?: SubjectDossier | null
+  focusedCard?: GrimoireCard | null
+  oracleReading?: OracleReading | null
 }
 
-const PAGE_CHAR_LIMIT = 260
+type UnknownRecord = Record<string, unknown>
 
-function cleanText(text: string | undefined | null) {
-  return (text ?? '').replace(/\s+/g, ' ').trim()
+function asRecord(value: unknown): UnknownRecord {
+  return value && typeof value === 'object' ? (value as UnknownRecord) : {}
 }
 
-function chunkText(text: string | undefined | null, limit = PAGE_CHAR_LIMIT) {
-  const cleaned = cleanText(text)
-  if (!cleaned) return []
+function readString(source: unknown, keys: string[]) {
+  const record = asRecord(source)
 
-  const chunks: string[] = []
-  let remaining = cleaned
-
-  while (remaining.length > limit) {
-    const slice = remaining.slice(0, limit)
-    const breakPoint = Math.max(
-      slice.lastIndexOf('. '),
-      slice.lastIndexOf('; '),
-      slice.lastIndexOf(', '),
-      slice.lastIndexOf(' '),
-    )
-
-    const end = breakPoint > limit * 0.55 ? breakPoint + 1 : limit
-    chunks.push(remaining.slice(0, end).trim())
-    remaining = remaining.slice(end).trim()
+  for (const key of keys) {
+    const value = record[key]
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim()
+    }
   }
 
-  if (remaining) chunks.push(remaining)
-
-  return chunks
+  return ''
 }
 
-function makeSectionPages(
-  sections: Array<{
-    heading: string
-    body?: string | null
-    color?: string
-    limit?: number
-  }>,
-) {
-  const pages: PanelPage[] = []
+function readStringArray(source: unknown, keys: string[]) {
+  const record = asRecord(source)
 
-  for (const section of sections) {
-    const chunks = chunkText(section.body, section.limit ?? PAGE_CHAR_LIMIT)
+  for (const key of keys) {
+    const value = record[key]
+    if (Array.isArray(value)) {
+      const strings = value
+        .map((entry) => {
+          if (typeof entry === 'string') return entry.trim()
+          if (entry && typeof entry === 'object') {
+            return readString(entry, ['name', 'title', 'label', 'value'])
+          }
+          return ''
+        })
+        .filter(Boolean)
 
-    chunks.forEach((chunk, index) => {
-      pages.push({
-        heading:
-          chunks.length > 1
-            ? `${section.heading} ${index + 1}/${chunks.length}`
-            : section.heading,
-        body: chunk,
-        color: section.color,
-      })
-    })
+      if (strings.length) return strings
+    }
   }
 
-  return pages
+  return []
 }
 
-function formatDrawnCards(reading: OracleReading) {
-  if (!reading.drawnCards.length) return ''
+function readNestedString(source: unknown, parentKey: string, keys: string[]) {
+  const parent = asRecord(source)[parentKey]
+  return readString(parent, keys)
+}
 
-  return reading.drawnCards
-    .map((card) => {
-      return `${card.position}: ${card.cardName}. ${card.interpretation} Operative instruction: ${card.operativeInstruction}`
-    })
+function shortText(value: string, max = 80) {
+  const cleaned = value.replace(/\s+/g, ' ').trim()
+  return cleaned.length > max ? `${cleaned.slice(0, max - 1)}…` : cleaned
+}
+
+function paginateText(text: string, maxChars = 310) {
+  const normalized = text
+    .replace(/\r/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+
+  if (!normalized) return ['No text available.']
+
+  const words = normalized.split(/\s+/)
+  const pages: string[] = []
+  let current = ''
+
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word
+
+    if (candidate.length > maxChars && current) {
+      pages.push(current)
+      current = word
+    } else {
+      current = candidate
+    }
+  }
+
+  if (current) pages.push(current)
+
+  return pages.length ? pages : ['No text available.']
+}
+
+function makeDossierText(dossier: SubjectDossier) {
+  const subject =
+    readString(dossier, ['subject', 'title', 'name']) || 'Subject Dossier'
+
+  const archetype = readString(dossier, [
+    'archetype',
+    'primaryArchetype',
+    'pattern',
+  ])
+
+  const summary = readString(dossier, [
+    'summary',
+    'overview',
+    'synopsis',
+    'thesis',
+    'description',
+  ])
+
+  const historical = readString(dossier, [
+    'historicalContext',
+    'history',
+    'context',
+    'background',
+  ])
+
+  const occult = readString(dossier, [
+    'occultReading',
+    'esotericReading',
+    'symbolicReading',
+    'interpretation',
+  ])
+
+  const warnings = readStringArray(dossier, [
+    'warnings',
+    'cautions',
+    'risks',
+    'shadows',
+  ])
+
+  const keys = readStringArray(dossier, [
+    'keywords',
+    'keyIdeas',
+    'motifs',
+    'symbols',
+  ])
+
+  return [
+    `SUBJECT: ${subject}`,
+    archetype ? `ARCHETYPE: ${archetype}` : '',
+    summary,
+    historical ? `CONTEXT: ${historical}` : '',
+    occult ? `OCCULT READING: ${occult}` : '',
+    keys.length ? `KEYS: ${keys.join(' · ')}` : '',
+    warnings.length ? `WARNINGS: ${warnings.join(' · ')}` : '',
+  ]
+    .filter(Boolean)
     .join('\n\n')
 }
 
-function formatCorrespondences(card: GrimoireCard) {
+function makeCardText(card: GrimoireCard) {
+  const metadata = asRecord(card.metadata)
+  const keywords = Array.isArray(metadata.keywords)
+    ? metadata.keywords.filter((entry): entry is string => typeof entry === 'string')
+    : []
+
+  const ritual = readString(card, ['ritual', 'operation', 'practice'])
+  const ritualInstruction = readNestedString(card, 'ritual', [
+    'instruction',
+    'practice',
+    'operation',
+    'formula',
+    'summary',
+  ])
+
   return [
-    card.metadata.element ? `Element: ${card.metadata.element}` : '',
-    card.metadata.planet ? `Planet: ${card.metadata.planet}` : '',
-    card.metadata.polarity ? `Polarity: ${card.metadata.polarity}` : '',
-    card.metadata.alchemical ? `Alchemy: ${card.metadata.alchemical}` : '',
-    card.metadata.hebrew ? `Hebrew: ${card.metadata.hebrew}` : '',
-    card.metadata.daimon ? `Daimon: ${card.metadata.daimon}` : '',
-    card.metadata.gematria !== undefined ? `Gematria: ${card.metadata.gematria}` : '',
-    card.metadata.keywords.length ? `Keywords: ${card.metadata.keywords.join(', ')}` : '',
+    `${card.name}`,
+    card.sigil ? `SIGIL: ${card.sigil}` : '',
+    [
+      metadata.element ? `ELEMENT: ${String(metadata.element)}` : '',
+      metadata.planet ? `PLANET: ${String(metadata.planet)}` : '',
+      metadata.polarity ? `POLARITY: ${String(metadata.polarity)}` : '',
+      typeof metadata.gematria === 'number'
+        ? `GEMATRIA: ${metadata.gematria}`
+        : '',
+    ]
+      .filter(Boolean)
+      .join(' // '),
+    keywords.length ? `KEYWORDS: ${keywords.join(' · ')}` : '',
+    card.exegesis ? `EXEGESIS: ${card.exegesis}` : '',
+    ritual || ritualInstruction
+      ? `OPERATION: ${ritual || ritualInstruction}`
+      : '',
   ]
     .filter(Boolean)
-    .join(' • ')
+    .join('\n\n')
 }
 
-function previousPage(current: number, count: number) {
-  if (count <= 1) return 0
-  return (current - 1 + count) % count
+function formatDrawnCards(reading: OracleReading) {
+  const drawnCards = asRecord(reading).drawnCards
+
+  if (!Array.isArray(drawnCards) || !drawnCards.length) return ''
+
+  const names = drawnCards
+    .map((entry) => {
+      if (typeof entry === 'string') return entry
+      if (entry && typeof entry === 'object') {
+        return readString(entry, ['name', 'title', 'card'])
+      }
+      return ''
+    })
+    .filter(Boolean)
+
+  return names.length ? names.join(' · ') : ''
 }
 
-function nextPage(current: number, count: number) {
-  if (count <= 1) return 0
-  return (current + 1) % count
+function makeOracleText(reading: OracleReading) {
+  const question = readString(reading, ['question', 'query', 'prompt'])
+  const answer = readString(reading, ['answer', 'response', 'oracle', 'reading'])
+  const diagnosis = readString(reading, ['diagnosis', 'analysis'])
+  const prescription = readString(reading, [
+    'prescription',
+    'instruction',
+    'practice',
+    'operation',
+  ])
+  const warning = readString(reading, ['warning', 'caution', 'shadow'])
+  const drawnCards = formatDrawnCards(reading)
+
+  return [
+    question ? `QUESTION: ${question}` : '',
+    drawnCards ? `DRAWN: ${drawnCards}` : '',
+    answer ? `ANSWER: ${answer}` : '',
+    diagnosis ? `DIAGNOSIS: ${diagnosis}` : '',
+    prescription ? `PRESCRIPTION: ${prescription}` : '',
+    warning ? `WARNING: ${warning}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n\n')
 }
 
-function PageButton({
+function CornerGlyph({
+  x,
+  y,
+  accent,
+}: {
+  x: number
+  y: number
+  accent: string
+}) {
+  return (
+    <group position={[x, y, 0.035]}>
+      <mesh rotation={[0, 0, Math.PI / 4]}>
+        <planeGeometry args={[0.11, 0.018]} />
+        <meshBasicMaterial
+          color={accent}
+          transparent
+          opacity={0.62}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+      <mesh rotation={[0, 0, -Math.PI / 4]}>
+        <planeGeometry args={[0.11, 0.018]} />
+        <meshBasicMaterial
+          color={accent}
+          transparent
+          opacity={0.62}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+    </group>
+  )
+}
+
+function PanelButton({
   label,
   x,
-  onClick,
+  y,
+  accent,
   disabled = false,
+  onClick,
 }: {
   label: string
   x: number
-  onClick: () => void
+  y: number
+  accent: string
   disabled?: boolean
+  onClick: () => void
 }) {
   const [hovered, setHovered] = useState(false)
 
-  const active = !disabled
-  const buttonScale = hovered && active ? 1.08 : 1
-
   return (
     <group
-      position={[x, -1.08, 0.06]}
-      scale={buttonScale}
+      position={[x, y, 0.065]}
+      scale={hovered && !disabled ? 1.08 : 1}
       onPointerOver={(event) => {
         event.stopPropagation()
-        if (active) setHovered(true)
+        setHovered(true)
       }}
       onPointerOut={(event) => {
         event.stopPropagation()
@@ -133,445 +298,285 @@ function PageButton({
       }}
       onClick={(event) => {
         event.stopPropagation()
-        if (active) onClick()
+        if (!disabled) onClick()
       }}
     >
       <mesh>
-        <planeGeometry args={[0.44, 0.18]} />
+        <planeGeometry args={[0.22, 0.16]} />
         <meshBasicMaterial
-          color={active ? '#2a0a0a' : '#130707'}
+          color={disabled ? '#120808' : '#251008'}
           transparent
-          opacity={active ? 0.92 : 0.45}
+          opacity={disabled ? 0.38 : 0.92}
+          side={THREE.DoubleSide}
         />
       </mesh>
 
-      <mesh position={[0, 0, 0.004]}>
-        <planeGeometry args={[0.5, 0.25]} />
+      <mesh position={[0, 0, 0.01]}>
+        <planeGeometry args={[0.32, 0.28]} />
         <meshBasicMaterial
-          color={active && hovered ? '#ffcf7c' : '#8f5b00'}
+          color={accent}
           transparent
-          opacity={active ? 0.28 : 0.12}
+          opacity={hovered && !disabled ? 0.32 : 0.11}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
         />
       </mesh>
 
       <Text
-        position={[0, 0.004, 0.014]}
+        position={[0, 0.004, 0.025]}
         anchorX="center"
         anchorY="middle"
         fontSize={0.052}
-        color={active ? (hovered ? '#ffffff' : '#ffcf7c') : '#6f5435'}
-        maxWidth={0.38}
+        color={disabled ? '#6e4934' : hovered ? '#ffffff' : '#ffd18a'}
       >
         {label}
       </Text>
 
-      <mesh position={[0, 0, 0.026]}>
-        <planeGeometry args={[0.78, 0.46]} />
+      <mesh position={[0, 0, 0.04]}>
+        <planeGeometry args={[0.42, 0.34]} />
         <meshBasicMaterial
           color="#ffffff"
           transparent
           opacity={0.001}
           depthWrite={false}
+          side={THREE.DoubleSide}
         />
       </mesh>
-    </group>
-  )
-}
-
-function PaginationControls({
-  pageIndex,
-  pageCount,
-  onPrevious,
-  onNext,
-}: {
-  pageIndex: number
-  pageCount: number
-  onPrevious: () => void
-  onNext: () => void
-}) {
-  const hasPages = pageCount > 1
-
-  return (
-    <group>
-      <PageButton
-        label="‹ PREV"
-        x={-0.56}
-        onClick={onPrevious}
-        disabled={!hasPages}
-      />
-
-      <PageButton
-        label="NEXT ›"
-        x={0.56}
-        onClick={onNext}
-        disabled={!hasPages}
-      />
-
-      <Text
-        position={[0, -0.84, 0.045]}
-        anchorX="center"
-        anchorY="middle"
-        fontSize={0.046}
-        color={hasPages ? '#ffcf7c' : '#8b6a45'}
-        maxWidth={1.8}
-      >
-        {hasPages
-          ? `PAGE ${pageIndex + 1}/${pageCount} // TOUCH PANEL OR USE PREV / NEXT`
-          : `PAGE ${pageIndex + 1}/${pageCount}`}
-      </Text>
     </group>
   )
 }
 
 function PanelShell({
-  position,
-  rotation,
   title,
-  pageIndex,
-  pageCount,
-  onPreviousPage,
-  onNextPage,
+  subtitle,
+  pages,
+  accent,
   children,
 }: {
-  position: [number, number, number]
-  rotation?: [number, number, number]
   title: string
-  pageIndex: number
-  pageCount: number
-  onPreviousPage: () => void
-  onNextPage: () => void
-  children: ReactNode
+  subtitle: string
+  pages: string[]
+  accent: string
+  children?: ReactNode
 }) {
-  const hasPages = pageCount > 1
-  const [hovered, setHovered] = useState(false)
+  const [pageIndex, setPageIndex] = useState(0)
+  const groupRef = useRef<THREE.Group>(null)
+  const pageSignature = pages.join('\u0000')
+  const safePages = pages.length ? pages : ['No text available.']
+  const currentPage = safePages[Math.min(pageIndex, safePages.length - 1)] ?? ''
+
+  useEffect(() => {
+    setPageIndex(0)
+  }, [pageSignature])
+
+  useFrame(({ clock }) => {
+    if (!groupRef.current) return
+    const t = clock.getElapsedTime()
+    groupRef.current.position.y = Math.sin(t * 0.85 + title.length) * 0.018
+  })
+
+  const goPrevious = () => {
+    setPageIndex((current) =>
+      current <= 0 ? safePages.length - 1 : current - 1,
+    )
+  }
+
+  const goNext = () => {
+    setPageIndex((current) => (current + 1) % safePages.length)
+  }
 
   return (
-    <group
-      position={position}
-      rotation={rotation}
-      onPointerOver={(event) => {
-        event.stopPropagation()
-        if (hasPages) setHovered(true)
-      }}
-      onPointerOut={(event) => {
-        event.stopPropagation()
-        setHovered(false)
-      }}
-      onClick={(event) => {
-        event.stopPropagation()
-        if (hasPages) onNextPage()
-      }}
-    >
-      <mesh>
-        <planeGeometry args={[2.2, 2.65]} />
+    <group ref={groupRef}>
+      <mesh
+        onClick={(event) => {
+          event.stopPropagation()
+          goNext()
+        }}
+      >
+        <planeGeometry args={[1.16, 1.38]} />
         <meshStandardMaterial
-          color="#120606"
-          emissive={hovered && hasPages ? '#401010' : '#2a0a0a'}
-          emissiveIntensity={hovered && hasPages ? 0.52 : 0.38}
+          color="#100606"
+          emissive="#251006"
+          emissiveIntensity={0.34}
           transparent
-          opacity={0.94}
+          opacity={0.88}
+          side={THREE.DoubleSide}
         />
       </mesh>
 
-      <mesh position={[0, 0, 0.006]}>
-        <planeGeometry args={[2.28, 2.73]} />
+      <mesh position={[0, 0, 0.008]}>
+        <planeGeometry args={[1.26, 1.48]} />
         <meshBasicMaterial
-          color={hovered && hasPages ? '#ffcf7c' : '#6a2b10'}
+          color={accent}
           transparent
-          opacity={hovered && hasPages ? 0.34 : 0.26}
+          opacity={0.105}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
         />
       </mesh>
 
-      <mesh position={[0, 1.21, 0.012]}>
-        <planeGeometry args={[2.0, 0.24]} />
-        <meshBasicMaterial color="#2a0a0a" transparent opacity={0.74} />
+      <mesh position={[0, 0.57, 0.02]}>
+        <planeGeometry args={[0.98, 0.18]} />
+        <meshBasicMaterial
+          color="#220d07"
+          transparent
+          opacity={0.78}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <CornerGlyph x={-0.48} y={0.55} accent={accent} />
+      <CornerGlyph x={0.48} y={0.55} accent={accent} />
+      <CornerGlyph x={-0.48} y={-0.55} accent={accent} />
+      <CornerGlyph x={0.48} y={-0.55} accent={accent} />
+
+      <mesh position={[0, 0.69, -0.006]}>
+        <ringGeometry args={[0.12, 0.15, 28]} />
+        <meshBasicMaterial
+          color={accent}
+          transparent
+          opacity={0.32}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
       </mesh>
 
       <Text
-        position={[-0.94, 1.12, 0.026]}
-        anchorX="left"
-        anchorY="top"
-        fontSize={0.075}
-        color="#ffcf7c"
-        maxWidth={1.88}
+        position={[0, 0.6, 0.045]}
+        anchorX="center"
+        anchorY="middle"
+        fontSize={0.048}
+        color="#ffd18a"
+        maxWidth={0.96}
       >
         {title}
       </Text>
 
-      {children}
+      <Text
+        position={[0, 0.47, 0.045]}
+        anchorX="center"
+        anchorY="middle"
+        fontSize={0.029}
+        color="#b98855"
+        maxWidth={0.92}
+      >
+        {subtitle}
+      </Text>
 
-      <PaginationControls
-        pageIndex={pageIndex}
-        pageCount={pageCount}
-        onPrevious={onPreviousPage}
-        onNext={onNextPage}
+      <Text
+        position={[-0.46, 0.31, 0.045]}
+        anchorX="left"
+        anchorY="top"
+        fontSize={0.036}
+        color="#f2d4a2"
+        maxWidth={0.92}
+        lineHeight={1.22}
+      >
+        {currentPage}
+      </Text>
+
+      <PanelButton
+        label="‹"
+        x={-0.34}
+        y={-0.54}
+        accent={accent}
+        disabled={safePages.length <= 1}
+        onClick={goPrevious}
       />
+
+      <Text
+        position={[0, -0.54, 0.055]}
+        anchorX="center"
+        anchorY="middle"
+        fontSize={0.031}
+        color="#9a6b48"
+        maxWidth={0.38}
+      >
+        {safePages.length > 1
+          ? `${pageIndex + 1}/${safePages.length}`
+          : 'TAP PANEL'}
+      </Text>
+
+      <PanelButton
+        label="›"
+        x={0.34}
+        y={-0.54}
+        accent={accent}
+        disabled={safePages.length <= 1}
+        onClick={goNext}
+      />
+
+      {children}
     </group>
   )
 }
 
-function PagedPanel({
-  position,
-  rotation,
-  title,
-  pages,
-  pageIndex,
-  onPreviousPage,
-  onNextPage,
-}: {
-  position: [number, number, number]
-  rotation?: [number, number, number]
-  title: string
-  pages: PanelPage[]
-  pageIndex: number
-  onPreviousPage: () => void
-  onNextPage: () => void
-}) {
-  const safePages =
-    pages.length > 0
-      ? pages
-      : [
-          {
-            heading: 'No Data',
-            body: 'No readable content is currently available for this panel.',
-            color: '#d8bf9b',
-          },
-        ]
-
-  const safeIndex = pageIndex % safePages.length
-  const page = safePages[safeIndex]
-
-  return (
-    <PanelShell
-      position={position}
-      rotation={rotation}
-      title={title}
-      pageIndex={safeIndex}
-      pageCount={safePages.length}
-      onPreviousPage={onPreviousPage}
-      onNextPage={onNextPage}
-    >
-      <Text
-        position={[-0.94, 0.86, 0.03]}
-        anchorX="left"
-        anchorY="top"
-        fontSize={0.058}
-        color="#c58a53"
-        maxWidth={1.88}
-      >
-        {page.heading.toUpperCase()}
-      </Text>
-
-      <Text
-        position={[-0.94, 0.68, 0.03]}
-        anchorX="left"
-        anchorY="top"
-        fontSize={0.06}
-        color={page.color ?? '#f2d4a2'}
-        maxWidth={1.88}
-        lineHeight={1.32}
-      >
-        {page.body}
-      </Text>
-    </PanelShell>
-  )
-}
-
 export function InWorldOraclePanels({
-  dossier,
-  focusedCard,
-  oracleReading,
-}: {
-  dossier: SubjectDossier | null
-  focusedCard: GrimoireCard | null
-  oracleReading?: OracleReading | null
-}) {
-  const [dossierPageIndex, setDossierPageIndex] = useState(0)
-  const [cardPageIndex, setCardPageIndex] = useState(0)
-  const [oraclePageIndex, setOraclePageIndex] = useState(0)
-
-  useEffect(() => {
-    setDossierPageIndex(0)
-  }, [dossier?.subject, dossier?.summary])
-
-  useEffect(() => {
-    setCardPageIndex(0)
-  }, [focusedCard?.id])
-
-  useEffect(() => {
-    setOraclePageIndex(0)
-  }, [oracleReading?.id])
-
+  dossier = null,
+  focusedCard = null,
+  oracleReading = null,
+}: InWorldOraclePanelsProps) {
   const dossierPages = useMemo(() => {
-    if (!dossier) return []
-
-    return makeSectionPages([
-      {
-        heading: 'Subject',
-        body: dossier.subject,
-        color: '#ffcf7c',
-        limit: 220,
-      },
-      {
-        heading: 'Archetype',
-        body: dossier.archetype,
-        color: '#f2d4a2',
-        limit: 240,
-      },
-      {
-        heading: 'Omen',
-        body: dossier.omen,
-        color: '#f2d4a2',
-      },
-      {
-        heading: 'Summary',
-        body: dossier.summary,
-        color: '#d8bf9b',
-      },
-      {
-        heading: 'Magical Diagnosis',
-        body: dossier.magicalDiagnosis,
-        color: '#d8bf9b',
-      },
-      {
-        heading: 'Operative Advice',
-        body: dossier.operativeAdvice,
-        color: '#ffcf7c',
-      },
-      {
-        heading: 'Suggested Questions',
-        body: dossier.suggestedQuestions?.join(' • '),
-        color: '#d8bf9b',
-      },
-    ])
+    return dossier ? paginateText(makeDossierText(dossier), 300) : []
   }, [dossier])
 
   const cardPages = useMemo(() => {
-    if (!focusedCard) return []
-
-    return makeSectionPages([
-      {
-        heading: 'Exegesis',
-        body: focusedCard.exegesis,
-        color: '#f2d4a2',
-      },
-      {
-        heading: 'Ritual Function',
-        body: focusedCard.ritualFunction,
-        color: '#ffcf7c',
-      },
-      {
-        heading: 'Correspondences',
-        body: formatCorrespondences(focusedCard),
-        color: '#d8bf9b',
-      },
-    ])
+    return focusedCard ? paginateText(makeCardText(focusedCard), 275) : []
   }, [focusedCard])
 
   const oraclePages = useMemo(() => {
-    if (!oracleReading) return []
-
-    return makeSectionPages([
-      {
-        heading: 'Question',
-        body: oracleReading.question,
-        color: '#ffcf7c',
-        limit: 220,
-      },
-      {
-        heading: 'Answer',
-        body: oracleReading.answer,
-        color: '#f2d4a2',
-      },
-      {
-        heading: 'Diagnosis',
-        body: oracleReading.diagnosis,
-        color: '#d8bf9b',
-      },
-      {
-        heading: 'Prescription',
-        body: oracleReading.prescription,
-        color: '#ffcf7c',
-      },
-      {
-        heading: 'Warning',
-        body: oracleReading.warning,
-        color: '#ff9b7a',
-      },
-      {
-        heading: 'Drawn Cards',
-        body: formatDrawnCards(oracleReading),
-        color: '#d8bf9b',
-      },
-      {
-        heading: 'Keywords',
-        body: oracleReading.keywords.join(', '),
-        color: '#d8bf9b',
-        limit: 220,
-      },
-    ])
+    return oracleReading ? paginateText(makeOracleText(oracleReading), 300) : []
   }, [oracleReading])
 
+  const hasAnyPanel =
+    dossierPages.length > 0 || cardPages.length > 0 || oraclePages.length > 0
+
+  if (!hasAnyPanel) return null
+
+  const dossierTitle = dossier
+    ? shortText(readString(dossier, ['subject', 'title', 'name']) || 'DOSSIER', 20)
+    : 'DOSSIER'
+
+  const cardTitle = focusedCard ? shortText(focusedCard.name, 20) : 'ARCANUM'
+
+  const oracleTitle = oracleReading ? 'ORACLE' : 'ORACLE'
+
   return (
-    <group>
-      {dossier ? (
-        <PagedPanel
-          position={[-2.2, 1.65, -1.65]}
-          rotation={[0, 0.42, 0]}
-          title="Dossier"
-          pages={dossierPages}
-          pageIndex={dossierPageIndex}
-          onPreviousPage={() => {
-            setDossierPageIndex((current) =>
-              previousPage(current, dossierPages.length),
-            )
-          }}
-          onNextPage={() => {
-            setDossierPageIndex((current) =>
-              nextPage(current, dossierPages.length),
-            )
-          }}
-        />
+    <group position={[0, 1.76, -2.62]}>
+      {dossierPages.length ? (
+        <group position={[-1.24, 0.03, 0]} rotation={[0, 0.18, 0]}>
+          <PanelShell
+            title={dossierTitle.toUpperCase()}
+            subtitle="SUBJECT DOSSIER"
+            pages={dossierPages}
+            accent="#ff9a00"
+          />
+        </group>
       ) : null}
 
-      {focusedCard ? (
-        <PagedPanel
-          position={[2.2, 1.65, -1.65]}
-          rotation={[0, -0.42, 0]}
-          title={focusedCard.name}
-          pages={cardPages}
-          pageIndex={cardPageIndex}
-          onPreviousPage={() => {
-            setCardPageIndex((current) =>
-              previousPage(current, cardPages.length),
-            )
-          }}
-          onNextPage={() => {
-            setCardPageIndex((current) =>
-              nextPage(current, cardPages.length),
-            )
-          }}
-        />
+      {cardPages.length ? (
+        <group position={[0, 0.1, -0.04]}>
+          <PanelShell
+            title={cardTitle.toUpperCase()}
+            subtitle="ACTIVE ARCANUM"
+            pages={cardPages}
+            accent="#ffcf7c"
+          />
+        </group>
       ) : null}
 
-      {oracleReading ? (
-        <PagedPanel
-          position={[0, 2.05, -2.62]}
-          rotation={[0, 0, 0]}
-          title="Oracle"
-          pages={oraclePages}
-          pageIndex={oraclePageIndex}
-          onPreviousPage={() => {
-            setOraclePageIndex((current) =>
-              previousPage(current, oraclePages.length),
-            )
-          }}
-          onNextPage={() => {
-            setOraclePageIndex((current) =>
-              nextPage(current, oraclePages.length),
-            )
-          }}
-        />
+      {oraclePages.length ? (
+        <group position={[1.24, 0.03, 0]} rotation={[0, -0.18, 0]}>
+          <PanelShell
+            title={oracleTitle}
+            subtitle="CONSULTATION"
+            pages={oraclePages}
+            accent="#8a2cff"
+          />
+        </group>
       ) : null}
     </group>
   )
