@@ -11,6 +11,7 @@ import * as THREE from 'three'
 import { PALETTE } from '../theme/palette'
 import type { GrimoireCard, OracleReading, SubjectDossier } from '../types/grimoire'
 import { InWorldOraclePanels } from './InWorldOraclePanels'
+import { TempleAtmosphere } from './TempleAtmosphere'
 
 type ManifestState = {
   card: GrimoireCard
@@ -778,6 +779,12 @@ export function RitualChamberScene({
 
   return (
     <group>
+      <TempleAtmosphere
+        ritualImpulseRef={ritualImpulseRef}
+        hasActiveCard={Boolean(focusedCard)}
+        hasOracleReading={Boolean(oracleReading)}
+      />
+
       <TempleFloor />
       <RearShrine ritualImpulseRef={ritualImpulseRef} />
       <Pillar x={-2.1} />
