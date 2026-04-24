@@ -704,7 +704,7 @@ function FloatingForgeMenu({
       />
 
       <FloatingMenuButton
-        label={loading ? 'FORGING…' : 'IGNITE FORGE'}
+        label={loading ? 'FORGING DECK…' : 'IGNITE DECK FORGE'}
         x={0.18}
         y={-0.74}
         width={0.98}
@@ -915,10 +915,32 @@ function FloatingSigilButton({
   onClick: () => void
 }) {
   const [hovered, setHovered] = useState(false)
+  const haloRef = useRef<THREE.MeshBasicMaterial>(null)
+  const outerRingRef = useRef<THREE.MeshBasicMaterial>(null)
+  const innerRingRef = useRef<THREE.MeshBasicMaterial>(null)
 
   const baseColor = danger ? '#3a0707' : active ? '#3a1808' : '#120807'
   const glowColor = danger ? '#ff3030' : active ? '#ffcf7c' : '#ff9a00'
   const textColor = disabled ? '#5f4932' : hovered || active ? '#fff0c0' : '#d99b58'
+
+  useFrame(({ clock }) => {
+    if (disabled) return
+
+    const t = clock.getElapsedTime()
+    const pulse = active || hovered ? 0.5 + Math.sin(t * 3.2) * 0.5 : 0
+
+    if (haloRef.current) {
+      haloRef.current.opacity = hovered || active ? 0.13 + pulse * 0.12 : 0.075
+    }
+
+    if (outerRingRef.current) {
+      outerRingRef.current.opacity = hovered || active ? 0.58 + pulse * 0.26 : 0.42
+    }
+
+    if (innerRingRef.current) {
+      innerRingRef.current.opacity = hovered || active ? 0.52 + pulse * 0.24 : 0.35
+    }
+  })
 
   const trigger = () => {
     if (!disabled) onClick()
@@ -973,6 +995,7 @@ function FloatingSigilButton({
       <mesh position={[0, 0, 0.007]}>
         <ringGeometry args={[0.065, 0.074, 24]} />
         <meshBasicMaterial
+          ref={innerRingRef}
           color={glowColor}
           transparent
           opacity={disabled ? 0.1 : hovered || active ? 0.72 : 0.35}
@@ -985,6 +1008,7 @@ function FloatingSigilButton({
       <mesh position={[0, 0, 0.01]}>
         <ringGeometry args={[0.17, 0.185, 36]} />
         <meshBasicMaterial
+          ref={outerRingRef}
           color={glowColor}
           transparent
           opacity={disabled ? 0.14 : hovered || active ? 0.82 : 0.42}
@@ -997,6 +1021,7 @@ function FloatingSigilButton({
       <mesh position={[0, 0, 0.018]}>
         <circleGeometry args={[0.27, 32]} />
         <meshBasicMaterial
+          ref={haloRef}
           color={glowColor}
           transparent
           opacity={disabled ? 0.035 : hovered || active ? 0.2 : 0.075}
@@ -1109,7 +1134,7 @@ function FloatingSigilDock({
 
       <FloatingSigilButton
         sigil="✶"
-        label={menuMode === 'forge' ? 'Close Forge Menu' : 'Open Forge Menu'}
+        label={menuMode === 'forge' ? 'Seal Forge' : 'Configure Forge'}
         x={config.x}
         y={config.y}
         z={config.z}
@@ -1119,7 +1144,7 @@ function FloatingSigilDock({
 
       <FloatingSigilButton
         sigil="⌬"
-        label={menuMode === 'spread' ? 'Hide Spread' : 'Reveal Spread'}
+        label={menuMode === 'spread' ? 'Seal Spread Field' : 'Reveal Spread Field'}
         x={spread.x}
         y={spread.y}
         z={spread.z}
@@ -1129,7 +1154,7 @@ function FloatingSigilDock({
 
       <FloatingSigilButton
         sigil={oracleLoading ? '…' : '☉'}
-        label={oracleLoading ? 'Consulting Oracle' : 'Consult Oracle'}
+        label={oracleLoading ? 'Oracle Awakening' : 'Invoke Oracle'}
         x={oracle.x}
         y={oracle.y}
         z={oracle.z}
@@ -1140,7 +1165,7 @@ function FloatingSigilDock({
 
       <FloatingSigilButton
         sigil="✕"
-        label="Clear Oracle"
+        label="Clear Oracle Tablet"
         x={clear.x}
         y={clear.y}
         z={clear.z}
@@ -1150,7 +1175,7 @@ function FloatingSigilDock({
 
       <FloatingSigilButton
         sigil="↺"
-        label="Reset Ritual"
+        label="Banish Ritual"
         x={reset.x}
         y={reset.y}
         z={reset.z}
