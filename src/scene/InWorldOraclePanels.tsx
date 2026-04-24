@@ -120,6 +120,13 @@ function makeDossierText(dossier: SubjectDossier) {
     'esotericReading',
     'symbolicReading',
     'interpretation',
+    'magicalDiagnosis',
+  ])
+
+  const advice = readString(dossier, [
+    'operativeAdvice',
+    'practice',
+    'instruction',
   ])
 
   const warnings = readStringArray(dossier, [
@@ -142,6 +149,7 @@ function makeDossierText(dossier: SubjectDossier) {
     summary,
     historical ? `CONTEXT: ${historical}` : '',
     occult ? `OCCULT READING: ${occult}` : '',
+    advice ? `OPERATIVE ADVICE: ${advice}` : '',
     keys.length ? `KEYS: ${keys.join(' · ')}` : '',
     warnings.length ? `WARNINGS: ${warnings.join(' · ')}` : '',
   ]
@@ -155,7 +163,7 @@ function makeCardText(card: GrimoireCard) {
     ? metadata.keywords.filter((entry): entry is string => typeof entry === 'string')
     : []
 
-  const ritual = readString(card, ['ritual', 'operation', 'practice'])
+  const ritual = readString(card, ['ritualFunction', 'ritual', 'operation', 'practice'])
   const ritualInstruction = readNestedString(card, 'ritual', [
     'instruction',
     'practice',
@@ -171,6 +179,8 @@ function makeCardText(card: GrimoireCard) {
       metadata.element ? `ELEMENT: ${String(metadata.element)}` : '',
       metadata.planet ? `PLANET: ${String(metadata.planet)}` : '',
       metadata.polarity ? `POLARITY: ${String(metadata.polarity)}` : '',
+      metadata.alchemical ? `ALCHEMY: ${String(metadata.alchemical)}` : '',
+      metadata.hebrew ? `HEBREW: ${String(metadata.hebrew)}` : '',
       typeof metadata.gematria === 'number'
         ? `GEMATRIA: ${metadata.gematria}`
         : '',
@@ -192,21 +202,45 @@ function formatDrawnCards(reading: OracleReading) {
 
   if (!Array.isArray(drawnCards) || !drawnCards.length) return ''
 
-  const names = drawnCards
-    .map((entry) => {
-      if (typeof entry === 'string') return entry
+  const rendered = drawnCards
+    .map((entry, index) => {
+      if (typeof entry === 'string') return `${index + 1}. ${entry}`
+
       if (entry && typeof entry === 'object') {
-        return readString(entry, ['name', 'title', 'card'])
+        const name = readString(entry, ['cardName', 'name', 'title', 'card'])
+        const position = readString(entry, ['position', 'role'])
+        const interpretation = readString(entry, [
+          'interpretation',
+          'meaning',
+          'reading',
+          'exegesis',
+        ])
+        const operativeInstruction = readString(entry, [
+          'operativeInstruction',
+          'operation',
+          'instruction',
+          'practice',
+        ])
+
+        return [
+          `${index + 1}. ${position ? `${position}: ` : ''}${name || 'Unnamed Card'}`,
+          interpretation ? `INTERPRETATION: ${interpretation}` : '',
+          operativeInstruction ? `OPERATION: ${operativeInstruction}` : '',
+        ]
+          .filter(Boolean)
+          .join('\n')
       }
+
       return ''
     })
     .filter(Boolean)
 
-  return names.length ? names.join(' · ') : ''
+  return rendered.length ? rendered.join('\n\n') : ''
 }
 
 function makeOracleText(reading: OracleReading) {
   const question = readString(reading, ['question', 'query', 'prompt'])
+  const spreadName = readString(reading, ['spreadName', 'spread', 'layout'])
   const answer = readString(reading, ['answer', 'response', 'oracle', 'reading'])
   const diagnosis = readString(reading, ['diagnosis', 'analysis'])
   const prescription = readString(reading, [
@@ -217,14 +251,17 @@ function makeOracleText(reading: OracleReading) {
   ])
   const warning = readString(reading, ['warning', 'caution', 'shadow'])
   const drawnCards = formatDrawnCards(reading)
+  const keywords = readStringArray(reading, ['keywords', 'keys', 'motifs'])
 
   return [
     question ? `QUESTION: ${question}` : '',
-    drawnCards ? `DRAWN: ${drawnCards}` : '',
+    spreadName ? `SPREAD: ${spreadName}` : '',
+    drawnCards ? `DRAWN CARDS:\n${drawnCards}` : '',
     answer ? `ANSWER: ${answer}` : '',
     diagnosis ? `DIAGNOSIS: ${diagnosis}` : '',
     prescription ? `PRESCRIPTION: ${prescription}` : '',
     warning ? `WARNING: ${warning}` : '',
+    keywords.length ? `KEYWORDS: ${keywords.join(' · ')}` : '',
   ]
     .filter(Boolean)
     .join('\n\n')
@@ -541,7 +578,6 @@ export function InWorldOraclePanels({
     : 'DOSSIER'
 
   const cardTitle = focusedCard ? shortText(focusedCard.name, 20) : 'ARCANUM'
-
   const oracleTitle = oracleReading ? 'ORACLE' : 'ORACLE'
 
   return (
