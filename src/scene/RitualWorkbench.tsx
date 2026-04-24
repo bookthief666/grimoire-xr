@@ -853,41 +853,155 @@ function DeckTray({
   count: number
   active: boolean
 }) {
+  const haloRef = useRef<THREE.MeshBasicMaterial>(null)
+  const innerRef = useRef<THREE.MeshBasicMaterial>(null)
+  const stackRef = useRef<THREE.Group>(null)
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime()
+
+    if (haloRef.current) {
+      haloRef.current.opacity = active
+        ? 0.26 + Math.sin(t * 1.4) * 0.08
+        : 0.09 + Math.sin(t * 0.7) * 0.025
+    }
+
+    if (innerRef.current) {
+      innerRef.current.opacity = active
+        ? 0.42 + Math.sin(t * 2.1) * 0.12
+        : 0.18
+    }
+
+    if (stackRef.current) {
+      stackRef.current.position.y = TABLE_Y + 0.07 + Math.sin(t * 0.9) * (active ? 0.012 : 0.004)
+      stackRef.current.rotation.z = Math.sin(t * 0.45) * (active ? 0.025 : 0.008)
+    }
+  })
+
   return (
     <group>
-      <mesh position={[-1.2, TABLE_Y + 0.055, -0.04]} rotation={[-Math.PI / 2, 0, 0]}>
-        <boxGeometry args={[0.5, 0.72, 0.08]} />
-        <meshStandardMaterial
-          color="#120807"
-          emissive={active ? '#3a1608' : '#150807'}
-          emissiveIntensity={active ? 0.64 : 0.28}
-          roughness={0.5}
-          metalness={0.5}
+      <mesh position={[-1.2, TABLE_Y + 0.018, -0.04]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.38, 0.43, 48]} />
+        <meshBasicMaterial
+          ref={haloRef}
+          color={active ? '#8a35ff' : '#7b5536'}
+          transparent
+          opacity={0.14}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
         />
       </mesh>
 
+      <mesh position={[-1.2, TABLE_Y + 0.021, -0.04]} rotation={[-Math.PI / 2, 0, Math.PI / 8]}>
+        <ringGeometry args={[0.24, 0.27, 40]} />
+        <meshBasicMaterial
+          ref={innerRef}
+          color={active ? '#ffcf7c' : '#9a5a18'}
+          transparent
+          opacity={0.22}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      {Array.from({ length: 12 }, (_, i) => {
+        const angle = (i / 12) * Math.PI * 2
+        const inner = 0.31
+        const outer = i % 3 === 0 ? 0.43 : 0.39
+
+        return (
+          <TableBar
+            key={i}
+            a={[-1.2 + Math.cos(angle) * inner, -0.04 + Math.sin(angle) * inner]}
+            b={[-1.2 + Math.cos(angle) * outer, -0.04 + Math.sin(angle) * outer]}
+            color={i % 3 === 0 ? '#ffcf7c' : '#8a35ff'}
+            opacity={active ? 0.38 : 0.14}
+            width={i % 3 === 0 ? 0.012 : 0.007}
+          />
+        )
+      })}
+
+      <group ref={stackRef}>
+        {Array.from({ length: active ? 9 : 5 }, (_, i) => (
+          <mesh
+            key={i}
+            position={[
+              -1.2 + i * 0.006,
+              TABLE_Y + 0.055 + i * 0.008,
+              -0.04 - i * 0.004,
+            ]}
+            rotation={[-Math.PI / 2, 0, -0.08 + i * 0.012]}
+          >
+            <boxGeometry args={[0.46, 0.68, 0.018]} />
+            <meshStandardMaterial
+              color={active ? '#180907' : '#100706'}
+              emissive={active ? '#3a1608' : '#140807'}
+              emissiveIntensity={active ? 0.58 : 0.22}
+              roughness={0.44}
+              metalness={0.44}
+            />
+          </mesh>
+        ))}
+
+        <mesh position={[-1.2, TABLE_Y + 0.146, -0.04]} rotation={[-Math.PI / 2, 0, 0]}>
+          <planeGeometry args={[0.36, 0.54]} />
+          <meshBasicMaterial
+            color={active ? '#2a1208' : '#090505'}
+            transparent
+            opacity={active ? 0.9 : 0.72}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+
+        <mesh position={[-1.2, TABLE_Y + 0.15, -0.04]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.055, 0.078, 20]} />
+          <meshBasicMaterial
+            color={active ? '#ffcf7c' : '#7b5536'}
+            transparent
+            opacity={active ? 0.86 : 0.34}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+
+        <Text
+          position={[-1.2, TABLE_Y + 0.158, 0.12]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          fontSize={0.034}
+          color={active ? '#ffd18a' : '#8b6a45'}
+          anchorX="center"
+          anchorY="middle"
+          maxWidth={0.34}
+        >
+          {active ? `${count} ONLINE` : 'UNFORGED'}
+        </Text>
+      </group>
+
       <Text
-        position={[-1.2, TABLE_Y + 0.12, -0.04]}
+        position={[-1.2, TABLE_Y + 0.09, 0.44]}
         rotation={[-Math.PI / 2, 0, 0]}
-        fontSize={0.045}
-        color={active ? '#ffd18a' : '#8b6a45'}
+        fontSize={0.032}
+        color={active ? '#d9b5ff' : '#9a6b48'}
         anchorX="center"
         anchorY="middle"
-        maxWidth={0.42}
+        maxWidth={0.72}
       >
-        {active ? `${count} CARDS` : 'NO DECK'}
+        ARCANA MATRIX
       </Text>
 
       <Text
-        position={[-1.2, TABLE_Y + 0.09, 0.42]}
+        position={[-1.2, TABLE_Y + 0.066, -0.52]}
         rotation={[-Math.PI / 2, 0, 0]}
-        fontSize={0.032}
-        color="#9a6b48"
+        fontSize={0.026}
+        color={active ? '#9f744b' : '#5f4932'}
         anchorX="center"
         anchorY="middle"
-        maxWidth={0.6}
+        maxWidth={0.72}
       >
-        DECK TRAY
+        DECK MEMORY // SPREAD SOURCE
       </Text>
     </group>
   )
