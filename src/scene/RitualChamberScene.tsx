@@ -20,6 +20,8 @@ import type {
 } from '../types/grimoire'
 import { InWorldOraclePanels } from './InWorldOraclePanels'
 import { TempleAtmosphere } from './TempleAtmosphere'
+import { TempleXenotheurgy } from './TempleXenotheurgy'
+import { TempleGrandArchitecture } from './TempleGrandArchitecture'
 import { InWorldRitualConsole } from './InWorldRitualConsole'
 import { RitualWorkbench } from './RitualWorkbench'
 
@@ -996,6 +998,25 @@ export function RitualChamberScene({
         hasActiveCard={Boolean(focusedCard)}
         hasOracleReading={Boolean(oracleReading)}
       />
+
+      <TempleXenotheurgy
+        ritualImpulseRef={ritualImpulseRef}
+        loading={loading}
+        oracleLoading={oracleLoading}
+        hasDeck={hasDeck}
+        hasActiveCard={Boolean(focusedCard)}
+        hasOracleReading={hasOracleReading}
+      />
+
+      <TempleGrandArchitecture
+        ritualImpulseRef={ritualImpulseRef}
+        loading={loading}
+        oracleLoading={oracleLoading}
+        hasDeck={hasDeck}
+        hasActiveCard={Boolean(focusedCard)}
+        hasOracleReading={hasOracleReading}
+      />
+
 
       <TempleFloor />
       <LateralWalls />

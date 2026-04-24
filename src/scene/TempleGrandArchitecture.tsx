@@ -4,7 +4,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
 type Props = {
-  ritualImpulseRef?: MutableRefObject<number>
+  ritualImpulseRef: MutableRefObject<number>
   loading?: boolean
   oracleLoading?: boolean
   hasDeck?: boolean
@@ -385,11 +385,13 @@ export function TempleGrandArchitecture({
         hasOracleReading={hasOracleReading}
       />
       <TreeOfLifeMachineWall
+        ritualImpulseRef={ritualImpulseRef}
         oracleLoading={oracleLoading}
         hasOracleReading={hasOracleReading}
         hasDeck={hasDeck}
       />
       <ChamberRaySystem
+        ritualImpulseRef={ritualImpulseRef}
         loading={loading}
         oracleLoading={oracleLoading}
         hasDeck={hasDeck}
@@ -397,6 +399,7 @@ export function TempleGrandArchitecture({
         hasOracleReading={hasOracleReading}
       />
       <HumanScaleMarkerText
+        ritualImpulseRef={ritualImpulseRef}
         hasDeck={hasDeck}
         oracleLoading={oracleLoading}
         hasOracleReading={hasOracleReading}
