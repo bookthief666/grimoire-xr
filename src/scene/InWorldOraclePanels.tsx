@@ -580,6 +580,46 @@ function DragHeader({
   )
 }
 
+
+function ActiveDragSurface({
+  dragging,
+  onDragMove,
+  onDragEnd,
+}: {
+  dragging: boolean
+  onDragMove: (point: THREE.Vector3) => void
+  onDragEnd: () => void
+}) {
+  if (!dragging) return null
+
+  return (
+    <mesh
+      position={[0, 0, 0.14]}
+      onPointerMove={(event) => {
+        event.stopPropagation()
+        onDragMove(event.point.clone())
+      }}
+      onPointerUp={(event) => {
+        event.stopPropagation()
+        onDragEnd()
+      }}
+      onPointerCancel={(event) => {
+        event.stopPropagation()
+        onDragEnd()
+      }}
+    >
+      <planeGeometry args={[3.2, 3.0]} />
+      <meshBasicMaterial
+        color="#ffffff"
+        transparent
+        opacity={0.001}
+        depthWrite={false}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  )
+}
+
 function PanelShell({
   title,
   subtitle,
@@ -667,6 +707,12 @@ function PanelShell({
         accent={accent}
         dragging={dragging}
         onDragStart={onDragStart}
+        onDragMove={onDragMove}
+        onDragEnd={onDragEnd}
+      />
+
+      <ActiveDragSurface
+        dragging={dragging}
         onDragMove={onDragMove}
         onDragEnd={onDragEnd}
       />

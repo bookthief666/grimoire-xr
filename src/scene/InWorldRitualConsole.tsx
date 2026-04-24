@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import {
@@ -7,6 +7,150 @@ import {
   TRADITION_OPTIONS,
 } from '../constants/ritualOptions'
 import type { ForgePhase, TechLevel, Tone, Tradition } from '../types/grimoire'
+
+type ConsoleVec3 = [number, number, number]
+
+type ConsoleDragState = {
+  startPoint: THREE.Vector3
+  startOffset: ConsoleVec3
+}
+
+function clampConsoleValue(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value))
+}
+
+function clampConsoleOffset([x, y, z]: ConsoleVec3): ConsoleVec3 {
+  return [
+    clampConsoleValue(x, -0.85, 0.95),
+    clampConsoleValue(y, -0.85, 0.95),
+    clampConsoleValue(z, -0.75, 0.75),
+  ]
+}
+
+function addConsoleOffset(base: ConsoleVec3, offset: ConsoleVec3): ConsoleVec3 {
+  return [
+    base[0] + offset[0],
+    base[1] + offset[1],
+    base[2] + offset[2],
+  ]
+}
+
+function ConsoleDragHandle({
+  label = 'DRAG',
+  y,
+  width,
+  dragging,
+  onDragStart,
+  onDragMove,
+  onDragEnd,
+}: {
+  label?: string
+  y: number
+  width: number
+  dragging: boolean
+  onDragStart: (point: THREE.Vector3) => void
+  onDragMove: (point: THREE.Vector3) => void
+  onDragEnd: () => void
+}) {
+  const [hovered, setHovered] = useState(false)
+
+  return (
+    <group position={[0, y, 0.12]}>
+      <mesh
+        onPointerOver={(event) => {
+          event.stopPropagation()
+          setHovered(true)
+        }}
+        onPointerOut={(event) => {
+          event.stopPropagation()
+          setHovered(false)
+        }}
+        onPointerDown={(event) => {
+          event.stopPropagation()
+
+          const target = event.target as unknown as {
+            setPointerCapture?: (pointerId: number) => void
+          }
+
+          target.setPointerCapture?.(event.pointerId)
+          onDragStart(event.point.clone())
+        }}
+        onPointerMove={(event) => {
+          if (!dragging) return
+          event.stopPropagation()
+          onDragMove(event.point.clone())
+        }}
+        onPointerUp={(event) => {
+          event.stopPropagation()
+
+          const target = event.target as unknown as {
+            releasePointerCapture?: (pointerId: number) => void
+          }
+
+          target.releasePointerCapture?.(event.pointerId)
+          onDragEnd()
+        }}
+      >
+        <planeGeometry args={[width, 0.18]} />
+        <meshBasicMaterial
+          color={dragging ? '#4a1608' : hovered ? '#2a1208' : '#160909'}
+          transparent
+          opacity={dragging ? 0.96 : 0.78}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, 0, 0.01]}>
+        <planeGeometry args={[width + 0.12, 0.28]} />
+        <meshBasicMaterial
+          color="#ffcf7c"
+          transparent
+          opacity={dragging ? 0.32 : hovered ? 0.2 : 0.09}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <Text
+        position={[0, 0.003, 0.03]}
+        anchorX="center"
+        anchorY="middle"
+        fontSize={0.035}
+        color={dragging || hovered ? '#ffffff' : '#b98855'}
+        maxWidth={width - 0.08}
+      >
+        {dragging ? 'MOVING WINDOW' : label}
+      </Text>
+
+      {dragging ? (
+        <mesh
+          position={[0, -y, 0.08]}
+          onPointerMove={(event) => {
+            event.stopPropagation()
+            onDragMove(event.point.clone())
+          }}
+          onPointerUp={(event) => {
+            event.stopPropagation()
+            onDragEnd()
+          }}
+          onPointerCancel={(event) => {
+            event.stopPropagation()
+            onDragEnd()
+          }}
+        >
+          <planeGeometry args={[3.2, 3.0]} />
+          <meshBasicMaterial
+            color="#ffffff"
+            transparent
+            opacity={0.001}
+            depthWrite={false}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      ) : null}
+    </group>
+  )
+}
 
 type Option<T extends string> = {
   readonly value: T
@@ -405,6 +549,42 @@ export function InWorldRitualConsole({
   const [collapsed, setCollapsed] = useState(true)
   const [targetLabel, setTargetLabel] = useState<string | null>(null)
   const [editorField, setEditorField] = useState<EditableField | null>(null)
+  const [consoleOffset, setConsoleOffset] = useState<ConsoleVec3>([0, 0, 0])
+  const [consoleDragging, setConsoleDragging] = useState(false)
+  const consoleDragRef = useRef<ConsoleDragState | null>(null)
+
+  const getConsolePosition = (base: ConsoleVec3): ConsoleVec3 => {
+    return addConsoleOffset(base, consoleOffset)
+  }
+
+  const startConsoleDrag = (point: THREE.Vector3) => {
+    consoleDragRef.current = {
+      startPoint: point,
+      startOffset: [...consoleOffset],
+    }
+    setConsoleDragging(true)
+  }
+
+  const updateConsoleDrag = (point: THREE.Vector3) => {
+    const drag = consoleDragRef.current
+    if (!drag) return
+
+    const dx = point.x - drag.startPoint.x
+    const dy = point.y - drag.startPoint.y
+
+    setConsoleOffset(
+      clampConsoleOffset([
+        drag.startOffset[0] + dx,
+        drag.startOffset[1] + dy,
+        drag.startOffset[2],
+      ]),
+    )
+  }
+
+  const endConsoleDrag = () => {
+    consoleDragRef.current = null
+    setConsoleDragging(false)
+  }
 
   useEffect(() => {
     if (!subject.trim()) onSubjectChange(SUBJECT_OPTIONS[0])
@@ -469,8 +649,17 @@ export function InWorldRitualConsole({
 
   if (collapsed) {
     return (
-      <group position={[-2.05, 1.14, -1.55]} rotation={[0, 0.54, 0]}>
+      <group position={getConsolePosition([-2.05, 1.14, -1.55])} rotation={[0, 0.54, 0]}>
         <MiniConsoleFrame>
+          <ConsoleDragHandle
+            label="DRAG CONSOLE"
+            y={0.31}
+            width={0.92}
+            dragging={consoleDragging}
+            onDragStart={startConsoleDrag}
+            onDragMove={updateConsoleDrag}
+            onDragEnd={endConsoleDrag}
+          />
           <Text
             position={[-0.44, 0.16, 0.03]}
             anchorX="left"
@@ -511,8 +700,17 @@ export function InWorldRitualConsole({
     const editorValue = getFieldValue(editorField)
 
     return (
-      <group position={[-2.25, 1.26, -1.95]} rotation={[0, 0.58, 0]}>
+      <group position={getConsolePosition([-2.25, 1.26, -1.95])} rotation={[0, 0.58, 0]}>
         <PanelFrame title="VR TEXT INPUT">
+          <ConsoleDragHandle
+            label="DRAG KEYBOARD"
+            y={1.14}
+            width={1.16}
+            dragging={consoleDragging}
+            onDragStart={startConsoleDrag}
+            onDragMove={updateConsoleDrag}
+            onDragEnd={endConsoleDrag}
+          />
           <Text
             position={[-0.78, 0.78, 0.04]}
             anchorX="left"
@@ -659,8 +857,17 @@ export function InWorldRitualConsole({
   }
 
   return (
-    <group position={[-2.25, 1.26, -1.95]} rotation={[0, 0.58, 0]}>
+    <group position={getConsolePosition([-2.25, 1.26, -1.95])} rotation={[0, 0.58, 0]}>
       <PanelFrame title="VR RITUAL CONSOLE">
+        <ConsoleDragHandle
+          label="DRAG CONSOLE"
+          y={1.14}
+          width={1.16}
+          dragging={consoleDragging}
+          onDragStart={startConsoleDrag}
+          onDragMove={updateConsoleDrag}
+          onDragEnd={endConsoleDrag}
+        />
         <Text
           position={[-0.78, 0.78, 0.04]}
           anchorX="left"
