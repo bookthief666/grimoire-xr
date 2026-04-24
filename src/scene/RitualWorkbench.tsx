@@ -17,6 +17,8 @@ import type {
 
 type Vec2 = [number, number]
 
+type WorkbenchMode = 'closed' | 'forge' | 'spread'
+
 type DragState = {
   cardId: number
   startPoint: THREE.Vector3
@@ -75,6 +77,7 @@ const INTENT_OPTIONS = [
 ]
 
 const TABLE_Y = 0.08
+const WORKBENCH_SCALE = 0.62
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
@@ -537,6 +540,7 @@ export function RitualWorkbench({
 }: RitualWorkbenchProps) {
   const [cardOffsets, setCardOffsets] = useState<Record<number, Vec2>>({})
   const [dragState, setDragState] = useState<DragState | null>(null)
+  const [menuMode, setMenuMode] = useState<WorkbenchMode>('closed')
 
   const displayedCards = cards.slice(0, 7)
 
@@ -563,8 +567,8 @@ export function RitualWorkbench({
   const updateCardDrag = (point: THREE.Vector3) => {
     if (!dragState) return
 
-    const dx = point.x - dragState.startPoint.x
-    const dz = point.z - dragState.startPoint.z
+    const dx = (point.x - dragState.startPoint.x) / WORKBENCH_SCALE
+    const dz = (point.z - dragState.startPoint.z) / WORKBENCH_SCALE
 
     setCardOffsets((current) => ({
       ...current,
@@ -587,7 +591,7 @@ export function RitualWorkbench({
     hasDeck && !loading && !oracleLoading && oracleQuestion.trim().length >= 3
 
   return (
-    <group position={[0, 0.92, -1.02]}>
+    <group position={[0, 0.62, -1.68]} scale={WORKBENCH_SCALE}>
       <mesh position={[0, TABLE_Y - 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <boxGeometry args={[3.3, 1.85, 0.08]} />
         <meshStandardMaterial
@@ -615,15 +619,17 @@ export function RitualWorkbench({
 
       <DeckTray count={cards.length} active={hasDeck} />
 
-      {spreadSlots.map((slot, index) => (
-        <SpreadSlot
-          key={slot.label}
-          x={slot.x}
-          z={slot.z}
-          label={slot.label}
-          active={index < displayedCards.length}
-        />
-      ))}
+      {menuMode === 'spread' || hasDeck
+        ? spreadSlots.map((slot, index) => (
+            <SpreadSlot
+              key={slot.label}
+              x={slot.x}
+              z={slot.z}
+              label={slot.label}
+              active={index < displayedCards.length}
+            />
+          ))
+        : null}
 
       {displayedCards.map((card, index) => {
         const slot = spreadSlots[index] ?? spreadSlots[0]
@@ -672,8 +678,10 @@ export function RitualWorkbench({
         </mesh>
       ) : null}
 
-      <TableDial
-        label="SUBJECT"
+      {menuMode === 'forge' ? (
+        <>
+          <TableDial
+            label="SUBJECT"
         value={activeSubject}
         z={-0.78}
         onPrevious={() =>
@@ -732,9 +740,30 @@ export function RitualWorkbench({
         }}
       />
 
+        </>
+      ) : null}
+
+      <TableButton
+        label={menuMode === 'forge' ? 'CLOSE' : 'CONFIG'}
+        x={-1.34}
+        z={1.25}
+        width={0.52}
+        primary={menuMode === 'forge'}
+        onClick={() => setMenuMode(menuMode === 'forge' ? 'closed' : 'forge')}
+      />
+
+      <TableButton
+        label={menuMode === 'spread' ? 'HIDE SPREAD' : 'SPREAD'}
+        x={-0.76}
+        z={1.25}
+        width={0.58}
+        primary={menuMode === 'spread'}
+        onClick={() => setMenuMode(menuMode === 'spread' ? 'closed' : 'spread')}
+      />
+
       <TableButton
         label={loading ? 'FORGING' : 'FORGE'}
-        x={-0.95}
+        x={-0.16}
         z={1.25}
         width={0.52}
         primary
@@ -744,7 +773,7 @@ export function RitualWorkbench({
 
       <TableButton
         label={oracleLoading ? 'ASKING' : 'ORACLE'}
-        x={-0.32}
+        x={0.43}
         z={1.25}
         width={0.52}
         primary
@@ -754,7 +783,7 @@ export function RitualWorkbench({
 
       <TableButton
         label="CLEAR"
-        x={0.32}
+        x={0.98}
         z={1.25}
         width={0.48}
         disabled={!hasOracleReading}
@@ -763,7 +792,7 @@ export function RitualWorkbench({
 
       <TableButton
         label="RESET"
-        x={0.93}
+        x={1.47}
         z={1.25}
         width={0.48}
         danger
@@ -782,7 +811,7 @@ export function RitualWorkbench({
         anchorY="middle"
         maxWidth={1.7}
       >
-        {`ALTAR WORKBENCH // ${forgePhase.toUpperCase()} // ${hasDeck ? 'DECK ACTIVE' : 'NO DECK'}`}
+        {menuMode === 'forge' ? 'FORGE MENU OPEN' : menuMode === 'spread' ? 'SPREAD FIELD OPEN' : `${forgePhase.toUpperCase()} // ${hasDeck ? 'DECK ACTIVE' : 'ALTAR IDLE'}`}
       </Text>
     </group>
   )
