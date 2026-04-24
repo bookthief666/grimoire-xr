@@ -2,7 +2,6 @@ import { useMemo, useRef, type MutableRefObject } from 'react'
 import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { PALETTE } from '../theme/palette'
 
 type TempleAtmosphereProps = {
   ritualImpulseRef: MutableRefObject<number>
