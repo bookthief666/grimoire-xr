@@ -409,6 +409,50 @@ function FloatingForgeMenu({
         />
       </mesh>
 
+      {([[-1, 1], [1, 1], [-1, -1], [1, -1]] as [number, number][]).map(([sx, sy], ci) => {
+        const cx = sx * 0.84
+        const cy = sy * 0.615
+        const armLen = 0.11
+        const armW = 0.014
+        return (
+          <group key={ci} position={[cx, cy, 0.02]}>
+            <mesh position={[sx * armLen * 0.5, 0, 0]}>
+              <planeGeometry args={[armLen, armW]} />
+              <meshBasicMaterial
+                color="#ff9a00"
+                transparent
+                opacity={0.68}
+                depthWrite={false}
+                blending={THREE.AdditiveBlending}
+                side={THREE.DoubleSide}
+              />
+            </mesh>
+            <mesh position={[0, sy * armLen * 0.5, 0]}>
+              <planeGeometry args={[armW, armLen]} />
+              <meshBasicMaterial
+                color="#ff9a00"
+                transparent
+                opacity={0.68}
+                depthWrite={false}
+                blending={THREE.AdditiveBlending}
+                side={THREE.DoubleSide}
+              />
+            </mesh>
+            <mesh position={[0, 0, 0.003]}>
+              <circleGeometry args={[0.018, 10]} />
+              <meshBasicMaterial
+                color="#ffcf7c"
+                transparent
+                opacity={0.55}
+                depthWrite={false}
+                blending={THREE.AdditiveBlending}
+                side={THREE.DoubleSide}
+              />
+            </mesh>
+          </group>
+        )
+      })}
+
       <Text
         position={[0, 0.45, 0.07]}
         fontSize={0.05}
@@ -419,6 +463,18 @@ function FloatingForgeMenu({
       >
         FORGE CONFIGURATION
       </Text>
+
+      <mesh position={[0, 0.398, 0.065]}>
+        <planeGeometry args={[1.52, 0.012]} />
+        <meshBasicMaterial
+          color="#ff9a00"
+          transparent
+          opacity={0.38}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
 
       <Text
         position={[0, 0.36, 0.07]}
@@ -758,6 +814,18 @@ function FloatingSigilButton({
         />
       </mesh>
 
+      <mesh position={[0, 0, 0.007]}>
+        <ringGeometry args={[0.065, 0.074, 24]} />
+        <meshBasicMaterial
+          color={glowColor}
+          transparent
+          opacity={disabled ? 0.1 : hovered || active ? 0.72 : 0.35}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
       <mesh position={[0, 0, 0.01]}>
         <ringGeometry args={[0.17, 0.185, 36]} />
         <meshBasicMaterial
@@ -1036,6 +1104,54 @@ export function RitualWorkbench({
           color="#ff8a00"
           transparent
           opacity={0.075}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, TABLE_Y + 0.014, 0.878]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[3.22, 0.016]} />
+        <meshBasicMaterial
+          color="#b8860b"
+          transparent
+          opacity={0.58}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, TABLE_Y + 0.014, -0.878]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[3.22, 0.016]} />
+        <meshBasicMaterial
+          color="#b8860b"
+          transparent
+          opacity={0.38}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[1.6, TABLE_Y + 0.014, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[0.016, 1.76]} />
+        <meshBasicMaterial
+          color="#b8860b"
+          transparent
+          opacity={0.44}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[-1.6, TABLE_Y + 0.014, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[0.016, 1.76]} />
+        <meshBasicMaterial
+          color="#b8860b"
+          transparent
+          opacity={0.44}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}

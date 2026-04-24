@@ -158,9 +158,9 @@ function RadialMarks() {
   )
 }
 
-function Pillar({ x }: { x: number }) {
+function Pillar({ x, z = -3.55 }: { x: number; z?: number }) {
   return (
-    <group position={[x, 0, -3.55]}>
+    <group position={[x, 0, z]}>
       <mesh position={[0, 0.18, 0]}>
         <cylinderGeometry args={[0.3, 0.38, 0.36, 12]} />
         <meshLambertMaterial color={PALETTE.massDark} flatShading />
@@ -193,6 +193,163 @@ function Pillar({ x }: { x: number }) {
         >
           93
         </Text>
+      </mesh>
+    </group>
+  )
+}
+
+function LateralWalls() {
+  return (
+    <group>
+      {([-3.55, 3.55] as number[]).map((x) => {
+        const sign = x < 0 ? 1 : -1
+        return (
+          <group key={x}>
+            <mesh position={[x, 2.2, -2.1]} rotation={[0, sign * Math.PI / 2, 0]}>
+              <planeGeometry args={[7.6, 5.0]} />
+              <meshLambertMaterial color="#050404" flatShading side={THREE.FrontSide} />
+            </mesh>
+
+            <mesh position={[x + sign * 0.01, 1.86, -2.1]} rotation={[0, sign * Math.PI / 2, 0]}>
+              <planeGeometry args={[7.0, 0.022]} />
+              <meshBasicMaterial
+                color={PALETTE.glyphDim}
+                transparent
+                opacity={0.42}
+                depthWrite={false}
+                blending={THREE.AdditiveBlending}
+                side={THREE.DoubleSide}
+              />
+            </mesh>
+
+            <mesh position={[x + sign * 0.01, 0.88, -2.1]} rotation={[0, sign * Math.PI / 2, 0]}>
+              <planeGeometry args={[7.0, 0.014]} />
+              <meshBasicMaterial
+                color={PALETTE.bloodDim}
+                transparent
+                opacity={0.35}
+                depthWrite={false}
+                blending={THREE.AdditiveBlending}
+                side={THREE.DoubleSide}
+              />
+            </mesh>
+
+            <mesh position={[x + sign * 0.01, 2.95, -2.1]} rotation={[0, sign * Math.PI / 2, 0]}>
+              <planeGeometry args={[7.0, 0.012]} />
+              <meshBasicMaterial
+                color={PALETTE.ember}
+                transparent
+                opacity={0.22}
+                depthWrite={false}
+                blending={THREE.AdditiveBlending}
+                side={THREE.DoubleSide}
+              />
+            </mesh>
+          </group>
+        )
+      })}
+    </group>
+  )
+}
+
+function RearArch() {
+  return (
+    <group position={[0, 0, -3.55]}>
+      <mesh position={[0, 3.28, 0]}>
+        <boxGeometry args={[4.58, 0.26, 0.32]} />
+        <meshLambertMaterial color={PALETTE.massDark} flatShading />
+        <Edges color={PALETTE.outlineDark} />
+      </mesh>
+
+      <mesh position={[0, 3.48, 0]}>
+        <boxGeometry args={[1.85, 0.4, 0.26]} />
+        <meshLambertMaterial color={PALETTE.mass} flatShading />
+        <Edges color={PALETTE.outlineDark} />
+      </mesh>
+
+      <mesh position={[0, 3.3, 0.17]}>
+        <planeGeometry args={[3.9, 0.018]} />
+        <meshBasicMaterial
+          color={PALETTE.ember}
+          transparent
+          opacity={0.52}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, 3.5, 0.15]}>
+        <planeGeometry args={[1.55, 0.015]} />
+        <meshBasicMaterial
+          color={PALETTE.gold}
+          transparent
+          opacity={0.38}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+    </group>
+  )
+}
+
+function OracleDais() {
+  const veilRef = useRef<THREE.MeshBasicMaterial>(null)
+
+  useFrame(({ clock }) => {
+    if (!veilRef.current) return
+    const t = clock.getElapsedTime()
+    veilRef.current.opacity = 0.055 + Math.sin(t * 0.6) * 0.022
+  })
+
+  return (
+    <group position={[0, 0, -2.4]}>
+      <mesh position={[0, 0.08, 0]}>
+        <cylinderGeometry args={[0.56, 0.64, 0.16, 20]} />
+        <meshLambertMaterial color={PALETTE.massDark} flatShading />
+        <Edges color={PALETTE.outlineDark} />
+      </mesh>
+
+      <mesh position={[0, 0.17, 0]}>
+        <cylinderGeometry args={[0.52, 0.56, 0.06, 20]} />
+        <meshLambertMaterial color={PALETTE.mass} flatShading />
+      </mesh>
+
+      <mesh position={[0, 0.018, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.68, 0.72, 36]} />
+        <meshBasicMaterial
+          color={PALETTE.glyphDim}
+          transparent
+          opacity={0.34}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, 1.62, -0.55]}>
+        <planeGeometry args={[1.28, 2.96]} />
+        <meshBasicMaterial
+          color="#030101"
+          transparent
+          opacity={0.82}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, 1.62, -0.52]}>
+        <planeGeometry args={[1.32, 3.0]} />
+        <meshBasicMaterial
+          ref={veilRef}
+          color={PALETTE.glyphDim}
+          transparent
+          opacity={0.06}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
       </mesh>
     </group>
   )
@@ -841,9 +998,14 @@ export function RitualChamberScene({
       />
 
       <TempleFloor />
+      <LateralWalls />
       <RearShrine ritualImpulseRef={ritualImpulseRef} />
+      <RearArch />
+      <OracleDais />
       <Pillar x={-2.1} />
       <Pillar x={2.1} />
+      <Pillar x={-2.2} z={-1.72} />
+      <Pillar x={2.2} z={-1.72} />
       <CeilingCrown ritualImpulseRef={ritualImpulseRef} />
       <Embers ritualImpulseRef={ritualImpulseRef} />
 
