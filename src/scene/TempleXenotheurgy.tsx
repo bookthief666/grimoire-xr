@@ -762,10 +762,207 @@ function DeckConstellation({
   )
 }
 
+
+function HumanScaleTempleLife({
+  ritualImpulseRef,
+  loading = false,
+  oracleLoading = false,
+  hasActiveCard = false,
+  hasOracleReading = false,
+  hasDeck = false,
+}: Props) {
+  const glyphRootRef = useRef<THREE.Group>(null)
+  const sanctumRef = useRef<THREE.Group>(null)
+  const veilRef = useRef<THREE.MeshBasicMaterial>(null)
+  const auraRef = useRef<THREE.MeshBasicMaterial>(null)
+
+  const active = loading || oracleLoading || hasActiveCard || hasOracleReading || hasDeck
+  const oracleActive = oracleLoading || hasOracleReading
+
+  const glyphs = useMemo(() => {
+    return ['✶', '☉', '☽', '♀', '☿', '♃', '♄', '⟁', '✦', '◌'].map((glyph, i) => {
+      const angle = (i / 10) * Math.PI * 2
+      return {
+        glyph,
+        x: Math.cos(angle) * (1.15 + (i % 3) * 0.08),
+        y: 1.18 + (i % 4) * 0.11,
+        z: -0.92 + Math.sin(angle) * 0.38,
+        phase: i * 0.77,
+        color: i % 3 === 0 ? '#ffd18a' : i % 3 === 1 ? '#9a6bff' : '#ff3d5a',
+      }
+    })
+  }, [])
+
+  useFrame(({ clock }, delta) => {
+    const t = clock.getElapsedTime()
+    const impulse = ritualImpulseRef.current
+    const boost = active ? 1 : 0
+
+    if (glyphRootRef.current) {
+      glyphRootRef.current.rotation.y = Math.sin(t * 0.18) * 0.08
+      glyphRootRef.current.position.y = Math.sin(t * 0.72) * 0.018
+      glyphRootRef.current.scale.setScalar(1 + boost * 0.045 + impulse * 0.035)
+    }
+
+    if (sanctumRef.current) {
+      sanctumRef.current.rotation.y = Math.sin(t * 0.22) * 0.045
+      sanctumRef.current.position.y = 0.04 + Math.sin(t * 0.55) * 0.02
+    }
+
+    if (veilRef.current) {
+      veilRef.current.opacity = Math.min(
+        0.42,
+        0.09 + Math.sin(t * 0.72) * 0.025 + (oracleActive ? 0.18 : 0) + impulse * 0.08,
+      )
+    }
+
+    if (auraRef.current) {
+      auraRef.current.opacity = Math.min(
+        0.48,
+        0.08 + Math.sin(t * 1.05) * 0.035 + (active ? 0.12 : 0) + impulse * 0.1,
+      )
+    }
+
+    if (sanctumRef.current) {
+      sanctumRef.current.rotation.z += delta * (oracleActive ? 0.025 : 0.008)
+    }
+  })
+
+  const phrase = oracleActive
+    ? 'THE ORACLE FIELD BREATHES'
+    : loading
+      ? 'THE FORGE HEATS THE ASTRAL DECK'
+      : hasDeck
+        ? 'THE DECK MEMORY HUMS BENEATH THE ALTAR'
+        : 'THE TEMPLE WAITS FOR THE WILL'
+
+  return (
+    <group raycast={noRaycast}>
+      <group ref={glyphRootRef} raycast={noRaycast}>
+        {glyphs.map((g, i) => (
+          <group key={g.glyph + i} position={[g.x, g.y, g.z]} raycast={noRaycast}>
+            <mesh raycast={noRaycast}>
+              <circleGeometry args={[0.075, 20]} />
+              <meshBasicMaterial
+                color="#050203"
+                transparent
+                opacity={0.34}
+                depthWrite={false}
+                side={THREE.DoubleSide}
+              />
+            </mesh>
+
+            <mesh position={[0, 0, 0.006]} raycast={noRaycast}>
+              <ringGeometry args={[0.087, 0.094, 24]} />
+              <meshBasicMaterial
+                color={g.color}
+                transparent
+                opacity={active ? 0.48 : 0.24}
+                depthWrite={false}
+                blending={THREE.AdditiveBlending}
+                side={THREE.DoubleSide}
+              />
+            </mesh>
+
+            <Text
+              position={[0, 0, 0.018]}
+              fontSize={0.064}
+              color={g.color}
+              anchorX="center"
+              anchorY="middle"
+              raycast={noRaycast}
+            >
+              {g.glyph}
+            </Text>
+          </group>
+        ))}
+      </group>
+
+      <group ref={sanctumRef} position={[0, 0.04, -2.42]} raycast={noRaycast}>
+        <mesh position={[0, 1.52, -0.08]} raycast={noRaycast}>
+          <planeGeometry args={[1.12, 2.28]} />
+          <meshBasicMaterial
+            ref={veilRef}
+            color={oracleActive ? '#8a35ff' : '#3a0714'}
+            transparent
+            opacity={0.12}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+
+        <mesh position={[0, 1.52, -0.12]} raycast={noRaycast}>
+          <planeGeometry args={[1.55, 2.65]} />
+          <meshBasicMaterial
+            ref={auraRef}
+            color={oracleActive ? '#d9b5ff' : '#8a1034'}
+            transparent
+            opacity={0.08}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+
+        <HoloRing
+          position={[0, 1.48, 0.02]}
+          rotation={[0, 0, 0]}
+          radius={0.52}
+          tube={0.007}
+          color={oracleActive ? '#d9b5ff' : '#b8860b'}
+          opacity={oracleActive ? 0.42 : 0.18}
+        />
+
+        <HoloRing
+          position={[0, 1.48, 0.04]}
+          rotation={[0, 0, Math.PI / 2]}
+          radius={0.34}
+          tube={0.006}
+          color={hasActiveCard ? '#ffcf7c' : '#8a35ff'}
+          opacity={active ? 0.34 : 0.13}
+        />
+
+        <Text
+          position={[0, 2.92, 0.08]}
+          fontSize={0.072}
+          color={oracleActive ? '#d9b5ff' : '#9f744b'}
+          anchorX="center"
+          anchorY="middle"
+          maxWidth={1.82}
+          raycast={noRaycast}
+        >
+          ORACLE SANCTUM
+        </Text>
+      </group>
+
+      <Text
+        position={[0, 0.96, -0.34]}
+        fontSize={0.052}
+        color={active ? '#ffd18a' : '#7b5536'}
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={1.92}
+        raycast={noRaycast}
+      >
+        {phrase}
+      </Text>
+    </group>
+  )
+}
+
 export function TempleXenotheurgy({ ritualImpulseRef, loading = false, oracleLoading = false, hasActiveCard = false, hasOracleReading = false, hasDeck = false }: Props) {
   return (
     <group>
       <ProcessionCircuits />
+      <HumanScaleTempleLife
+        ritualImpulseRef={ritualImpulseRef}
+        loading={loading}
+        oracleLoading={oracleLoading}
+        hasActiveCard={hasActiveCard}
+        hasOracleReading={hasOracleReading}
+        hasDeck={hasDeck}
+      />
       <DeckConstellation
         ritualImpulseRef={ritualImpulseRef}
         loading={loading}

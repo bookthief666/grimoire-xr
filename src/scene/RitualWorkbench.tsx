@@ -1204,13 +1204,13 @@ function FloatingSigilDock({
   onClearOracle: () => void
   onReset: () => void
 }) {
-  const sideDock = menuMode === 'spread'
+  const sideDock = menuMode === 'spread' || menuMode === 'forge'
 
   const dockPlanePosition: [number, number, number] = sideDock
-    ? [1.42, TABLE_Y + 0.28, 0.32]
+    ? [1.54, TABLE_Y + 0.2, 0.22]
     : [0, TABLE_Y + 0.42, 0.94]
 
-  const dockPlaneSize: [number, number] = sideDock ? [0.34, 1.72] : [2.18, 0.34]
+  const dockPlaneSize: [number, number] = sideDock ? [0.42, 1.92] : [2.18, 0.34]
 
   const sigilPosition = (
     normalX: number,
@@ -1221,9 +1221,9 @@ function FloatingSigilDock({
     }
 
     return {
-      x: 1.42,
-      y: TABLE_Y + 0.86 - sideIndex * 0.32,
-      z: 0.34,
+      x: 1.54,
+      y: TABLE_Y + 0.72 - sideIndex * 0.27,
+      z: 0.22,
     }
   }
 
@@ -1240,7 +1240,7 @@ function FloatingSigilDock({
         <meshBasicMaterial
           color="#050202"
           transparent
-          opacity={sideDock ? 0.28 : 0.36}
+          opacity={sideDock ? 0.22 : 0.36}
           depthWrite={false}
           side={THREE.DoubleSide}
         />
@@ -1256,50 +1256,53 @@ function FloatingSigilDock({
         onClick={onToggleForge}
       />
 
-      <FloatingSigilButton
-        sigil="⌬"
-        label={menuMode === 'spread' ? 'Seal Spread Field' : 'Reveal Spread Field'}
-        x={spread.x}
-        y={spread.y}
-        z={spread.z}
-        active={menuMode === 'spread'}
-        onClick={onToggleSpread}
-      />
+      {menuMode !== 'forge' ? (
+        <>
+          <FloatingSigilButton
+            sigil="⌬"
+            label={menuMode === 'spread' ? 'Seal Spread Field' : 'Reveal Spread Field'}
+            x={spread.x}
+            y={spread.y}
+            z={spread.z}
+            active={menuMode === 'spread'}
+            onClick={onToggleSpread}
+          />
 
-      <FloatingSigilButton
-        sigil={oracleLoading ? '…' : '☉'}
-        label={oracleLoading ? 'Oracle Awakening' : 'Invoke Oracle'}
-        x={oracle.x}
-        y={oracle.y}
-        z={oracle.z}
-        active={oracleLoading}
-        disabled={!canConsult}
-        onClick={onConsultOracle}
-      />
+          <FloatingSigilButton
+            sigil={oracleLoading ? '…' : '☉'}
+            label={oracleLoading ? 'Oracle Awakening' : 'Invoke Oracle'}
+            x={oracle.x}
+            y={oracle.y}
+            z={oracle.z}
+            active={oracleLoading}
+            disabled={!canConsult}
+            onClick={onConsultOracle}
+          />
 
-      <FloatingSigilButton
-        sigil="✕"
-        label="Clear Oracle Tablet"
-        x={clear.x}
-        y={clear.y}
-        z={clear.z}
-        disabled={!hasOracleReading}
-        onClick={onClearOracle}
-      />
+          <FloatingSigilButton
+            sigil="✕"
+            label="Clear Oracle Tablet"
+            x={clear.x}
+            y={clear.y}
+            z={clear.z}
+            disabled={!hasOracleReading}
+            onClick={onClearOracle}
+          />
 
-      <FloatingSigilButton
-        sigil="↺"
-        label="Banish Ritual"
-        x={reset.x}
-        y={reset.y}
-        z={reset.z}
-        danger
-        onClick={onReset}
-      />
+          <FloatingSigilButton
+            sigil="↺"
+            label="Banish Ritual"
+            x={reset.x}
+            y={reset.y}
+            z={reset.z}
+            danger
+            onClick={onReset}
+          />
+        </>
+      ) : null}
     </group>
   )
 }
-
 
 
 export function RitualWorkbench({
