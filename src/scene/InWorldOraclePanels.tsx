@@ -27,7 +27,14 @@ const DEFAULT_PANEL_OFFSETS: Record<PanelKind, Vec3> = {
 }
 
 const DEPTH_STEP = 0.24
+
+const DEFAULT_PANEL_SCALES: Record<PanelKind, number> = {
+  dossier: 0.92,
+  card: 0.92,
+  oracle: 0.92,
+}
 const PANEL_POSITION_STORAGE_KEY = 'grimoire-xr:reading-panel-offsets:v1'
+const PANEL_SCALE_STORAGE_KEY = 'grimoire-xr:reading-panel-scales:v1'
 
 function cloneDefaultOffsets(): Record<PanelKind, Vec3> {
   return {
@@ -47,6 +54,19 @@ function clampPanelOffset([x, y, z]: Vec3): Vec3 {
     clamp(y, -0.95, 0.95),
     clamp(z, -1.55, 0.82),
   ]
+}
+
+
+function clampPanelScale(value: number) {
+  return clamp(value, 0.68, 1.18)
+}
+
+function cloneDefaultScales(): Record<PanelKind, number> {
+  return {
+    dossier: DEFAULT_PANEL_SCALES.dossier,
+    card: DEFAULT_PANEL_SCALES.card,
+    oracle: DEFAULT_PANEL_SCALES.oracle,
+  }
 }
 
 function rotationForOffset([x]: Vec3): [number, number, number] {
@@ -93,6 +113,47 @@ function writeStoredPanelOffsets(offsets: Record<PanelKind, Vec3>) {
 
   try {
     window.localStorage.setItem(PANEL_POSITION_STORAGE_KEY, JSON.stringify(offsets))
+  } catch {
+    // Non-critical: VR layout should still work without persistence.
+  }
+}
+
+
+function readStoredPanelScales(): Record<PanelKind, number> {
+  const defaults = cloneDefaultScales()
+
+  if (typeof window === 'undefined') return defaults
+
+  try {
+    const raw = window.localStorage.getItem(PANEL_SCALE_STORAGE_KEY)
+    if (!raw) return defaults
+
+    const parsed = JSON.parse(raw) as Partial<Record<PanelKind, unknown>>
+
+    return {
+      dossier:
+        typeof parsed.dossier === 'number'
+          ? clampPanelScale(parsed.dossier)
+          : defaults.dossier,
+      card:
+        typeof parsed.card === 'number'
+          ? clampPanelScale(parsed.card)
+          : defaults.card,
+      oracle:
+        typeof parsed.oracle === 'number'
+          ? clampPanelScale(parsed.oracle)
+          : defaults.oracle,
+    }
+  } catch {
+    return defaults
+  }
+}
+
+function writeStoredPanelScales(scales: Record<PanelKind, number>) {
+  if (typeof window === 'undefined') return
+
+  try {
+    window.localStorage.setItem(PANEL_SCALE_STORAGE_KEY, JSON.stringify(scales))
   } catch {
     // Non-critical: VR layout should still work without persistence.
   }
@@ -476,11 +537,15 @@ function DepthControls({
   onNear,
   onFar,
   onReset,
+  onSmaller,
+  onLarger,
 }: {
   accent: string
   onNear: () => void
   onFar: () => void
   onReset: () => void
+  onSmaller: () => void
+  onLarger: () => void
 }) {
   return (
     <group>
@@ -509,6 +574,24 @@ function DepthControls({
         accent={accent}
         width={0.32}
         onClick={onReset}
+      />
+
+      <PanelButton
+        label="SMALL"
+        x={-0.24}
+        y={-0.93}
+        accent={accent}
+        width={0.36}
+        onClick={onSmaller}
+      />
+
+      <PanelButton
+        label="BIG"
+        x={0.24}
+        y={-0.93}
+        accent={accent}
+        width={0.3}
+        onClick={onLarger}
       />
     </group>
   )
@@ -678,6 +761,8 @@ function PanelShell({
   onNear,
   onFar,
   onReset,
+  onSmaller,
+  onLarger,
 }: {
   title: string
   subtitle: string
@@ -690,6 +775,8 @@ function PanelShell({
   onNear: () => void
   onFar: () => void
   onReset: () => void
+  onSmaller: () => void
+  onLarger: () => void
 }) {
   const [pageIndex, setPageIndex] = useState(0)
   const groupRef = useRef<THREE.Group>(null)
@@ -725,7 +812,7 @@ function PanelShell({
           if (!dragging) goNext()
         }}
       >
-        <planeGeometry args={[1.16, 1.66]} />
+        <planeGeometry args={[1.16, 1.88]} />
         <meshStandardMaterial
           color="#100606"
           emissive="#251006"
@@ -737,7 +824,7 @@ function PanelShell({
       </mesh>
 
       <mesh position={[0, 0, 0.008]}>
-        <planeGeometry args={[1.26, 1.76]} />
+        <planeGeometry args={[1.26, 1.98]} />
         <meshBasicMaterial
           color={accent}
           transparent
@@ -827,6 +914,8 @@ function PanelShell({
         onNear={onNear}
         onFar={onFar}
         onReset={onReset}
+        onSmaller={onSmaller}
+        onLarger={onLarger}
       />
     </group>
   )
@@ -841,9 +930,17 @@ export function InWorldOraclePanels({
     readStoredPanelOffsets,
   )
 
+  const [panelScales, setPanelScales] = useState<Record<PanelKind, number>>(
+    readStoredPanelScales,
+  )
+
   useEffect(() => {
     writeStoredPanelOffsets(panelOffsets)
   }, [panelOffsets])
+
+  useEffect(() => {
+    writeStoredPanelScales(panelScales)
+  }, [panelScales])
   const [draggingPanel, setDraggingPanel] = useState<PanelKind | null>(null)
   const dragStateRef = useRef<DragState | null>(null)
 
@@ -908,6 +1005,22 @@ export function InWorldOraclePanels({
       ...current,
       [kind]: [...DEFAULT_PANEL_OFFSETS[kind]],
     }))
+    resetPanelScale(kind)
+  }
+
+
+  const scalePanel = (kind: PanelKind, delta: number) => {
+    setPanelScales((current) => ({
+      ...current,
+      [kind]: clampPanelScale(current[kind] + delta),
+    }))
+  }
+
+  const resetPanelScale = (kind: PanelKind) => {
+    setPanelScales((current) => ({
+      ...current,
+      [kind]: DEFAULT_PANEL_SCALES[kind],
+    }))
   }
 
   const dossierPages = useMemo(() => {
@@ -940,6 +1053,7 @@ export function InWorldOraclePanels({
         <group
           position={panelOffsets.dossier}
           rotation={rotationForOffset(panelOffsets.dossier)}
+          scale={panelScales.dossier}
         >
           <PanelShell
             title={dossierTitle.toUpperCase()}
@@ -953,6 +1067,8 @@ export function InWorldOraclePanels({
             onNear={() => movePanelDepth('dossier', DEPTH_STEP)}
             onFar={() => movePanelDepth('dossier', -DEPTH_STEP)}
             onReset={() => resetPanel('dossier')}
+            onSmaller={() => scalePanel('dossier', -0.08)}
+            onLarger={() => scalePanel('dossier', 0.08)}
           />
         </group>
       ) : null}
@@ -961,6 +1077,7 @@ export function InWorldOraclePanels({
         <group
           position={panelOffsets.card}
           rotation={rotationForOffset(panelOffsets.card)}
+          scale={panelScales.card}
         >
           <PanelShell
             title={cardTitle.toUpperCase()}
@@ -974,6 +1091,8 @@ export function InWorldOraclePanels({
             onNear={() => movePanelDepth('card', DEPTH_STEP)}
             onFar={() => movePanelDepth('card', -DEPTH_STEP)}
             onReset={() => resetPanel('card')}
+            onSmaller={() => scalePanel('card', -0.08)}
+            onLarger={() => scalePanel('card', 0.08)}
           />
         </group>
       ) : null}
@@ -982,6 +1101,7 @@ export function InWorldOraclePanels({
         <group
           position={panelOffsets.oracle}
           rotation={rotationForOffset(panelOffsets.oracle)}
+          scale={panelScales.oracle}
         >
           <PanelShell
             title={oracleTitle}
@@ -995,6 +1115,8 @@ export function InWorldOraclePanels({
             onNear={() => movePanelDepth('oracle', DEPTH_STEP)}
             onFar={() => movePanelDepth('oracle', -DEPTH_STEP)}
             onReset={() => resetPanel('oracle')}
+            onSmaller={() => scalePanel('oracle', -0.08)}
+            onLarger={() => scalePanel('oracle', 0.08)}
           />
         </group>
       ) : null}
