@@ -274,7 +274,7 @@ function toneDirective(tone: Tone) {
 }
 
 function techLevelDirective(techLevel: TechLevel) {
-  return TECH_LEVELS[techLevel].instruction
+  return TECH_LEVELS[techLevel]?.instruction ?? TECH_LEVELS.adept.instruction
 }
 
 function correspondenceDirective(techLevel: TechLevel) {
@@ -440,7 +440,13 @@ async function forgeOnce(
 
   const response = await ai.models.generateContent({
     model,
-    contents: buildPrompt(subject, tradition, tone, techLevel, intent),
+    contents: buildPrompt({
+      subject,
+      tradition,
+      tone,
+      techLevel,
+      intent,
+    }),
     config: {
       temperature: 0.5,
       responseMimeType: 'application/json',
