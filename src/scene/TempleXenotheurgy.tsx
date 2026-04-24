@@ -5,6 +5,10 @@ import * as THREE from 'three'
 
 type Props = {
   ritualImpulseRef: MutableRefObject<number>
+  loading?: boolean
+  oracleLoading?: boolean
+  hasActiveCard?: boolean
+  hasOracleReading?: boolean
 }
 
 const noRaycast = () => null
@@ -83,21 +87,31 @@ function HoloBar({
   )
 }
 
-function ThelemicStarGate({ ritualImpulseRef }: Props) {
+function ThelemicStarGate({ ritualImpulseRef, loading = false, oracleLoading = false, hasActiveCard = false, hasOracleReading = false }: Props) {
   const groupRef = useRef<THREE.Group>(null)
   const coreRef = useRef<THREE.MeshBasicMaterial>(null)
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime()
     const impulse = ritualImpulseRef.current
+    const stateBoost =
+      (loading ? 0.22 : 0) +
+      (oracleLoading ? 0.34 : 0) +
+      (hasActiveCard ? 0.16 : 0) +
+      (hasOracleReading ? 0.28 : 0)
 
     if (groupRef.current) {
-      groupRef.current.rotation.z = Math.sin(t * 0.18) * 0.035
-      groupRef.current.rotation.y = Math.sin(t * 0.11) * 0.025
+      groupRef.current.rotation.z = Math.sin(t * (0.18 + stateBoost * 0.2)) * (0.035 + stateBoost * 0.03)
+      groupRef.current.rotation.y = Math.sin(t * 0.11) * (0.025 + stateBoost * 0.035)
+      const scale = 1 + Math.sin(t * 1.4) * 0.012 + stateBoost * 0.045
+      groupRef.current.scale.setScalar(scale)
     }
 
     if (coreRef.current) {
-      coreRef.current.opacity = 0.18 + Math.sin(t * 1.15) * 0.06 + impulse * 0.2
+      coreRef.current.opacity = Math.min(
+        0.88,
+        0.18 + Math.sin(t * 1.15) * 0.06 + impulse * 0.2 + stateBoost * 0.28,
+      )
     }
   })
 
@@ -185,11 +199,31 @@ function ThelemicStarGate({ ritualImpulseRef }: Props) {
       >
         XENOTHEURGIC · HERMETIC · THELEMIC
       </Text>
+
+      {(loading || oracleLoading || hasActiveCard || hasOracleReading) ? (
+        <Text
+          position={[0, -1.66, 0.12]}
+          fontSize={0.065}
+          color={oracleLoading || hasOracleReading ? '#d9b5ff' : '#ffd18a'}
+          anchorX="center"
+          anchorY="middle"
+          maxWidth={2.6}
+          raycast={noRaycast}
+        >
+          {oracleLoading
+            ? 'ORACLE FLAME ACTIVE'
+            : loading
+              ? 'DECK FORGE IGNITED'
+              : hasOracleReading
+                ? 'READING INSCRIBED'
+                : 'ARCANUM FOCUSED'}
+        </Text>
+      ) : null}
     </group>
   )
 }
 
-function FloatingOrrery({ ritualImpulseRef }: Props) {
+function FloatingOrrery({ ritualImpulseRef, loading = false, oracleLoading = false, hasOracleReading = false }: Props) {
   const root = useRef<THREE.Group>(null)
   const inner = useRef<THREE.Group>(null)
   const core = useRef<THREE.MeshBasicMaterial>(null)
@@ -197,12 +231,13 @@ function FloatingOrrery({ ritualImpulseRef }: Props) {
   useFrame(({ clock }, delta) => {
     const t = clock.getElapsedTime()
     const impulse = ritualImpulseRef.current
+    const stateBoost = (loading ? 0.18 : 0) + (oracleLoading ? 0.28 : 0) + (hasOracleReading ? 0.22 : 0)
 
-    if (root.current) root.current.rotation.y += delta * (0.18 + impulse * 0.18)
-    if (inner.current) inner.current.rotation.x += delta * (0.22 + impulse * 0.12)
+    if (root.current) root.current.rotation.y += delta * (0.18 + impulse * 0.18 + stateBoost * 0.22)
+    if (inner.current) inner.current.rotation.x += delta * (0.22 + impulse * 0.12 + stateBoost * 0.16)
 
     if (core.current) {
-      core.current.opacity = 0.35 + Math.sin(t * 1.4) * 0.08 + impulse * 0.18
+      core.current.opacity = Math.min(0.86, 0.35 + Math.sin(t * 1.4) * 0.08 + impulse * 0.18 + stateBoost * 0.24)
     }
   })
 
@@ -330,17 +365,18 @@ function XenoObelisk({
   )
 }
 
-function EroticSacredVeils({ ritualImpulseRef }: Props) {
+function EroticSacredVeils({ ritualImpulseRef, oracleLoading = false, hasActiveCard = false, hasOracleReading = false }: Props) {
   const left = useRef<THREE.MeshBasicMaterial>(null)
   const right = useRef<THREE.MeshBasicMaterial>(null)
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime()
     const impulse = ritualImpulseRef.current
-    const opacity = 0.16 + Math.sin(t * 0.5) * 0.04 + impulse * 0.08
+    const stateBoost = (oracleLoading ? 0.14 : 0) + (hasActiveCard ? 0.08 : 0) + (hasOracleReading ? 0.12 : 0)
+    const opacity = 0.16 + Math.sin(t * 0.5) * 0.04 + impulse * 0.08 + stateBoost
 
-    if (left.current) left.current.opacity = opacity
-    if (right.current) right.current.opacity = opacity * 0.82
+    if (left.current) left.current.opacity = Math.min(0.46, opacity)
+    if (right.current) right.current.opacity = Math.min(0.38, opacity * 0.82)
   })
 
   return (
@@ -399,14 +435,14 @@ function ProcessionCircuits() {
   )
 }
 
-export function TempleXenotheurgy({ ritualImpulseRef }: Props) {
+export function TempleXenotheurgy({ ritualImpulseRef, loading = false, oracleLoading = false, hasActiveCard = false, hasOracleReading = false }: Props) {
   return (
     <group>
       <ProcessionCircuits />
       <QabalisticCircuitWall />
-      <ThelemicStarGate ritualImpulseRef={ritualImpulseRef} />
-      <FloatingOrrery ritualImpulseRef={ritualImpulseRef} />
-      <EroticSacredVeils ritualImpulseRef={ritualImpulseRef} />
+      <ThelemicStarGate ritualImpulseRef={ritualImpulseRef} loading={loading} oracleLoading={oracleLoading} hasActiveCard={hasActiveCard} hasOracleReading={hasOracleReading} />
+      <FloatingOrrery ritualImpulseRef={ritualImpulseRef} loading={loading} oracleLoading={oracleLoading} hasOracleReading={hasOracleReading} />
+      <EroticSacredVeils ritualImpulseRef={ritualImpulseRef} oracleLoading={oracleLoading} hasActiveCard={hasActiveCard} hasOracleReading={hasOracleReading} />
 
       <XenoObelisk x={-1.72} z={-0.95} height={1.35} />
       <XenoObelisk x={1.72} z={-0.95} height={1.35} />
