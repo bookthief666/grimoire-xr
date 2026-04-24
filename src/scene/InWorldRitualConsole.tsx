@@ -1,5 +1,6 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Text } from '@react-three/drei'
+import * as THREE from 'three'
 import type { ForgePhase, TechLevel, Tone, Tradition } from '../types/grimoire'
 
 type Option<T extends string> = {
@@ -135,20 +136,32 @@ function PanelFrame({
         <meshStandardMaterial
           color="#120606"
           emissive="#2a0a0a"
-          emissiveIntensity={0.42}
+          emissiveIntensity={0.46}
           transparent
           opacity={0.94}
+          side={THREE.DoubleSide}
         />
       </mesh>
 
       <mesh position={[0, 0, 0.006]}>
         <planeGeometry args={[2.53, 3.03]} />
-        <meshBasicMaterial color="#ffb000" transparent opacity={0.12} />
+        <meshBasicMaterial
+          color="#ffb000"
+          transparent
+          opacity={0.14}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
       </mesh>
 
       <mesh position={[0, 1.36, 0.014]}>
         <planeGeometry args={[2.24, 0.26]} />
-        <meshBasicMaterial color="#2a0a0a" transparent opacity={0.82} />
+        <meshBasicMaterial
+          color="#2a0a0a"
+          transparent
+          opacity={0.84}
+          side={THREE.DoubleSide}
+        />
       </mesh>
 
       <Text
@@ -167,6 +180,41 @@ function PanelFrame({
   )
 }
 
+function MiniConsoleFrame({
+  children,
+}: {
+  children: ReactNode
+}) {
+  return (
+    <group>
+      <mesh>
+        <planeGeometry args={[1.25, 0.58]} />
+        <meshStandardMaterial
+          color="#120606"
+          emissive="#2a0a0a"
+          emissiveIntensity={0.42}
+          transparent
+          opacity={0.92}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, 0, 0.006]}>
+        <planeGeometry args={[1.33, 0.66]} />
+        <meshBasicMaterial
+          color="#ffb000"
+          transparent
+          opacity={0.16}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      {children}
+    </group>
+  )
+}
+
 function RayButton({
   label,
   position,
@@ -174,7 +222,10 @@ function RayButton({
   disabled = false,
   danger = false,
   primary = false,
+  targetLabel,
+  disabledLabel,
   onClick,
+  onTargetChange,
 }: {
   label: string
   position: [number, number, number]
@@ -182,25 +233,31 @@ function RayButton({
   disabled?: boolean
   danger?: boolean
   primary?: boolean
+  targetLabel?: string
+  disabledLabel?: string
   onClick: () => void
+  onTargetChange: (label: string | null) => void
 }) {
   const [hovered, setHovered] = useState(false)
 
   const active = !disabled
   const baseColor = danger ? '#3a0808' : primary ? '#4a1608' : '#201010'
   const glowColor = danger ? '#ff5050' : primary ? '#ffcf7c' : '#d89b6b'
+  const displayedLabel = disabled && disabledLabel ? disabledLabel : label
 
   return (
     <group
       position={position}
-      scale={hovered && active ? 1.06 : 1}
+      scale={hovered && active ? 1.075 : 1}
       onPointerOver={(event) => {
         event.stopPropagation()
-        if (active) setHovered(true)
+        setHovered(true)
+        onTargetChange(targetLabel ?? label)
       }}
       onPointerOut={(event) => {
         event.stopPropagation()
         setHovered(false)
+        onTargetChange(null)
       }}
       onClick={(event) => {
         event.stopPropagation()
@@ -210,18 +267,21 @@ function RayButton({
       <mesh>
         <planeGeometry args={[width, 0.2]} />
         <meshBasicMaterial
-          color={active ? baseColor : '#130707'}
+          color={active ? baseColor : '#100606'}
           transparent
-          opacity={active ? 0.94 : 0.44}
+          opacity={active ? 0.95 : 0.46}
+          side={THREE.DoubleSide}
         />
       </mesh>
 
       <mesh position={[0, 0, 0.006]}>
-        <planeGeometry args={[width + 0.08, 0.28]} />
+        <planeGeometry args={[width + 0.09, 0.29]} />
         <meshBasicMaterial
           color={hovered && active ? glowColor : '#8f5b00'}
           transparent
-          opacity={hovered && active ? 0.32 : 0.14}
+          opacity={hovered && active ? 0.42 : active ? 0.16 : 0.08}
+          depthWrite={false}
+          side={THREE.DoubleSide}
         />
       </mesh>
 
@@ -233,16 +293,17 @@ function RayButton({
         color={active ? (hovered ? '#ffffff' : '#ffcf7c') : '#6f5435'}
         maxWidth={width - 0.08}
       >
-        {label}
+        {displayedLabel}
       </Text>
 
-      <mesh position={[0, 0, 0.032]}>
-        <planeGeometry args={[width + 0.22, 0.42]} />
+      <mesh position={[0, 0, 0.035]}>
+        <planeGeometry args={[width + 0.24, 0.44]} />
         <meshBasicMaterial
           color="#ffffff"
           transparent
           opacity={0.001}
           depthWrite={false}
+          side={THREE.DoubleSide}
         />
       </mesh>
     </group>
@@ -255,12 +316,14 @@ function ValueStepper({
   y,
   onPrevious,
   onNext,
+  onTargetChange,
 }: {
   label: string
   value: string
   y: number
   onPrevious: () => void
   onNext: () => void
+  onTargetChange: (label: string | null) => void
 }) {
   return (
     <group position={[0, y, 0.04]}>
@@ -279,12 +342,19 @@ function ValueStepper({
         label="‹"
         position={[-0.45, 0, 0.01]}
         width={0.25}
+        targetLabel={`Previous ${label}`}
         onClick={onPrevious}
+        onTargetChange={onTargetChange}
       />
 
       <mesh position={[0.2, 0, 0]}>
         <planeGeometry args={[1.08, 0.23]} />
-        <meshBasicMaterial color="#160909" transparent opacity={0.92} />
+        <meshBasicMaterial
+          color="#160909"
+          transparent
+          opacity={0.92}
+          side={THREE.DoubleSide}
+        />
       </mesh>
 
       <Text
@@ -302,7 +372,9 @@ function ValueStepper({
         label="›"
         position={[0.85, 0, 0.01]}
         width={0.25}
+        targetLabel={`Next ${label}`}
         onClick={onNext}
+        onTargetChange={onTargetChange}
       />
     </group>
   )
@@ -331,12 +403,31 @@ export function InWorldRitualConsole({
   onClearOracle,
   onClearRitual,
 }: RitualConsoleProps) {
+  const [collapsed, setCollapsed] = useState(false)
+  const [targetLabel, setTargetLabel] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!subject.trim()) {
+      onSubjectChange(SUBJECT_OPTIONS[0])
+    }
+  }, [subject, onSubjectChange])
+
+  useEffect(() => {
+    if (!intent.trim()) {
+      onIntentChange(INTENT_OPTIONS[0])
+    }
+
+    if (!oracleQuestion.trim()) {
+      onOracleQuestionChange(INTENT_OPTIONS[0])
+    }
+  }, [intent, oracleQuestion, onIntentChange, onOracleQuestionChange])
+
   const selectedSubject = useMemo(() => {
-    return SUBJECT_OPTIONS.includes(subject) ? subject : SUBJECT_OPTIONS[0]
+    return subject.trim() || SUBJECT_OPTIONS[0]
   }, [subject])
 
   const selectedIntent = useMemo(() => {
-    return INTENT_OPTIONS.includes(intent) ? intent : INTENT_OPTIONS[0]
+    return intent.trim() || INTENT_OPTIONS[0]
   }, [intent])
 
   const traditionLabel =
@@ -349,10 +440,58 @@ export function InWorldRitualConsole({
     TECH_LEVEL_OPTIONS.find((option) => option.value === techLevel)?.label ?? techLevel
 
   const canBegin = !loading && selectedSubject.trim().length >= 2
-  const canConsult = hasDeck && !oracleLoading && oracleQuestion.trim().length >= 3
+  const canConsult =
+    hasDeck &&
+    !loading &&
+    !oracleLoading &&
+    oracleQuestion.trim().length >= 3
+
+  const statusText = `PHASE: ${forgePhase.toUpperCase()} // DECK: ${
+    hasDeck ? 'ACTIVE' : 'NONE'
+  } // ORACLE: ${hasOracleReading ? 'READING' : oracleLoading ? 'CONSULTING' : 'EMPTY'}`
+
+  if (collapsed) {
+    return (
+      <group position={[-1.85, 1.28, -0.55]} rotation={[0, 0.36, 0]}>
+        <MiniConsoleFrame>
+          <Text
+            position={[-0.5, 0.19, 0.03]}
+            anchorX="left"
+            anchorY="middle"
+            fontSize={0.055}
+            color="#ffcf7c"
+            maxWidth={1.0}
+          >
+            RITUAL CONSOLE
+          </Text>
+
+          <Text
+            position={[-0.5, 0.02, 0.03]}
+            anchorX="left"
+            anchorY="middle"
+            fontSize={0.04}
+            color={loading || oracleLoading ? '#ffcf7c' : '#8b6a45'}
+            maxWidth={1.0}
+          >
+            {forgePhase.toUpperCase()}
+          </Text>
+
+          <RayButton
+            label="OPEN"
+            position={[0.34, -0.16, 0.04]}
+            width={0.58}
+            primary
+            targetLabel="Open Ritual Console"
+            onClick={() => setCollapsed(false)}
+            onTargetChange={setTargetLabel}
+          />
+        </MiniConsoleFrame>
+      </group>
+    )
+  }
 
   return (
-    <group position={[0, 1.65, 1.05]} rotation={[0, Math.PI, 0]}>
+    <group position={[-1.72, 1.5, -0.58]} rotation={[0, 0.36, 0]}>
       <PanelFrame title="VR RITUAL CONSOLE">
         <Text
           position={[-1.02, 1.03, 0.04]}
@@ -363,8 +502,17 @@ export function InWorldRitualConsole({
           maxWidth={2.04}
           lineHeight={1.24}
         >
-          Use the ray pointer to configure and begin the working without leaving VR.
+          Configure, begin, consult, and clear the working without leaving VR.
         </Text>
+
+        <RayButton
+          label="HIDE"
+          position={[0.82, 1.22, 0.05]}
+          width={0.48}
+          targetLabel="Hide Ritual Console"
+          onClick={() => setCollapsed(true)}
+          onTargetChange={setTargetLabel}
+        />
 
         <ValueStepper
           label="Subject"
@@ -376,6 +524,7 @@ export function InWorldRitualConsole({
           onNext={() => {
             onSubjectChange(cycleArrayValue(SUBJECT_OPTIONS, selectedSubject, 1))
           }}
+          onTargetChange={setTargetLabel}
         />
 
         <ValueStepper
@@ -388,6 +537,7 @@ export function InWorldRitualConsole({
           onNext={() => {
             onTraditionChange(cycleOptionValue(TRADITION_OPTIONS, tradition, 1))
           }}
+          onTargetChange={setTargetLabel}
         />
 
         <ValueStepper
@@ -400,6 +550,7 @@ export function InWorldRitualConsole({
           onNext={() => {
             onToneChange(cycleOptionValue(TONE_OPTIONS, tone, 1))
           }}
+          onTargetChange={setTargetLabel}
         />
 
         <ValueStepper
@@ -412,6 +563,7 @@ export function InWorldRitualConsole({
           onNext={() => {
             onTechLevelChange(cycleOptionValue(TECH_LEVEL_OPTIONS, techLevel, 1))
           }}
+          onTargetChange={setTargetLabel}
         />
 
         <ValueStepper
@@ -428,61 +580,70 @@ export function InWorldRitualConsole({
             onIntentChange(nextIntent)
             onOracleQuestionChange(nextIntent)
           }}
+          onTargetChange={setTargetLabel}
         />
 
         <RayButton
           label={loading ? 'FORGING…' : 'BEGIN RITUAL'}
+          disabledLabel="WAIT"
           position={[-0.56, -0.88, 0.05]}
           width={0.92}
           primary
           disabled={!canBegin}
+          targetLabel="Begin Ritual"
           onClick={() => {
-            onSubjectChange(selectedSubject)
-            onIntentChange(selectedIntent)
             onOracleQuestionChange(selectedIntent)
             void onBeginRitual()
           }}
+          onTargetChange={setTargetLabel}
         />
 
         <RayButton
           label={oracleLoading ? 'CONSULTING…' : 'CONSULT ORACLE'}
+          disabledLabel={!hasDeck ? 'NO DECK' : 'WAIT'}
           position={[0.56, -0.88, 0.05]}
           width={0.92}
           primary
           disabled={!canConsult}
+          targetLabel="Consult Oracle"
           onClick={() => {
             void onConsultOracle()
           }}
+          onTargetChange={setTargetLabel}
         />
 
         <RayButton
           label="CLEAR ORACLE"
+          disabledLabel="EMPTY"
           position={[-0.56, -1.17, 0.05]}
           width={0.92}
           disabled={!hasOracleReading}
+          targetLabel="Clear Oracle Reading"
           onClick={onClearOracle}
+          onTargetChange={setTargetLabel}
         />
 
         <RayButton
           label="CLEAR RITUAL"
+          disabledLabel="LOCKED"
           position={[0.56, -1.17, 0.05]}
           width={0.92}
           danger
           disabled={loading}
+          targetLabel="Clear Ritual"
           onClick={onClearRitual}
+          onTargetChange={setTargetLabel}
         />
 
         <Text
-          position={[0, -1.38, 0.04]}
+          position={[0, -1.36, 0.04]}
           anchorX="center"
           anchorY="middle"
-          fontSize={0.043}
-          color={loading || oracleLoading ? '#ffcf7c' : '#8b6a45'}
+          fontSize={0.04}
+          color={targetLabel ? '#ffffff' : '#8b6a45'}
           maxWidth={2.0}
         >
-          {`PHASE: ${forgePhase.toUpperCase()} // DECK: ${hasDeck ? 'ACTIVE' : 'NONE'} // ORACLE: ${
-            hasOracleReading ? 'READING' : 'EMPTY'
-          }`}
+          {targetLabel ? `TARGET: ${targetLabel.toUpperCase()}` : statusText}
         </Text>
       </PanelFrame>
     </group>
