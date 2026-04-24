@@ -1080,7 +1080,7 @@ export default function App() {
                 hasDeck={Boolean(engine.deck)}
                 suggestedQuestions={suggestedQuestions}
                 onQuestionChange={engine.setOracleQuestion}
-                onConsult={engine.consultCurrentOracle}
+                onConsult={engine.consultActiveOracle}
                 onClear={engine.clearOracleReading}
                 onSuggestedQuestionClick={useSuggestedQuestion}
               />

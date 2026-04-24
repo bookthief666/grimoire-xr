@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { consultOracle, generateDeck } from '../services/content'
 import {
   grimoireDeckSchema,
-  oracleReadingSchema,
   techLevelSchema,
   toneSchema,
   traditionSchema,
@@ -18,7 +17,7 @@ import {
   type Tradition,
 } from '../types/grimoire'
 
-const ARCHIVE_VERSION = 2
+const ARCHIVE_VERSION = 1
 const ARCHIVE_KEY = 'grimoire-xr:last-ritual'
 
 type GrimoireEngineState = {
@@ -27,40 +26,49 @@ type GrimoireEngineState = {
   tone: Tone
   techLevel: TechLevel
   intent: string
+
   forgePhase: ForgePhase
   deck: GrimoireDeck | null
   dossier: SubjectDossier | null
   selection: RitualSelection
   loading: boolean
   error: string | null
-  oracleQuestion: string
-  oracleReading: OracleReading | null
-  oracleLoading: boolean
-  oracleError: string | null
+
   oraclePlaceholder: string | null
   archivePlaceholder: string | null
   hasSavedRitual: boolean
   lastSavedAt: string | null
+
+  oracleQuestion: string
+  oracleReading: OracleReading | null
+  oracleLoading: boolean
+  oracleError: string | null
 }
 
 export type GrimoireEngine = GrimoireEngineState & {
   cards: GrimoireCard[]
   focusedCard: GrimoireCard | null
   altarCard: GrimoireCard | null
+
   setSubject: (subject: string) => void
   setTradition: (tradition: Tradition) => void
   setTone: (tone: Tone) => void
   setTechLevel: (techLevel: TechLevel) => void
   setIntent: (intent: string) => void
-  setOracleQuestion: (question: string) => void
+
   beginRitual: () => Promise<void>
-  consultCurrentOracle: () => Promise<void>
-  clearOracleReading: () => void
   activateCard: (cardId: number) => void
+  clearCardSelection: () => void
   clearRitual: () => void
+
   saveCurrentRitual: () => boolean
   loadMostRecentArchive: () => boolean
   clearArchive: () => void
+
+  setOracleQuestion: (question: string) => void
+  consultActiveOracle: () => Promise<void>
+  clearOracleReading: () => void
+
   acknowledgeAltarLanding: () => void
 }
 
@@ -71,8 +79,6 @@ type PersistedRitualArchive = {
   deck: GrimoireDeck
   dossier: SubjectDossier
   selection: RitualSelection
-  oracleQuestion: string
-  oracleReading: OracleReading | null
 }
 
 const INITIAL_SELECTION: RitualSelection = {
@@ -144,11 +150,6 @@ function normalizeRitualConfig(raw: unknown, deck: GrimoireDeck): RitualConfig {
   }
 }
 
-function normalizeOracleReading(raw: unknown): OracleReading | null {
-  const parsed = oracleReadingSchema.safeParse(raw)
-  return parsed.success ? parsed.data : null
-}
-
 function parseArchivePayload(raw: unknown): PersistedRitualArchive | null {
   if (!isObject(raw)) return null
 
@@ -163,9 +164,6 @@ function parseArchivePayload(raw: unknown): PersistedRitualArchive | null {
       ? raw.savedAt
       : new Date().toISOString()
 
-  const oracleQuestion =
-    typeof raw.oracleQuestion === 'string' ? raw.oracleQuestion : ''
-
   return {
     version: ARCHIVE_VERSION,
     savedAt,
@@ -173,8 +171,6 @@ function parseArchivePayload(raw: unknown): PersistedRitualArchive | null {
     deck,
     dossier: deck.dossier,
     selection: normalizeSelection(raw.selection, deck),
-    oracleQuestion,
-    oracleReading: normalizeOracleReading(raw.oracleReading),
   }
 }
 
@@ -217,14 +213,10 @@ function createArchivePayload({
   ritualConfig,
   deck,
   selection,
-  oracleQuestion,
-  oracleReading,
 }: {
   ritualConfig: RitualConfig
   deck: GrimoireDeck
   selection: RitualSelection
-  oracleQuestion: string
-  oracleReading: OracleReading | null
 }): PersistedRitualArchive {
   return {
     version: ARCHIVE_VERSION,
@@ -233,8 +225,6 @@ function createArchivePayload({
     deck,
     dossier: deck.dossier,
     selection: normalizeSelection(selection, deck),
-    oracleQuestion,
-    oracleReading,
   }
 }
 
@@ -244,6 +234,7 @@ export function useGrimoireEngine(): GrimoireEngine {
   const [tone, setToneState] = useState<Tone>('oracular')
   const [techLevel, setTechLevelState] = useState<TechLevel>('adept')
   const [intent, setIntentState] = useState('')
+
   const [forgePhase, setForgePhase] = useState<ForgePhase>('idle')
   const [deck, setDeck] = useState<GrimoireDeck | null>(null)
   const [dossier, setDossier] = useState<SubjectDossier | null>(null)
@@ -251,16 +242,16 @@ export function useGrimoireEngine(): GrimoireEngine {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const [archivePlaceholder, setArchivePlaceholder] = useState<string | null>(null)
+  const [hasSavedRitual, setHasSavedRitual] = useState(false)
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null)
+  const [forgedConfig, setForgedConfig] = useState<RitualConfig | null>(null)
+
   const [oracleQuestion, setOracleQuestionState] = useState('')
   const [oracleReading, setOracleReading] = useState<OracleReading | null>(null)
   const [oracleLoading, setOracleLoading] = useState(false)
   const [oracleError, setOracleError] = useState<string | null>(null)
   const [oraclePlaceholder, setOraclePlaceholder] = useState<string | null>(null)
-
-  const [archivePlaceholder, setArchivePlaceholder] = useState<string | null>(null)
-  const [hasSavedRitual, setHasSavedRitual] = useState(false)
-  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null)
-  const [forgedConfig, setForgedConfig] = useState<RitualConfig | null>(null)
 
   const cards = deck?.cards ?? []
 
@@ -291,18 +282,21 @@ export function useGrimoireEngine(): GrimoireEngine {
     setToneState(archive.ritualConfig.tone)
     setTechLevelState(archive.ritualConfig.techLevel)
     setIntentState(archive.ritualConfig.intent ?? '')
+
     setDeck(archive.deck)
     setDossier(archive.dossier)
     setSelection(archive.selection)
     setForgedConfig(archive.ritualConfig)
+
     setForgePhase('ready')
     setLoading(false)
     setError(null)
-    setOracleQuestionState(archive.oracleQuestion)
-    setOracleReading(archive.oracleReading)
+
+    setOracleReading(null)
     setOracleLoading(false)
     setOracleError(null)
-    setOraclePlaceholder(archive.oracleReading ? 'Loaded archived oracle reading.' : null)
+    setOraclePlaceholder('Archived ritual loaded. Oracle memory is fresh.')
+
     setHasSavedRitual(true)
     setLastSavedAt(archive.savedAt)
     setArchivePlaceholder('Loaded the most recent archived ritual.')
@@ -321,19 +315,13 @@ export function useGrimoireEngine(): GrimoireEngine {
   }, [])
 
   useEffect(() => {
-    if (!deck || !dossier || loading || oracleLoading) return
+    if (!deck || !dossier || loading) return
 
-    const ritualConfig = forgedConfig ?? {
-      ...currentInputConfig,
-      subject: deck.subject,
-    }
-
+    const ritualConfig = forgedConfig ?? currentInputConfig
     const payload = createArchivePayload({
       ritualConfig,
       deck,
       selection,
-      oracleQuestion,
-      oracleReading,
     })
 
     const didSave = writeArchive(payload)
@@ -343,17 +331,7 @@ export function useGrimoireEngine(): GrimoireEngine {
       setLastSavedAt(payload.savedAt)
       setArchivePlaceholder('Saved active ritual to local archive.')
     }
-  }, [
-    deck,
-    dossier,
-    selection,
-    forgedConfig,
-    currentInputConfig,
-    loading,
-    oracleLoading,
-    oracleQuestion,
-    oracleReading,
-  ])
+  }, [deck, dossier, selection, forgedConfig, currentInputConfig, loading])
 
   const setSubject = (nextSubject: string) => {
     setSubjectState(nextSubject)
@@ -384,7 +362,6 @@ export function useGrimoireEngine(): GrimoireEngine {
   const setOracleQuestion = (nextQuestion: string) => {
     setOracleQuestionState(nextQuestion)
     if (oracleError) setOracleError(null)
-    if (oraclePlaceholder) setOraclePlaceholder(null)
   }
 
   const beginRitual = async () => {
@@ -407,16 +384,17 @@ export function useGrimoireEngine(): GrimoireEngine {
     setLoading(true)
     setError(null)
     setArchivePlaceholder(null)
+
     setDeck(null)
     setDossier(null)
     setForgedConfig(null)
-    setOracleQuestionState('')
-    setOracleReading(null)
-    setOracleLoading(false)
-    setOracleError(null)
-    setOraclePlaceholder(null)
     setForgePhase('forging')
     setSelection(INITIAL_SELECTION)
+
+    setOracleReading(null)
+    setOracleError(null)
+    setOraclePlaceholder(null)
+    setOracleLoading(false)
 
     try {
       const generatedDeck = await generateDeck(ritualConfig)
@@ -433,57 +411,12 @@ export function useGrimoireEngine(): GrimoireEngine {
     }
   }
 
-  const consultCurrentOracle = async () => {
-    const trimmedQuestion = oracleQuestion.trim()
-
-    if (!deck) {
-      setOracleError('Forge or load a ritual before consulting the oracle.')
-      return
-    }
-
-    if (trimmedQuestion.length < 3) {
-      setOracleError('Enter an oracle question before consultation.')
-      return
-    }
-
-    const config: RitualConfig = forgedConfig ?? {
-      ...currentInputConfig,
-      subject: deck.subject,
-    }
-
-    const selectedCardIds = selection.focusedCardId ? [selection.focusedCardId] : undefined
-
-    setOracleLoading(true)
-    setOracleError(null)
-    setOraclePlaceholder('Consulting the oracle layer…')
-
-    try {
-      const reading = await consultOracle({
-        config,
-        deck,
-        question: trimmedQuestion,
-        selectedCardIds,
-      })
-
-      setOracleReading(reading)
-      setOraclePlaceholder('Oracle reading assembled.')
-      setArchivePlaceholder('Oracle reading added to local archive.')
-    } catch (err) {
-      setOracleError(err instanceof Error ? err.message : 'Oracle consultation failed unexpectedly.')
-      setOraclePlaceholder(null)
-    } finally {
-      setOracleLoading(false)
-    }
-  }
-
-  const clearOracleReading = () => {
-    setOracleReading(null)
-    setOracleError(null)
-    setOraclePlaceholder('Oracle reading cleared.')
-  }
-
   const activateCard = (cardId: number) => {
     setSelection({ focusedCardId: cardId, altarCardId: cardId })
+  }
+
+  const clearCardSelection = () => {
+    setSelection(INITIAL_SELECTION)
   }
 
   const clearRitual = () => {
@@ -491,15 +424,15 @@ export function useGrimoireEngine(): GrimoireEngine {
     setDossier(null)
     setForgedConfig(null)
     setSelection(INITIAL_SELECTION)
-    setOracleQuestionState('')
-    setOracleReading(null)
-    setOracleLoading(false)
-    setOracleError(null)
-    setOraclePlaceholder(null)
     setForgePhase('idle')
     setError(null)
     setArchivePlaceholder('Active ritual cleared. Local archive preserved.')
     setLoading(false)
+
+    setOracleReading(null)
+    setOracleLoading(false)
+    setOracleError(null)
+    setOraclePlaceholder(null)
   }
 
   const saveCurrentRitual = () => {
@@ -508,17 +441,11 @@ export function useGrimoireEngine(): GrimoireEngine {
       return false
     }
 
-    const ritualConfig = forgedConfig ?? {
-      ...currentInputConfig,
-      subject: deck.subject,
-    }
-
+    const ritualConfig = forgedConfig ?? currentInputConfig
     const payload = createArchivePayload({
       ritualConfig,
       deck,
       selection,
-      oracleQuestion,
-      oracleReading,
     })
 
     const didSave = writeArchive(payload)
@@ -557,6 +484,53 @@ export function useGrimoireEngine(): GrimoireEngine {
     setArchivePlaceholder('Local archive cleared.')
   }
 
+  const consultActiveOracle = async () => {
+    const question = oracleQuestion.trim()
+
+    if (!deck) {
+      setOracleError('Forge or load a ritual before consulting the oracle.')
+      setOraclePlaceholder(null)
+      return
+    }
+
+    if (question.length < 3) {
+      setOracleError('Enter an oracle question first.')
+      setOraclePlaceholder(null)
+      return
+    }
+
+    const config = forgedConfig ?? currentInputConfig
+    const selectedCardIds = focusedCard ? [focusedCard.id] : undefined
+
+    setOracleLoading(true)
+    setOracleError(null)
+    setOraclePlaceholder('Oracle consultation in progress.')
+
+    try {
+      const reading = await consultOracle({
+        config,
+        deck,
+        question,
+        selectedCardIds,
+      })
+
+      setOracleReading(reading)
+      setOraclePlaceholder('Oracle reading received.')
+    } catch (err) {
+      setOracleReading(null)
+      setOracleError(err instanceof Error ? err.message : 'Oracle consultation failed.')
+      setOraclePlaceholder(null)
+    } finally {
+      setOracleLoading(false)
+    }
+  }
+
+  const clearOracleReading = () => {
+    setOracleReading(null)
+    setOracleError(null)
+    setOraclePlaceholder(null)
+  }
+
   const acknowledgeAltarLanding = () => {
     // Future hook: archive timeline entries, oracle events, haptics, or ritual analytics.
   }
@@ -567,37 +541,47 @@ export function useGrimoireEngine(): GrimoireEngine {
     tone,
     techLevel,
     intent,
+
     forgePhase,
     deck,
     dossier,
     selection,
     loading,
     error,
-    oracleQuestion,
-    oracleReading,
-    oracleLoading,
-    oracleError,
+
     oraclePlaceholder,
     archivePlaceholder,
     hasSavedRitual,
     lastSavedAt,
+
+    oracleQuestion,
+    oracleReading,
+    oracleLoading,
+    oracleError,
+
     cards,
     focusedCard,
     altarCard,
+
     setSubject,
     setTradition,
     setTone,
     setTechLevel,
     setIntent,
-    setOracleQuestion,
+
     beginRitual,
-    consultCurrentOracle,
-    clearOracleReading,
     activateCard,
+    clearCardSelection,
     clearRitual,
+
     saveCurrentRitual,
     loadMostRecentArchive,
     clearArchive,
+
+    setOracleQuestion,
+    consultActiveOracle,
+    clearOracleReading,
+
     acknowledgeAltarLanding,
   }
 }
