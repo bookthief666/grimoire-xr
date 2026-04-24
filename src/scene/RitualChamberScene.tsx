@@ -30,6 +30,9 @@ type ManifestState = {
   activationId: number
 }
 
+const SHOW_LEGACY_VR_CONSOLE = false
+const SHOW_LEGACY_CARD_ARC = false
+
 let ritualAudioCtx: AudioContext | null = null
 
 function playRitualSting() {
@@ -871,29 +874,32 @@ export function RitualChamberScene({
         onCardSelect={handleSelect}
       />
 
-      <InWorldRitualConsole
-        subject={subject}
-        tradition={tradition}
-        tone={tone}
-        techLevel={techLevel}
-        intent={intent}
-        forgePhase={forgePhase}
-        loading={loading}
-        hasDeck={hasDeck}
-        oracleQuestion={oracleQuestion}
-        oracleLoading={oracleLoading}
-        hasOracleReading={hasOracleReading}
-        onSubjectChange={onSubjectChange}
-        onTraditionChange={onTraditionChange}
-        onToneChange={onToneChange}
-        onTechLevelChange={onTechLevelChange}
-        onIntentChange={onIntentChange}
-        onOracleQuestionChange={onOracleQuestionChange}
-        onBeginRitual={onBeginRitual}
-        onConsultOracle={onConsultOracle}
-        onClearOracle={onClearOracle}
-        onClearRitual={onClearRitual}
-      />
+      {SHOW_LEGACY_VR_CONSOLE ? (
+
+        <InWorldRitualConsole
+          subject={subject}
+          tradition={tradition}
+          tone={tone}
+          techLevel={techLevel}
+          intent={intent}
+          forgePhase={forgePhase}
+          loading={loading}
+          hasDeck={hasDeck}
+          oracleQuestion={oracleQuestion}
+          oracleLoading={oracleLoading}
+          hasOracleReading={hasOracleReading}
+          onSubjectChange={onSubjectChange}
+          onTraditionChange={onTraditionChange}
+          onToneChange={onToneChange}
+          onTechLevelChange={onTechLevelChange}
+          onIntentChange={onIntentChange}
+          onOracleQuestionChange={onOracleQuestionChange}
+          onBeginRitual={onBeginRitual}
+          onConsultOracle={onConsultOracle}
+          onClearOracle={onClearOracle}
+          onClearRitual={onClearRitual}
+        />
+      ) : null}
 
       <Altar
         manifest={manifest}
@@ -901,11 +907,14 @@ export function RitualChamberScene({
         onLanding={handleLanding}
       />
 
-      <CardArc
-        cards={cards}
-        selectedId={selectedCardId}
-        onSelect={handleSelect}
-      />
+      {SHOW_LEGACY_CARD_ARC ? (
+
+        <CardArc
+          cards={cards}
+          selectedId={selectedCardId}
+          onSelect={handleSelect}
+        />
+      ) : null}
 
       {shouldShowOraclePanels ? (
         <InWorldOraclePanels
