@@ -4,7 +4,7 @@ import { XR, createXRStore, useXR } from '@react-three/xr'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useGrimoireEngine } from './engine/useGrimoireEngine'
 import { RitualChamberScene } from './scene/RitualChamberScene'
-import type { TechLevel, Tone, Tradition } from './types/grimoire'
+import type { OracleReading, TechLevel, Tone, Tradition } from './types/grimoire'
 import {
   TECH_LEVEL_OPTIONS,
   TONE_OPTIONS,
@@ -276,7 +276,7 @@ function RitualControlPanel({
         <textarea
           value={intent}
           onChange={(event) => onIntentChange(event.target.value)}
-          placeholder="Optional: what specifically should the oracle reveal, diagnose, or clarify?"
+          placeholder="Optional: what specifically should the forge reveal, diagnose, or clarify?"
           rows={3}
           style={{
             width: '100%',
@@ -484,6 +484,224 @@ function RitualControlPanel({
 
       {error ? (
         <div style={{ marginTop: 10, fontSize: 12, color: '#ff7a7a' }}>{error}</div>
+      ) : null}
+    </div>
+  )
+}
+
+function OraclePanel({
+  question,
+  reading,
+  loading,
+  error,
+  placeholder,
+  hasDeck,
+  suggestedQuestions,
+  onQuestionChange,
+  onConsult,
+  onClear,
+  onSuggestedQuestionClick,
+}: {
+  question: string
+  reading: OracleReading | null
+  loading: boolean
+  error: string | null
+  placeholder: string | null
+  hasDeck: boolean
+  suggestedQuestions: string[]
+  onQuestionChange: (question: string) => void
+  onConsult: () => Promise<void>
+  onClear: () => void
+  onSuggestedQuestionClick: (question: string) => void
+}) {
+  return (
+    <div
+      style={{
+        width: 420,
+        maxHeight: 'calc(100vh - 96px)',
+        overflowY: 'auto',
+        padding: 14,
+        border: '1px solid rgba(191, 123, 39, 0.42)',
+        background:
+          'linear-gradient(180deg, rgba(13,5,5,0.94) 0%, rgba(7,3,3,0.88) 100%)',
+        color: '#ffe0a6',
+        fontFamily: 'monospace',
+        backdropFilter: 'blur(8px)',
+        boxShadow: '0 0 30px rgba(0,0,0,0.45), 0 0 22px rgba(120,20,20,0.16)',
+      }}
+    >
+      <div style={{ marginBottom: 12, fontSize: 13, letterSpacing: 1.4 }}>
+        ORACLE // CONSULTATION
+      </div>
+
+      <SectionLabel>Question</SectionLabel>
+      <textarea
+        value={question}
+        onChange={(event) => onQuestionChange(event.target.value)}
+        placeholder="Ask the forged deck a precise question."
+        rows={3}
+        style={{
+          width: '100%',
+          boxSizing: 'border-box',
+          padding: '10px 12px',
+          background: '#120707',
+          border: '1px solid #6a2b10',
+          color: '#ffe0a6',
+          outline: 'none',
+          resize: 'vertical',
+          fontFamily: 'monospace',
+          marginBottom: 10,
+        }}
+      />
+
+      {suggestedQuestions.length > 0 ? (
+        <div style={{ marginBottom: 12 }}>
+          <SectionLabel>Use Suggested Question</SectionLabel>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {suggestedQuestions.map((suggested, index) => (
+              <button
+                key={`${suggested}-${index}`}
+                onClick={() => onSuggestedQuestionClick(suggested)}
+                style={{
+                  fontSize: 12,
+                  lineHeight: 1.35,
+                  color: '#d8bf9b',
+                  border: '1px solid rgba(143,91,0,0.25)',
+                  padding: '8px 10px',
+                  background: 'rgba(90,26,13,0.12)',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  fontFamily: 'monospace',
+                }}
+              >
+                {suggested}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+        <button
+          onClick={() => void onConsult()}
+          disabled={!hasDeck || loading || question.trim().length < 3}
+          style={{
+            flex: 1,
+            padding: '10px 12px',
+            background: !hasDeck || loading ? '#35140b' : '#5a1a0d',
+            color: '#ffe0a6',
+            border: '1px solid #d94e16',
+            cursor: !hasDeck || loading ? 'not-allowed' : 'pointer',
+            fontFamily: 'monospace',
+          }}
+        >
+          {loading ? 'Consulting…' : 'Consult Oracle'}
+        </button>
+
+        <SmallButton onClick={onClear} disabled={!reading && !error}>
+          Clear
+        </SmallButton>
+      </div>
+
+      {placeholder ? (
+        <div style={{ marginBottom: 10, fontSize: 11, color: '#bfa788' }}>
+          {placeholder}
+        </div>
+      ) : null}
+
+      {error ? (
+        <div style={{ marginBottom: 10, fontSize: 12, color: '#ff7a7a' }}>{error}</div>
+      ) : null}
+
+      {!hasDeck ? (
+        <InfoBlock>
+          <div style={{ fontSize: 12, lineHeight: 1.45, color: '#bfa788' }}>
+            Forge or load a ritual before consulting the oracle.
+          </div>
+        </InfoBlock>
+      ) : null}
+
+      {reading ? (
+        <div style={{ display: 'grid', gap: 10 }}>
+          <div>
+            <SectionLabel>{reading.spreadName}</SectionLabel>
+            <InfoBlock>
+              <div style={{ fontSize: 12, lineHeight: 1.5, color: '#d8bf9b' }}>
+                {reading.answer}
+              </div>
+            </InfoBlock>
+          </div>
+
+          <div>
+            <SectionLabel>Diagnosis</SectionLabel>
+            <InfoBlock>
+              <div style={{ fontSize: 12, lineHeight: 1.5, color: '#d8bf9b' }}>
+                {reading.diagnosis}
+              </div>
+            </InfoBlock>
+          </div>
+
+          <div>
+            <SectionLabel>Prescription</SectionLabel>
+            <InfoBlock>
+              <div style={{ fontSize: 12, lineHeight: 1.5, color: '#d8bf9b' }}>
+                {reading.prescription}
+              </div>
+            </InfoBlock>
+          </div>
+
+          {reading.warning ? (
+            <div>
+              <SectionLabel>Warning</SectionLabel>
+              <InfoBlock>
+                <div style={{ fontSize: 12, lineHeight: 1.5, color: '#d8bf9b' }}>
+                  {reading.warning}
+                </div>
+              </InfoBlock>
+            </div>
+          ) : null}
+
+          <div>
+            <SectionLabel>Drawn Cards</SectionLabel>
+            <div style={{ display: 'grid', gap: 8 }}>
+              {reading.drawnCards.map((card) => (
+                <InfoBlock key={`${reading.id}-${card.cardId}-${card.position}`}>
+                  <div style={{ fontSize: 12, color: '#ffcf7c', marginBottom: 4 }}>
+                    {card.position}: {card.cardName}
+                  </div>
+                  <div style={{ fontSize: 12, lineHeight: 1.45, color: '#d8bf9b', marginBottom: 8 }}>
+                    {card.interpretation}
+                  </div>
+                  <div style={{ fontSize: 11, lineHeight: 1.4, color: '#bfa788' }}>
+                    {card.operativeInstruction}
+                  </div>
+                </InfoBlock>
+              ))}
+            </div>
+          </div>
+
+          {reading.keywords.length > 0 ? (
+            <div>
+              <SectionLabel>Keywords</SectionLabel>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {reading.keywords.map((keyword) => (
+                  <div
+                    key={keyword}
+                    style={{
+                      padding: '5px 8px',
+                      border: '1px solid rgba(143,91,0,0.35)',
+                      background: 'rgba(90,26,13,0.22)',
+                      fontSize: 11,
+                      color: '#e6c48f',
+                    }}
+                  >
+                    {keyword}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
       ) : null}
     </div>
   )
@@ -703,6 +921,7 @@ function CeremonyOverlay({
 export default function App() {
   const [isVR, setIsVR] = useState(false)
   const [showRitualPanel, setShowRitualPanel] = useState(true)
+  const [showOraclePanel, setShowOraclePanel] = useState(true)
   const [showActiveCardPanel, setShowActiveCardPanel] = useState(true)
   const [showInWorldPanels, setShowInWorldPanels] = useState(true)
   const engine = useGrimoireEngine()
@@ -712,12 +931,19 @@ export default function App() {
     [engine.focusedCard],
   )
 
+  const suggestedQuestions = engine.dossier?.suggestedQuestions ?? []
+
   const handleEnterVR = async () => {
     try {
       await xrStore.enterVR()
     } catch (err) {
       console.error('Failed to enter VR', err)
     }
+  }
+
+  const useSuggestedQuestion = (question: string) => {
+    engine.setOracleQuestion(question)
+    setShowOraclePanel(true)
   }
 
   return (
@@ -776,7 +1002,7 @@ export default function App() {
                 onToneChange={engine.setTone}
                 onTechLevelChange={engine.setTechLevel}
                 onIntentChange={engine.setIntent}
-                onSuggestedQuestionClick={engine.setIntent}
+                onSuggestedQuestionClick={useSuggestedQuestion}
                 onBegin={engine.beginRitual}
                 onClear={engine.clearRitual}
                 onSaveRitual={() => {
@@ -797,7 +1023,7 @@ export default function App() {
                 archetype={engine.dossier?.archetype ?? null}
                 magicalDiagnosis={engine.dossier?.magicalDiagnosis ?? null}
                 operativeAdvice={engine.dossier?.operativeAdvice ?? null}
-                suggestedQuestions={engine.dossier?.suggestedQuestions ?? []}
+                suggestedQuestions={suggestedQuestions}
                 hasSavedRitual={engine.hasSavedRitual}
                 lastSavedAt={engine.lastSavedAt}
                 archiveMessage={engine.archivePlaceholder}
@@ -822,6 +1048,60 @@ export default function App() {
               }}
             >
               Open Ritual Panel
+            </button>
+          )}
+
+          {showOraclePanel ? (
+            <div style={{ position: 'fixed', top: 76, left: 16, zIndex: 13 }}>
+              <button
+                onClick={() => setShowOraclePanel(false)}
+                style={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  zIndex: 14,
+                  background: '#120707',
+                  color: '#d7b891',
+                  border: '1px solid rgba(143,91,0,0.4)',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  fontFamily: 'monospace',
+                }}
+              >
+                ×
+              </button>
+
+              <OraclePanel
+                question={engine.oracleQuestion}
+                reading={engine.oracleReading}
+                loading={engine.oracleLoading}
+                error={engine.oracleError}
+                placeholder={engine.oraclePlaceholder}
+                hasDeck={Boolean(engine.deck)}
+                suggestedQuestions={suggestedQuestions}
+                onQuestionChange={engine.setOracleQuestion}
+                onConsult={engine.consultCurrentOracle}
+                onClear={engine.clearOracleReading}
+                onSuggestedQuestionClick={useSuggestedQuestion}
+              />
+            </div>
+          ) : (
+            <button
+              onClick={() => setShowOraclePanel(true)}
+              style={{
+                position: 'fixed',
+                top: 76,
+                left: 16,
+                zIndex: 13,
+                padding: '10px 12px',
+                background: '#120000',
+                color: '#ffcf7c',
+                border: '1px solid rgba(191,123,39,0.45)',
+                fontFamily: 'monospace',
+                cursor: 'pointer',
+              }}
+            >
+              Open Oracle
             </button>
           )}
 
@@ -898,6 +1178,7 @@ export default function App() {
             altarCard={engine.altarCard}
             focusedCard={engine.focusedCard}
             dossier={engine.dossier}
+            oracleReading={engine.oracleReading}
             showInWorldPanels={showInWorldPanels}
             onCardActivate={(card) => engine.activateCard(card.id)}
             onAltarLanding={engine.acknowledgeAltarLanding}

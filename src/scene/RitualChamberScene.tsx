@@ -9,7 +9,7 @@ import { Edges, Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { PALETTE } from '../theme/palette'
-import type { GrimoireCard, SubjectDossier } from '../types/grimoire'
+import type { GrimoireCard, OracleReading, SubjectDossier } from '../types/grimoire'
 import { InWorldOraclePanels } from './InWorldOraclePanels'
 
 type ManifestState = {
@@ -717,6 +717,7 @@ export function RitualChamberScene({
   altarCard,
   focusedCard = null,
   dossier = null,
+  oracleReading = null,
   showInWorldPanels = true,
   onCardActivate,
   onAltarLanding,
@@ -726,6 +727,7 @@ export function RitualChamberScene({
   altarCard: GrimoireCard | null
   focusedCard?: GrimoireCard | null
   dossier?: SubjectDossier | null
+  oracleReading?: OracleReading | null
   showInWorldPanels?: boolean
   onCardActivate: (card: GrimoireCard) => void
   onAltarLanding: () => void
@@ -771,7 +773,7 @@ export function RitualChamberScene({
   }
 
   const shouldShowOraclePanels =
-    showInWorldPanels && (Boolean(dossier) || Boolean(focusedCard))
+    showInWorldPanels && (Boolean(dossier) || Boolean(focusedCard) || Boolean(oracleReading))
 
   return (
     <group>
@@ -793,7 +795,11 @@ export function RitualChamberScene({
       />
 
       {shouldShowOraclePanels ? (
-        <InWorldOraclePanels dossier={dossier ?? null} focusedCard={focusedCard ?? null} />
+        <InWorldOraclePanels
+          dossier={dossier ?? null}
+          focusedCard={focusedCard ?? null}
+          oracleReading={oracleReading ?? null}
+        />
       ) : null}
 
       <Text
