@@ -14,6 +14,11 @@ import './index.css'
 
 const xrStore = createXRStore()
 
+function flatPanelDebugEnabled() {
+  if (typeof window === 'undefined') return false
+  return new URLSearchParams(window.location.search).has('debugPanels')
+}
+
 function XRSessionBridge({
   onVRChange,
 }: {
@@ -165,6 +170,8 @@ function FloatingOpenButton({
   onClick: () => void
   style: React.CSSProperties
 }) {
+  if (!flatPanelDebugEnabled()) return null
+
   return (
     <button
       onClick={onClick}
@@ -940,9 +947,9 @@ function CeremonyOverlay({
 
 export default function App() {
   const [isVR, setIsVR] = useState(false)
-  const [showRitualPanel, setShowRitualPanel] = useState(true)
-  const [showActiveCardPanel, setShowActiveCardPanel] = useState(true)
-  const [showOraclePanel, setShowOraclePanel] = useState(true)
+  const [showRitualPanel, setShowRitualPanel] = useState(() => flatPanelDebugEnabled())
+  const [showActiveCardPanel, setShowActiveCardPanel] = useState(() => flatPanelDebugEnabled())
+  const [showOraclePanel, setShowOraclePanel] = useState(() => flatPanelDebugEnabled())
   const [showInWorldPanels, setShowInWorldPanels] = useState(true)
   const engine = useGrimoireEngine()
 
