@@ -77,7 +77,7 @@ const INTENT_OPTIONS = [
 ]
 
 const TABLE_Y = 0.08
-const WORKBENCH_SCALE = 0.52
+const WORKBENCH_SCALE = 0.48
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
@@ -188,95 +188,6 @@ function TableHexagram({
       <TableBar a={points[1]} b={points[3]} color="#ff5a1f" opacity={0.64} />
       <TableBar a={points[3]} b={points[5]} color="#ff5a1f" opacity={0.64} />
       <TableBar a={points[5]} b={points[1]} color="#ff5a1f" opacity={0.64} />
-    </group>
-  )
-}
-
-function TableButton({
-  label,
-  x,
-  z,
-  width = 0.42,
-  disabled = false,
-  primary = false,
-  danger = false,
-  onClick,
-}: {
-  label: string
-  x: number
-  z: number
-  width?: number
-  disabled?: boolean
-  primary?: boolean
-  danger?: boolean
-  onClick: () => void
-}) {
-  const [hovered, setHovered] = useState(false)
-
-  const color = danger ? '#3a0808' : primary ? '#4a1608' : '#1a0c08'
-  const glow = danger ? '#ff4040' : primary ? '#ffcf7c' : '#ff9a00'
-
-  return (
-    <group
-      position={[x, TABLE_Y + 0.024, z]}
-      rotation={[-Math.PI / 2, 0, 0]}
-      scale={hovered && !disabled ? 1.06 : 1}
-      onPointerOver={(event) => {
-        event.stopPropagation()
-        setHovered(true)
-      }}
-      onPointerOut={(event) => {
-        event.stopPropagation()
-        setHovered(false)
-      }}
-      onClick={(event) => {
-        event.stopPropagation()
-        if (!disabled) onClick()
-      }}
-    >
-      <mesh>
-        <planeGeometry args={[width, 0.18]} />
-        <meshBasicMaterial
-          color={disabled ? '#0b0605' : color}
-          transparent
-          opacity={disabled ? 0.44 : 0.88}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh position={[0, 0, 0.012]}>
-        <planeGeometry args={[width + 0.08, 0.26]} />
-        <meshBasicMaterial
-          color={glow}
-          transparent
-          opacity={hovered && !disabled ? 0.34 : 0.1}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <Text
-        position={[0, 0.003, 0.025]}
-        fontSize={0.034}
-        color={disabled ? '#6d5135' : hovered ? '#ffffff' : '#ffd18a'}
-        anchorX="center"
-        anchorY="middle"
-        maxWidth={width - 0.04}
-      >
-        {label}
-      </Text>
-
-      <mesh position={[0, 0, 0.04]}>
-        <planeGeometry args={[width + 0.18, 0.34]} />
-        <meshBasicMaterial
-          color="#ffffff"
-          transparent
-          opacity={0.001}
-          depthWrite={false}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
     </group>
   )
 }
@@ -732,6 +643,213 @@ function DeckTray({
   )
 }
 
+function FloatingSigilButton({
+  sigil,
+  label,
+  x,
+  active = false,
+  disabled = false,
+  danger = false,
+  onClick,
+}: {
+  sigil: string
+  label: string
+  x: number
+  active?: boolean
+  disabled?: boolean
+  danger?: boolean
+  onClick: () => void
+}) {
+  const [hovered, setHovered] = useState(false)
+
+  const baseColor = danger ? '#3a0707' : active ? '#3a1808' : '#120807'
+  const glowColor = danger ? '#ff3030' : active ? '#ffcf7c' : '#ff9a00'
+  const textColor = disabled ? '#5f4932' : hovered || active ? '#fff0c0' : '#d99b58'
+
+  return (
+    <group
+      position={[x, TABLE_Y + 0.42, 0.92]}
+      rotation={[-0.18, 0, 0]}
+      scale={hovered && !disabled ? 1.08 : 1}
+      onPointerOver={(event) => {
+        event.stopPropagation()
+        setHovered(true)
+      }}
+      onPointerOut={(event) => {
+        event.stopPropagation()
+        setHovered(false)
+      }}
+      onClick={(event) => {
+        event.stopPropagation()
+        if (!disabled) onClick()
+      }}
+    >
+      <mesh>
+        <circleGeometry args={[0.14, 32]} />
+        <meshBasicMaterial
+          color={disabled ? '#070403' : baseColor}
+          transparent
+          opacity={disabled ? 0.42 : 0.86}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, 0, 0.01]}>
+        <ringGeometry args={[0.17, 0.185, 36]} />
+        <meshBasicMaterial
+          color={glowColor}
+          transparent
+          opacity={disabled ? 0.14 : hovered || active ? 0.82 : 0.42}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, 0, 0.018]}>
+        <circleGeometry args={[0.25, 32]} />
+        <meshBasicMaterial
+          color={glowColor}
+          transparent
+          opacity={disabled ? 0.035 : hovered || active ? 0.18 : 0.075}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <Text
+        position={[0, 0.003, 0.04]}
+        fontSize={0.078}
+        color={textColor}
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={0.22}
+      >
+        {sigil}
+      </Text>
+
+      {hovered ? (
+        <Text
+          position={[0, -0.27, 0.05]}
+          fontSize={0.033}
+          color="#ffd18a"
+          anchorX="center"
+          anchorY="middle"
+          maxWidth={0.52}
+        >
+          {label}
+        </Text>
+      ) : null}
+
+      <mesh position={[0, 0, 0.07]}>
+        <planeGeometry args={[0.48, 0.48]} />
+        <meshBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.001}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+    </group>
+  )
+}
+
+function FloatingSigilDock({
+  menuMode,
+  loading,
+  oracleLoading,
+  canForge,
+  canConsult,
+  hasOracleReading,
+  onToggleForge,
+  onToggleSpread,
+  onBeginRitual,
+  onConsultOracle,
+  onClearOracle,
+  onReset,
+}: {
+  menuMode: WorkbenchMode
+  loading: boolean
+  oracleLoading: boolean
+  canForge: boolean
+  canConsult: boolean
+  hasOracleReading: boolean
+  onToggleForge: () => void
+  onToggleSpread: () => void
+  onBeginRitual: () => void
+  onConsultOracle: () => void
+  onClearOracle: () => void
+  onReset: () => void
+}) {
+  return (
+    <group>
+      <mesh position={[0, TABLE_Y + 0.42, 0.94]} rotation={[-0.18, 0, 0]}>
+        <planeGeometry args={[2.18, 0.34]} />
+        <meshBasicMaterial
+          color="#050202"
+          transparent
+          opacity={0.36}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <FloatingSigilButton
+        sigil="✶"
+        label={menuMode === 'forge' ? 'Close Forge Menu' : 'Open Forge Menu'}
+        x={-0.82}
+        active={menuMode === 'forge'}
+        onClick={onToggleForge}
+      />
+
+      <FloatingSigilButton
+        sigil="⌬"
+        label={menuMode === 'spread' ? 'Hide Spread' : 'Reveal Spread'}
+        x={-0.49}
+        active={menuMode === 'spread'}
+        onClick={onToggleSpread}
+      />
+
+      <FloatingSigilButton
+        sigil={loading ? '…' : '⚚'}
+        label={loading ? 'Forging Deck' : 'Forge Deck'}
+        x={-0.16}
+        active={loading}
+        disabled={!canForge}
+        onClick={onBeginRitual}
+      />
+
+      <FloatingSigilButton
+        sigil={oracleLoading ? '…' : '☉'}
+        label={oracleLoading ? 'Consulting Oracle' : 'Consult Oracle'}
+        x={0.17}
+        active={oracleLoading}
+        disabled={!canConsult}
+        onClick={onConsultOracle}
+      />
+
+      <FloatingSigilButton
+        sigil="✕"
+        label="Clear Oracle"
+        x={0.5}
+        disabled={!hasOracleReading}
+        onClick={onClearOracle}
+      />
+
+      <FloatingSigilButton
+        sigil="↺"
+        label="Reset Ritual"
+        x={0.83}
+        danger
+        onClick={onReset}
+      />
+    </group>
+  )
+}
+
+
 export function RitualWorkbench({
   cards,
   selectedCardId,
@@ -811,7 +929,7 @@ export function RitualWorkbench({
     hasDeck && !loading && !oracleLoading && oracleQuestion.trim().length >= 3
 
   return (
-    <group position={[0, 0.86, -0.58]} scale={WORKBENCH_SCALE}>
+    <group position={[0, 0.82, -0.84]} scale={WORKBENCH_SCALE}>
       <mesh position={[0, TABLE_Y - 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <boxGeometry args={[3.3, 1.85, 0.08]} />
         <meshStandardMaterial
@@ -914,60 +1032,19 @@ export function RitualWorkbench({
         />
       ) : null}
 
-      <TableButton
-        label={menuMode === 'forge' ? 'CLOSE' : 'CONFIG'}
-        x={-1.34}
-        z={0.86}
-        width={0.52}
-        primary={menuMode === 'forge'}
-        onClick={() => setMenuMode(menuMode === 'forge' ? 'closed' : 'forge')}
-      />
-
-      <TableButton
-        label={menuMode === 'spread' ? 'HIDE SPREAD' : 'SPREAD'}
-        x={-0.76}
-        z={0.86}
-        width={0.58}
-        primary={menuMode === 'spread'}
-        onClick={() => setMenuMode(menuMode === 'spread' ? 'closed' : 'spread')}
-      />
-
-      <TableButton
-        label={loading ? 'FORGING' : 'FORGE'}
-        x={-0.16}
-        z={0.86}
-        width={0.52}
-        primary
-        disabled={!canForge}
-        onClick={() => void onBeginRitual()}
-      />
-
-      <TableButton
-        label={oracleLoading ? 'ASKING' : 'ORACLE'}
-        x={0.43}
-        z={0.86}
-        width={0.52}
-        primary
-        disabled={!canConsult}
-        onClick={() => void onConsultOracle()}
-      />
-
-      <TableButton
-        label="CLEAR"
-        x={0.98}
-        z={0.86}
-        width={0.48}
-        disabled={!hasOracleReading}
-        onClick={onClearOracle}
-      />
-
-      <TableButton
-        label="RESET"
-        x={1.47}
-        z={0.86}
-        width={0.48}
-        danger
-        onClick={() => {
+      <FloatingSigilDock
+        menuMode={menuMode}
+        loading={loading}
+        oracleLoading={oracleLoading}
+        canForge={canForge}
+        canConsult={canConsult}
+        hasOracleReading={hasOracleReading}
+        onToggleForge={() => setMenuMode(menuMode === 'forge' ? 'closed' : 'forge')}
+        onToggleSpread={() => setMenuMode(menuMode === 'spread' ? 'closed' : 'spread')}
+        onBeginRitual={() => void onBeginRitual()}
+        onConsultOracle={() => void onConsultOracle()}
+        onClearOracle={onClearOracle}
+        onReset={() => {
           setCardOffsets({})
           onClearRitual()
         }}
