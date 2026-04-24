@@ -435,10 +435,174 @@ function ProcessionCircuits() {
   )
 }
 
+
+function RitualStateConduit({
+  ritualImpulseRef,
+  loading = false,
+  oracleLoading = false,
+  hasActiveCard = false,
+  hasOracleReading = false,
+}: Props) {
+  const columnRef = useRef<THREE.MeshBasicMaterial>(null)
+  const ringARef = useRef<THREE.MeshBasicMaterial>(null)
+  const ringBRef = useRef<THREE.MeshBasicMaterial>(null)
+  const crownRef = useRef<THREE.Group>(null)
+
+  const active =
+    loading || oracleLoading || hasActiveCard || hasOracleReading
+
+  const stateLabel = oracleLoading
+    ? 'ORACLE CHANNEL OPEN'
+    : loading
+      ? 'FORGE CURRENT RISING'
+      : hasOracleReading
+        ? 'ORACLE INSCRIPTION SEALED'
+        : hasActiveCard
+          ? 'ARCANUM UNDER LENS'
+          : 'TEMPLE DORMANT'
+
+  const stateColor = oracleLoading || hasOracleReading
+    ? '#9a6bff'
+    : hasActiveCard
+      ? '#ffcf7c'
+      : loading
+        ? '#ff3d5a'
+        : '#b8860b'
+
+  useFrame(({ clock }, delta) => {
+    const t = clock.getElapsedTime()
+    const impulse = ritualImpulseRef.current
+    const activeBoost = active ? 1 : 0
+
+    if (columnRef.current) {
+      columnRef.current.opacity = active
+        ? Math.min(0.5, 0.16 + Math.sin(t * 2.2) * 0.05 + impulse * 0.18)
+        : 0.045 + Math.sin(t * 0.5) * 0.015
+    }
+
+    if (ringARef.current) {
+      ringARef.current.opacity = active
+        ? 0.46 + Math.sin(t * 1.7) * 0.12
+        : 0.16
+    }
+
+    if (ringBRef.current) {
+      ringBRef.current.opacity = active
+        ? 0.34 + Math.sin(t * 2.1 + 1.1) * 0.1
+        : 0.11
+    }
+
+    if (crownRef.current) {
+      crownRef.current.rotation.y += delta * (0.18 + activeBoost * 0.34 + impulse * 0.28)
+      crownRef.current.position.y = 1.78 + Math.sin(t * 1.15) * 0.025 + activeBoost * 0.05
+      const scale = 1 + activeBoost * 0.08 + Math.sin(t * 1.6) * 0.018
+      crownRef.current.scale.setScalar(scale)
+    }
+  })
+
+  return (
+    <group position={[0, 0, -0.82]} raycast={noRaycast}>
+      <mesh position={[0, 0.95, 0]} raycast={noRaycast}>
+        <cylinderGeometry args={[0.34, 0.18, 1.85, 32, 1, true]} />
+        <meshBasicMaterial
+          ref={columnRef}
+          color={stateColor}
+          transparent
+          opacity={0.08}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, 0.12, 0]} rotation={[-Math.PI / 2, 0, 0]} raycast={noRaycast}>
+        <ringGeometry args={[0.42, 0.45, 72]} />
+        <meshBasicMaterial
+          ref={ringARef}
+          color={stateColor}
+          transparent
+          opacity={0.18}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, 0.18, 0]} rotation={[-Math.PI / 2, 0, Math.PI / 8]} raycast={noRaycast}>
+        <ringGeometry args={[0.72, 0.735, 96]} />
+        <meshBasicMaterial
+          ref={ringBRef}
+          color={oracleLoading || hasOracleReading ? '#d9b5ff' : '#ffcf7c'}
+          transparent
+          opacity={0.14}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <group ref={crownRef} position={[0, 1.78, 0]} raycast={noRaycast}>
+        <HoloRing
+          position={[0, 0, 0]}
+          rotation={[Math.PI / 2, 0, 0]}
+          radius={0.38}
+          tube={0.009}
+          color={stateColor}
+          opacity={active ? 0.52 : 0.18}
+        />
+        <HoloRing
+          position={[0, 0, 0]}
+          rotation={[0.82, 0, 0]}
+          radius={0.3}
+          tube={0.007}
+          color={oracleLoading || hasOracleReading ? '#d9b5ff' : '#ffd18a'}
+          opacity={active ? 0.42 : 0.14}
+        />
+
+        {['✶', '☉', '☽', '♀'].map((glyph, i) => {
+          const a = (i / 4) * Math.PI * 2
+          return (
+            <Text
+              key={glyph}
+              position={[Math.cos(a) * 0.48, Math.sin(a) * 0.1, Math.sin(a) * 0.48]}
+              fontSize={0.075}
+              color={stateColor}
+              anchorX="center"
+              anchorY="middle"
+              raycast={noRaycast}
+            >
+              {glyph}
+            </Text>
+          )
+        })}
+      </group>
+
+      <Text
+        position={[0, 2.08, 0]}
+        fontSize={0.065}
+        color={active ? stateColor : '#7b5536'}
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={1.65}
+        raycast={noRaycast}
+      >
+        {stateLabel}
+      </Text>
+    </group>
+  )
+}
+
 export function TempleXenotheurgy({ ritualImpulseRef, loading = false, oracleLoading = false, hasActiveCard = false, hasOracleReading = false }: Props) {
   return (
     <group>
       <ProcessionCircuits />
+      <RitualStateConduit
+        ritualImpulseRef={ritualImpulseRef}
+        loading={loading}
+        oracleLoading={oracleLoading}
+        hasActiveCard={hasActiveCard}
+        hasOracleReading={hasOracleReading}
+      />
       <QabalisticCircuitWall />
       <ThelemicStarGate ritualImpulseRef={ritualImpulseRef} loading={loading} oracleLoading={oracleLoading} hasActiveCard={hasActiveCard} hasOracleReading={hasOracleReading} />
       <FloatingOrrery ritualImpulseRef={ritualImpulseRef} loading={loading} oracleLoading={oracleLoading} hasOracleReading={hasOracleReading} />
