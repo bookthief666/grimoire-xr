@@ -21,6 +21,7 @@ import type {
 import { InWorldOraclePanels } from './InWorldOraclePanels'
 import { TempleAtmosphere } from './TempleAtmosphere'
 import { InWorldRitualConsole } from './InWorldRitualConsole'
+import { RitualWorkbench } from './RitualWorkbench'
 
 type ManifestState = {
   card: GrimoireCard
@@ -842,6 +843,33 @@ export function RitualChamberScene({
       <Pillar x={2.1} />
       <CeilingCrown ritualImpulseRef={ritualImpulseRef} />
       <Embers ritualImpulseRef={ritualImpulseRef} />
+
+      <RitualWorkbench
+        cards={cards}
+        selectedCardId={selectedCardId}
+        subject={subject}
+        tradition={tradition}
+        tone={tone}
+        techLevel={techLevel}
+        intent={intent}
+        forgePhase={forgePhase}
+        loading={loading}
+        hasDeck={hasDeck}
+        oracleQuestion={oracleQuestion}
+        oracleLoading={oracleLoading}
+        hasOracleReading={hasOracleReading}
+        onSubjectChange={onSubjectChange}
+        onTraditionChange={onTraditionChange}
+        onToneChange={onToneChange}
+        onTechLevelChange={onTechLevelChange}
+        onIntentChange={onIntentChange}
+        onOracleQuestionChange={onOracleQuestionChange}
+        onBeginRitual={onBeginRitual}
+        onConsultOracle={onConsultOracle}
+        onClearOracle={onClearOracle}
+        onClearRitual={onClearRitual}
+        onCardSelect={handleSelect}
+      />
 
       <InWorldRitualConsole
         subject={subject}
