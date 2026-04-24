@@ -11,6 +11,7 @@ import type { ForgePhase, TechLevel, Tone, Tradition } from '../types/grimoire'
 type ConsoleVec3 = [number, number, number]
 
 const CONSOLE_POSITION_STORAGE_KEY = 'grimoire-xr:ritual-console-offset:v1'
+const CONSOLE_SCALE_STORAGE_KEY = 'grimoire-xr:ritual-console-scale:v1'
 
 type ConsoleDragState = {
   startPoint: THREE.Vector3
@@ -27,6 +28,10 @@ function clampConsoleOffset([x, y, z]: ConsoleVec3): ConsoleVec3 {
     clampConsoleValue(y, -0.85, 0.95),
     clampConsoleValue(z, -0.75, 0.75),
   ]
+}
+
+function clampConsoleScale(value: number) {
+  return clampConsoleValue(value, 0.68, 1.16)
 }
 
 function addConsoleOffset(base: ConsoleVec3, offset: ConsoleVec3): ConsoleVec3 {
@@ -67,6 +72,111 @@ function writeStoredConsoleOffset(offset: ConsoleVec3) {
   } catch {
     // Non-critical: VR layout should still work without persistence.
   }
+}
+
+
+function readStoredConsoleScale() {
+  if (typeof window === 'undefined') return 0.92
+
+  try {
+    const raw = window.localStorage.getItem(CONSOLE_SCALE_STORAGE_KEY)
+    if (!raw) return 0.92
+
+    const parsed = JSON.parse(raw)
+    return typeof parsed === 'number' ? clampConsoleScale(parsed) : 0.92
+  } catch {
+    return 0.92
+  }
+}
+
+function writeStoredConsoleScale(scale: number) {
+  if (typeof window === 'undefined') return
+
+  try {
+    window.localStorage.setItem(CONSOLE_SCALE_STORAGE_KEY, JSON.stringify(scale))
+  } catch {
+    // Non-critical: VR layout should still work without persistence.
+  }
+}
+
+
+function resetStoredVrLayout() {
+  if (typeof window === 'undefined') return
+
+  try {
+    window.localStorage.removeItem('grimoire-xr:reading-panel-offsets:v1')
+    window.localStorage.removeItem('grimoire-xr:reading-panel-scales:v1')
+    window.localStorage.removeItem('grimoire-xr:ritual-console-offset:v1')
+    window.localStorage.removeItem('grimoire-xr:ritual-console-scale:v1')
+    window.location.reload()
+  } catch {
+    window.location.reload()
+  }
+}
+
+function ResetLayoutButton({
+  y = -1.52,
+}: {
+  y?: number
+}) {
+  return (
+    <group position={[0, y, 0.13]}>
+      <RayButton
+        label="RESET XR LAYOUT"
+        disabledLabel="RESET XR LAYOUT"
+        position={[0, 0, 0]}
+        width={0.86}
+        danger
+        targetLabel="Reset All VR Window Positions And Sizes"
+        onClick={resetStoredVrLayout}
+        onTargetChange={() => {}}
+      />
+    </group>
+  )
+}
+
+function ConsoleScaleControls({
+  scale,
+  onScaleChange,
+  onScaleReset,
+}: {
+  scale: number
+  onScaleChange: (scale: number) => void
+  onScaleReset: () => void
+}) {
+  return (
+    <group position={[0, -1.32, 0.13]}>
+      <RayButton
+        label="SMALL"
+        disabledLabel="SMALL"
+        position={[-0.42, 0, 0]}
+        width={0.34}
+        targetLabel="Smaller Window"
+        onClick={() => onScaleChange(clampConsoleScale(scale - 0.08))}
+        onTargetChange={() => {}}
+      />
+
+      <RayButton
+        label="BIG"
+        disabledLabel="BIG"
+        position={[0, 0, 0]}
+        width={0.26}
+        targetLabel="Larger Window"
+        onClick={() => onScaleChange(clampConsoleScale(scale + 0.08))}
+        onTargetChange={() => {}}
+      />
+
+      <RayButton
+        label="RESET SIZE"
+        disabledLabel="RESET"
+        position={[0.42, 0, 0]}
+        width={0.42}
+        targetLabel="Reset Window Size"
+        onClick={onScaleReset}
+        onTargetChange={() => {}}
+      />
+    </group>
+  )
 }
 
 function ConsoleDragHandle({
@@ -584,12 +694,17 @@ export function InWorldRitualConsole({
   const [targetLabel, setTargetLabel] = useState<string | null>(null)
   const [editorField, setEditorField] = useState<EditableField | null>(null)
   const [consoleOffset, setConsoleOffset] = useState<ConsoleVec3>(readStoredConsoleOffset)
+  const [consoleScale, setConsoleScale] = useState(readStoredConsoleScale)
   const [consoleDragging, setConsoleDragging] = useState(false)
   const consoleDragRef = useRef<ConsoleDragState | null>(null)
 
   useEffect(() => {
     writeStoredConsoleOffset(consoleOffset)
   }, [consoleOffset])
+
+  useEffect(() => {
+    writeStoredConsoleScale(consoleScale)
+  }, [consoleScale])
 
   const getConsolePosition = (base: ConsoleVec3): ConsoleVec3 => {
     return addConsoleOffset(base, consoleOffset)
@@ -687,7 +802,7 @@ export function InWorldRitualConsole({
 
   if (collapsed) {
     return (
-      <group position={getConsolePosition([-2.05, 1.14, -1.55])} rotation={[0, 0.54, 0]}>
+      <group position={getConsolePosition([-2.05, 1.14, -1.55])} rotation={[0, 0.54, 0]} scale={consoleScale}>
         <MiniConsoleFrame>
           <ConsoleDragHandle
             label="DRAG CONSOLE"
@@ -698,6 +813,13 @@ export function InWorldRitualConsole({
             onDragMove={updateConsoleDrag}
             onDragEnd={endConsoleDrag}
           />
+          <ConsoleScaleControls
+            scale={consoleScale}
+            onScaleChange={setConsoleScale}
+            onScaleReset={() => setConsoleScale(0.92)}
+          />
+
+          <ResetLayoutButton y={-0.08} />
           <Text
             position={[-0.44, 0.16, 0.03]}
             anchorX="left"
@@ -738,7 +860,7 @@ export function InWorldRitualConsole({
     const editorValue = getFieldValue(editorField)
 
     return (
-      <group position={getConsolePosition([-2.25, 1.26, -1.95])} rotation={[0, 0.58, 0]}>
+      <group position={getConsolePosition([-2.25, 1.26, -1.95])} rotation={[0, 0.58, 0]} scale={consoleScale}>
         <PanelFrame title="VR TEXT INPUT">
           <ConsoleDragHandle
             label="DRAG KEYBOARD"
@@ -748,6 +870,11 @@ export function InWorldRitualConsole({
             onDragStart={startConsoleDrag}
             onDragMove={updateConsoleDrag}
             onDragEnd={endConsoleDrag}
+          />
+          <ConsoleScaleControls
+            scale={consoleScale}
+            onScaleChange={setConsoleScale}
+            onScaleReset={() => setConsoleScale(0.92)}
           />
           <Text
             position={[-0.78, 0.78, 0.04]}
@@ -895,7 +1022,7 @@ export function InWorldRitualConsole({
   }
 
   return (
-    <group position={getConsolePosition([-2.25, 1.26, -1.95])} rotation={[0, 0.58, 0]}>
+    <group position={getConsolePosition([-2.25, 1.26, -1.95])} rotation={[0, 0.58, 0]} scale={consoleScale}>
       <PanelFrame title="VR RITUAL CONSOLE">
         <ConsoleDragHandle
           label="DRAG CONSOLE"
@@ -906,6 +1033,13 @@ export function InWorldRitualConsole({
           onDragMove={updateConsoleDrag}
           onDragEnd={endConsoleDrag}
         />
+        <ConsoleScaleControls
+          scale={consoleScale}
+          onScaleChange={setConsoleScale}
+          onScaleReset={() => setConsoleScale(0.92)}
+        />
+
+        <ResetLayoutButton />
         <Text
           position={[-0.78, 0.78, 0.04]}
           anchorX="left"
