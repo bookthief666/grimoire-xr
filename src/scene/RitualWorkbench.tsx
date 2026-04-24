@@ -339,12 +339,18 @@ function FloatingForgeMenu({
   onTechLevelChange,
   onIntentChange,
   onOracleQuestionChange,
+  loading,
+  canForge,
+  onBeginRitual,
 }: {
   activeSubject: string
   tradition: Tradition
   tone: Tone
   techLevel: TechLevel
   activeIntent: string
+  loading: boolean
+  canForge: boolean
+  onBeginRitual: () => void
   onSubjectChange: (subject: string) => void
   onTraditionChange: (tradition: Tradition) => void
   onToneChange: (tone: Tone) => void
@@ -355,7 +361,7 @@ function FloatingForgeMenu({
   return (
     <group position={[0, 1.06, 0.05]} scale={1.32}>
       <mesh>
-        <planeGeometry args={[1.75, 1.08]} />
+        <planeGeometry args={[1.75, 1.3]} />
         <meshStandardMaterial
           color="#0a0505"
           emissive="#241006"
@@ -369,7 +375,7 @@ function FloatingForgeMenu({
       </mesh>
 
       <mesh position={[0, 0, 0.012]}>
-        <planeGeometry args={[1.88, 1.2]} />
+        <planeGeometry args={[1.88, 1.42]} />
         <meshBasicMaterial
           color="#ff9a00"
           transparent
@@ -449,7 +455,7 @@ function FloatingForgeMenu({
       <FloatingDial
         label="INTENT"
         value={activeIntent}
-        y={-0.41}
+        y={-0.36}
         onPrevious={() => {
           const next = cycleString(INTENT_OPTIONS, activeIntent, -1)
           onIntentChange(next)
@@ -460,6 +466,15 @@ function FloatingForgeMenu({
           onIntentChange(next)
           onOracleQuestionChange(next)
         }}
+      />
+
+      <FloatingMenuButton
+        label={loading ? 'FORGING…' : 'IGNITE FORGE'}
+        x={0.18}
+        y={-0.55}
+        width={0.82}
+        disabled={!canForge}
+        onClick={onBeginRitual}
       />
     </group>
   )
@@ -758,27 +773,21 @@ function FloatingSigilButton({
 
 function FloatingSigilDock({
   menuMode,
-  loading,
   oracleLoading,
-  canForge,
   canConsult,
   hasOracleReading,
   onToggleForge,
   onToggleSpread,
-  onBeginRitual,
   onConsultOracle,
   onClearOracle,
   onReset,
 }: {
   menuMode: WorkbenchMode
-  loading: boolean
   oracleLoading: boolean
-  canForge: boolean
   canConsult: boolean
   hasOracleReading: boolean
   onToggleForge: () => void
   onToggleSpread: () => void
-  onBeginRitual: () => void
   onConsultOracle: () => void
   onClearOracle: () => void
   onReset: () => void
@@ -799,7 +808,7 @@ function FloatingSigilDock({
       <FloatingSigilButton
         sigil="✶"
         label={menuMode === 'forge' ? 'Close Forge Menu' : 'Open Forge Menu'}
-        x={-0.82}
+        x={-0.66}
         active={menuMode === 'forge'}
         onClick={onToggleForge}
       />
@@ -807,24 +816,15 @@ function FloatingSigilDock({
       <FloatingSigilButton
         sigil="⌬"
         label={menuMode === 'spread' ? 'Hide Spread' : 'Reveal Spread'}
-        x={-0.49}
+        x={-0.33}
         active={menuMode === 'spread'}
         onClick={onToggleSpread}
       />
 
       <FloatingSigilButton
-        sigil={loading ? '…' : '⚚'}
-        label={loading ? 'Forging Deck' : 'Forge Deck'}
-        x={-0.16}
-        active={loading}
-        disabled={!canForge}
-        onClick={onBeginRitual}
-      />
-
-      <FloatingSigilButton
         sigil={oracleLoading ? '…' : '☉'}
         label={oracleLoading ? 'Consulting Oracle' : 'Consult Oracle'}
-        x={0.17}
+        x={0}
         active={oracleLoading}
         disabled={!canConsult}
         onClick={onConsultOracle}
@@ -833,7 +833,7 @@ function FloatingSigilDock({
       <FloatingSigilButton
         sigil="✕"
         label="Clear Oracle"
-        x={0.5}
+        x={0.33}
         disabled={!hasOracleReading}
         onClick={onClearOracle}
       />
@@ -841,7 +841,7 @@ function FloatingSigilDock({
       <FloatingSigilButton
         sigil="↺"
         label="Reset Ritual"
-        x={0.83}
+        x={0.66}
         danger
         onClick={onReset}
       />
@@ -1023,6 +1023,9 @@ export function RitualWorkbench({
           tone={tone}
           techLevel={techLevel}
           activeIntent={activeIntent}
+          loading={loading}
+          canForge={canForge}
+          onBeginRitual={() => void onBeginRitual()}
           onSubjectChange={onSubjectChange}
           onTraditionChange={onTraditionChange}
           onToneChange={onToneChange}
@@ -1034,14 +1037,11 @@ export function RitualWorkbench({
 
       <FloatingSigilDock
         menuMode={menuMode}
-        loading={loading}
         oracleLoading={oracleLoading}
-        canForge={canForge}
         canConsult={canConsult}
         hasOracleReading={hasOracleReading}
         onToggleForge={() => setMenuMode(menuMode === 'forge' ? 'closed' : 'forge')}
         onToggleSpread={() => setMenuMode(menuMode === 'spread' ? 'closed' : 'spread')}
-        onBeginRitual={() => void onBeginRitual()}
         onConsultOracle={() => void onConsultOracle()}
         onClearOracle={onClearOracle}
         onReset={() => {
