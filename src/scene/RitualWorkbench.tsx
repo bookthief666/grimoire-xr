@@ -77,7 +77,7 @@ const INTENT_OPTIONS = [
 ]
 
 const TABLE_Y = 0.08
-const WORKBENCH_SCALE = 0.62
+const WORKBENCH_SCALE = 0.52
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
@@ -258,7 +258,7 @@ function TableButton({
 
       <Text
         position={[0, 0.003, 0.025]}
-        fontSize={0.04}
+        fontSize={0.034}
         color={disabled ? '#6d5135' : hovered ? '#ffffff' : '#ffd18a'}
         anchorX="center"
         anchorY="middle"
@@ -281,59 +281,279 @@ function TableButton({
   )
 }
 
-function TableDial({
+function FloatingMenuButton({
+  label,
+  x,
+  y,
+  width = 0.22,
+  disabled = false,
+  onClick,
+}: {
+  label: string
+  x: number
+  y: number
+  width?: number
+  disabled?: boolean
+  onClick: () => void
+}) {
+  const [hovered, setHovered] = useState(false)
+
+  return (
+    <group
+      position={[x, y, 0.075]}
+      scale={hovered && !disabled ? 1.04 : 1}
+      onPointerOver={(event) => {
+        event.stopPropagation()
+        setHovered(true)
+      }}
+      onPointerOut={(event) => {
+        event.stopPropagation()
+        setHovered(false)
+      }}
+      onClick={(event) => {
+        event.stopPropagation()
+        if (!disabled) onClick()
+      }}
+    >
+      <mesh>
+        <planeGeometry args={[width, 0.14]} />
+        <meshBasicMaterial
+          color={disabled ? '#100807' : '#241008'}
+          transparent
+          opacity={disabled ? 0.42 : 0.86}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, 0, 0.012]}>
+        <planeGeometry args={[width + 0.12, 0.24]} />
+        <meshBasicMaterial
+          color="#ffb000"
+          transparent
+          opacity={hovered && !disabled ? 0.32 : 0.08}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <Text
+        position={[0, 0.002, 0.026]}
+        fontSize={0.04}
+        color={disabled ? '#6d5135' : hovered ? '#ffffff' : '#ffd18a'}
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={width - 0.03}
+      >
+        {label}
+      </Text>
+
+      <mesh position={[0, 0, 0.04]}>
+        <planeGeometry args={[width + 0.2, 0.3]} />
+        <meshBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.001}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+    </group>
+  )
+}
+
+function FloatingDial({
   label,
   value,
-  z,
+  y,
   onPrevious,
   onNext,
 }: {
   label: string
   value: string
-  z: number
+  y: number
   onPrevious: () => void
   onNext: () => void
 }) {
   return (
-    <group>
+    <group position={[0, y, 0.04]}>
       <Text
-        position={[-1.38, TABLE_Y + 0.04, z]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        fontSize={0.035}
-        color="#b98855"
+        position={[-0.72, 0, 0.055]}
+        fontSize={0.034}
+        color="#9f744b"
         anchorX="left"
         anchorY="middle"
-        maxWidth={0.4}
+        maxWidth={0.38}
       >
         {label}
       </Text>
 
-      <TableButton label="‹" x={-0.55} z={z} width={0.18} onClick={onPrevious} />
+      <FloatingMenuButton label="‹" x={-0.28} y={0} width={0.16} onClick={onPrevious} />
 
-      <mesh
-        position={[0, TABLE_Y + 0.025, z]}
-        rotation={[-Math.PI / 2, 0, 0]}
-      >
-        <planeGeometry args={[0.74, 0.18]} />
-        <meshBasicMaterial color="#0d0605" transparent opacity={0.88} />
+      <mesh position={[0.18, 0, 0.045]}>
+        <planeGeometry args={[0.72, 0.15]} />
+        <meshBasicMaterial
+          color="#090505"
+          transparent
+          opacity={0.9}
+          side={THREE.DoubleSide}
+        />
       </mesh>
 
       <Text
-        position={[0, TABLE_Y + 0.052, z]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        fontSize={0.036}
+        position={[0.18, 0.002, 0.075]}
+        fontSize={0.034}
         color="#f2d4a2"
         anchorX="center"
         anchorY="middle"
-        maxWidth={0.68}
+        maxWidth={0.66}
       >
-        {shortText(value, 28)}
+        {shortText(value, 30)}
       </Text>
 
-      <TableButton label="›" x={0.55} z={z} width={0.18} onClick={onNext} />
+      <FloatingMenuButton label="›" x={0.65} y={0} width={0.16} onClick={onNext} />
     </group>
   )
 }
+
+function FloatingForgeMenu({
+  activeSubject,
+  tradition,
+  tone,
+  techLevel,
+  activeIntent,
+  onSubjectChange,
+  onTraditionChange,
+  onToneChange,
+  onTechLevelChange,
+  onIntentChange,
+  onOracleQuestionChange,
+}: {
+  activeSubject: string
+  tradition: Tradition
+  tone: Tone
+  techLevel: TechLevel
+  activeIntent: string
+  onSubjectChange: (subject: string) => void
+  onTraditionChange: (tradition: Tradition) => void
+  onToneChange: (tone: Tone) => void
+  onTechLevelChange: (techLevel: TechLevel) => void
+  onIntentChange: (intent: string) => void
+  onOracleQuestionChange: (question: string) => void
+}) {
+  return (
+    <group position={[0, 1.06, 0.05]} scale={1.32}>
+      <mesh>
+        <planeGeometry args={[1.75, 1.08]} />
+        <meshStandardMaterial
+          color="#0a0505"
+          emissive="#241006"
+          emissiveIntensity={0.42}
+          transparent
+          opacity={0.9}
+          roughness={0.28}
+          metalness={0.72}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, 0, 0.012]}>
+        <planeGeometry args={[1.88, 1.2]} />
+        <meshBasicMaterial
+          color="#ff9a00"
+          transparent
+          opacity={0.095}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <Text
+        position={[0, 0.45, 0.07]}
+        fontSize={0.05}
+        color="#ffd18a"
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={1.38}
+      >
+        FORGE CONFIGURATION
+      </Text>
+
+      <Text
+        position={[0, 0.36, 0.07]}
+        fontSize={0.026}
+        color="#8f6742"
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={1.42}
+      >
+        Choose the current. The table remembers the operation.
+      </Text>
+
+      <FloatingDial
+        label="SUBJECT"
+        value={activeSubject}
+        y={0.23}
+        onPrevious={() =>
+          onSubjectChange(cycleString(SUBJECT_OPTIONS, activeSubject, -1))
+        }
+        onNext={() =>
+          onSubjectChange(cycleString(SUBJECT_OPTIONS, activeSubject, 1))
+        }
+      />
+
+      <FloatingDial
+        label="TRADITION"
+        value={optionLabel(TRADITION_OPTIONS, tradition)}
+        y={0.07}
+        onPrevious={() =>
+          onTraditionChange(cycleOption(TRADITION_OPTIONS, tradition, -1))
+        }
+        onNext={() =>
+          onTraditionChange(cycleOption(TRADITION_OPTIONS, tradition, 1))
+        }
+      />
+
+      <FloatingDial
+        label="TONE"
+        value={optionLabel(TONE_OPTIONS, tone)}
+        y={-0.09}
+        onPrevious={() => onToneChange(cycleOption(TONE_OPTIONS, tone, -1))}
+        onNext={() => onToneChange(cycleOption(TONE_OPTIONS, tone, 1))}
+      />
+
+      <FloatingDial
+        label="LEVEL"
+        value={optionLabel(TECH_LEVEL_OPTIONS, techLevel)}
+        y={-0.25}
+        onPrevious={() =>
+          onTechLevelChange(cycleOption(TECH_LEVEL_OPTIONS, techLevel, -1))
+        }
+        onNext={() =>
+          onTechLevelChange(cycleOption(TECH_LEVEL_OPTIONS, techLevel, 1))
+        }
+      />
+
+      <FloatingDial
+        label="INTENT"
+        value={activeIntent}
+        y={-0.41}
+        onPrevious={() => {
+          const next = cycleString(INTENT_OPTIONS, activeIntent, -1)
+          onIntentChange(next)
+          onOracleQuestionChange(next)
+        }}
+        onNext={() => {
+          const next = cycleString(INTENT_OPTIONS, activeIntent, 1)
+          onIntentChange(next)
+          onOracleQuestionChange(next)
+        }}
+      />
+    </group>
+  )
+}
+
 
 function SpreadSlot({
   x,
@@ -591,7 +811,7 @@ export function RitualWorkbench({
     hasDeck && !loading && !oracleLoading && oracleQuestion.trim().length >= 3
 
   return (
-    <group position={[0, 0.62, -1.68]} scale={WORKBENCH_SCALE}>
+    <group position={[0, 0.86, -0.58]} scale={WORKBENCH_SCALE}>
       <mesh position={[0, TABLE_Y - 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <boxGeometry args={[3.3, 1.85, 0.08]} />
         <meshStandardMaterial
@@ -679,74 +899,25 @@ export function RitualWorkbench({
       ) : null}
 
       {menuMode === 'forge' ? (
-        <>
-          <TableDial
-            label="SUBJECT"
-        value={activeSubject}
-        z={-0.78}
-        onPrevious={() =>
-          onSubjectChange(cycleString(SUBJECT_OPTIONS, activeSubject, -1))
-        }
-        onNext={() =>
-          onSubjectChange(cycleString(SUBJECT_OPTIONS, activeSubject, 1))
-        }
-      />
-
-      <TableDial
-        label="TRADITION"
-        value={optionLabel(TRADITION_OPTIONS, tradition)}
-        z={-1.0}
-        onPrevious={() =>
-          onTraditionChange(cycleOption(TRADITION_OPTIONS, tradition, -1))
-        }
-        onNext={() =>
-          onTraditionChange(cycleOption(TRADITION_OPTIONS, tradition, 1))
-        }
-      />
-
-      <TableDial
-        label="TONE"
-        value={optionLabel(TONE_OPTIONS, tone)}
-        z={-1.22}
-        onPrevious={() => onToneChange(cycleOption(TONE_OPTIONS, tone, -1))}
-        onNext={() => onToneChange(cycleOption(TONE_OPTIONS, tone, 1))}
-      />
-
-      <TableDial
-        label="LEVEL"
-        value={optionLabel(TECH_LEVEL_OPTIONS, techLevel)}
-        z={-1.44}
-        onPrevious={() =>
-          onTechLevelChange(cycleOption(TECH_LEVEL_OPTIONS, techLevel, -1))
-        }
-        onNext={() =>
-          onTechLevelChange(cycleOption(TECH_LEVEL_OPTIONS, techLevel, 1))
-        }
-      />
-
-      <TableDial
-        label="INTENT"
-        value={activeIntent}
-        z={0.92}
-        onPrevious={() => {
-          const next = cycleString(INTENT_OPTIONS, activeIntent, -1)
-          onIntentChange(next)
-          onOracleQuestionChange(next)
-        }}
-        onNext={() => {
-          const next = cycleString(INTENT_OPTIONS, activeIntent, 1)
-          onIntentChange(next)
-          onOracleQuestionChange(next)
-        }}
-      />
-
-        </>
+        <FloatingForgeMenu
+          activeSubject={activeSubject}
+          tradition={tradition}
+          tone={tone}
+          techLevel={techLevel}
+          activeIntent={activeIntent}
+          onSubjectChange={onSubjectChange}
+          onTraditionChange={onTraditionChange}
+          onToneChange={onToneChange}
+          onTechLevelChange={onTechLevelChange}
+          onIntentChange={onIntentChange}
+          onOracleQuestionChange={onOracleQuestionChange}
+        />
       ) : null}
 
       <TableButton
         label={menuMode === 'forge' ? 'CLOSE' : 'CONFIG'}
         x={-1.34}
-        z={1.25}
+        z={0.86}
         width={0.52}
         primary={menuMode === 'forge'}
         onClick={() => setMenuMode(menuMode === 'forge' ? 'closed' : 'forge')}
@@ -755,7 +926,7 @@ export function RitualWorkbench({
       <TableButton
         label={menuMode === 'spread' ? 'HIDE SPREAD' : 'SPREAD'}
         x={-0.76}
-        z={1.25}
+        z={0.86}
         width={0.58}
         primary={menuMode === 'spread'}
         onClick={() => setMenuMode(menuMode === 'spread' ? 'closed' : 'spread')}
@@ -764,7 +935,7 @@ export function RitualWorkbench({
       <TableButton
         label={loading ? 'FORGING' : 'FORGE'}
         x={-0.16}
-        z={1.25}
+        z={0.86}
         width={0.52}
         primary
         disabled={!canForge}
@@ -774,7 +945,7 @@ export function RitualWorkbench({
       <TableButton
         label={oracleLoading ? 'ASKING' : 'ORACLE'}
         x={0.43}
-        z={1.25}
+        z={0.86}
         width={0.52}
         primary
         disabled={!canConsult}
@@ -784,7 +955,7 @@ export function RitualWorkbench({
       <TableButton
         label="CLEAR"
         x={0.98}
-        z={1.25}
+        z={0.86}
         width={0.48}
         disabled={!hasOracleReading}
         onClick={onClearOracle}
@@ -793,7 +964,7 @@ export function RitualWorkbench({
       <TableButton
         label="RESET"
         x={1.47}
-        z={1.25}
+        z={0.86}
         width={0.48}
         danger
         onClick={() => {
@@ -803,7 +974,7 @@ export function RitualWorkbench({
       />
 
       <Text
-        position={[0, TABLE_Y + 0.06, 0.72]}
+        position={[0, TABLE_Y + 0.052, 0.54]}
         rotation={[-Math.PI / 2, 0, 0]}
         fontSize={0.04}
         color={loading || oracleLoading ? '#ffcf7c' : '#9a6b48'}
