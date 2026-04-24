@@ -805,9 +805,9 @@ export function InWorldRitualConsole({
       <group position={getConsolePosition([-2.05, 1.14, -1.55])} rotation={[0, 0.54, 0]} scale={consoleScale}>
         <MiniConsoleFrame>
           <ConsoleDragHandle
-            label="DRAG CONSOLE"
+            label="▲"
             y={0.31}
-            width={0.92}
+            width={0.28}
             dragging={consoleDragging}
             onDragStart={startConsoleDrag}
             onDragMove={updateConsoleDrag}
@@ -818,8 +818,6 @@ export function InWorldRitualConsole({
             onScaleChange={setConsoleScale}
             onScaleReset={() => setConsoleScale(0.92)}
           />
-
-          <ResetLayoutButton y={-0.08} />
           <Text
             position={[-0.44, 0.16, 0.03]}
             anchorX="left"
@@ -863,9 +861,9 @@ export function InWorldRitualConsole({
       <group position={getConsolePosition([-2.25, 1.26, -1.95])} rotation={[0, 0.58, 0]} scale={consoleScale}>
         <PanelFrame title="VR TEXT INPUT">
           <ConsoleDragHandle
-            label="DRAG KEYBOARD"
+            label="▲"
             y={1.14}
-            width={1.16}
+            width={0.28}
             dragging={consoleDragging}
             onDragStart={startConsoleDrag}
             onDragMove={updateConsoleDrag}
@@ -1025,9 +1023,9 @@ export function InWorldRitualConsole({
     <group position={getConsolePosition([-2.25, 1.26, -1.95])} rotation={[0, 0.58, 0]} scale={consoleScale}>
       <PanelFrame title="VR RITUAL CONSOLE">
         <ConsoleDragHandle
-          label="DRAG CONSOLE"
+          label="▲"
           y={1.14}
-          width={1.16}
+          width={0.28}
           dragging={consoleDragging}
           onDragStart={startConsoleDrag}
           onDragMove={updateConsoleDrag}
