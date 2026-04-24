@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Text } from '@react-three/drei'
 import type { GrimoireCard, OracleReading, SubjectDossier } from '../types/grimoire'
 
@@ -8,7 +8,7 @@ type PanelPage = {
   color?: string
 }
 
-const PAGE_CHAR_LIMIT = 360
+const PAGE_CHAR_LIMIT = 260
 
 function cleanText(text: string | undefined | null) {
   return (text ?? '').replace(/\s+/g, ' ').trim()
@@ -23,7 +23,12 @@ function chunkText(text: string | undefined | null, limit = PAGE_CHAR_LIMIT) {
 
   while (remaining.length > limit) {
     const slice = remaining.slice(0, limit)
-    const breakPoint = Math.max(slice.lastIndexOf('. '), slice.lastIndexOf('; '), slice.lastIndexOf(', '), slice.lastIndexOf(' '))
+    const breakPoint = Math.max(
+      slice.lastIndexOf('. '),
+      slice.lastIndexOf('; '),
+      slice.lastIndexOf(', '),
+      slice.lastIndexOf(' '),
+    )
 
     const end = breakPoint > limit * 0.55 ? breakPoint + 1 : limit
     chunks.push(remaining.slice(0, end).trim())
@@ -31,6 +36,7 @@ function chunkText(text: string | undefined | null, limit = PAGE_CHAR_LIMIT) {
   }
 
   if (remaining) chunks.push(remaining)
+
   return chunks
 }
 
@@ -87,12 +93,143 @@ function formatCorrespondences(card: GrimoireCard) {
     .join(' • ')
 }
 
+function previousPage(current: number, count: number) {
+  if (count <= 1) return 0
+  return (current - 1 + count) % count
+}
+
+function nextPage(current: number, count: number) {
+  if (count <= 1) return 0
+  return (current + 1) % count
+}
+
+function PageButton({
+  label,
+  x,
+  onClick,
+  disabled = false,
+}: {
+  label: string
+  x: number
+  onClick: () => void
+  disabled?: boolean
+}) {
+  const [hovered, setHovered] = useState(false)
+
+  const active = !disabled
+  const buttonScale = hovered && active ? 1.08 : 1
+
+  return (
+    <group
+      position={[x, -1.08, 0.06]}
+      scale={buttonScale}
+      onPointerOver={(event) => {
+        event.stopPropagation()
+        if (active) setHovered(true)
+      }}
+      onPointerOut={(event) => {
+        event.stopPropagation()
+        setHovered(false)
+      }}
+      onClick={(event) => {
+        event.stopPropagation()
+        if (active) onClick()
+      }}
+    >
+      <mesh>
+        <planeGeometry args={[0.44, 0.18]} />
+        <meshBasicMaterial
+          color={active ? '#2a0a0a' : '#130707'}
+          transparent
+          opacity={active ? 0.92 : 0.45}
+        />
+      </mesh>
+
+      <mesh position={[0, 0, 0.004]}>
+        <planeGeometry args={[0.5, 0.25]} />
+        <meshBasicMaterial
+          color={active && hovered ? '#ffcf7c' : '#8f5b00'}
+          transparent
+          opacity={active ? 0.28 : 0.12}
+        />
+      </mesh>
+
+      <Text
+        position={[0, 0.004, 0.014]}
+        anchorX="center"
+        anchorY="middle"
+        fontSize={0.052}
+        color={active ? (hovered ? '#ffffff' : '#ffcf7c') : '#6f5435'}
+        maxWidth={0.38}
+      >
+        {label}
+      </Text>
+
+      <mesh position={[0, 0, 0.026]}>
+        <planeGeometry args={[0.78, 0.46]} />
+        <meshBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.001}
+          depthWrite={false}
+        />
+      </mesh>
+    </group>
+  )
+}
+
+function PaginationControls({
+  pageIndex,
+  pageCount,
+  onPrevious,
+  onNext,
+}: {
+  pageIndex: number
+  pageCount: number
+  onPrevious: () => void
+  onNext: () => void
+}) {
+  const hasPages = pageCount > 1
+
+  return (
+    <group>
+      <PageButton
+        label="‹ PREV"
+        x={-0.56}
+        onClick={onPrevious}
+        disabled={!hasPages}
+      />
+
+      <PageButton
+        label="NEXT ›"
+        x={0.56}
+        onClick={onNext}
+        disabled={!hasPages}
+      />
+
+      <Text
+        position={[0, -0.84, 0.045]}
+        anchorX="center"
+        anchorY="middle"
+        fontSize={0.046}
+        color={hasPages ? '#ffcf7c' : '#8b6a45'}
+        maxWidth={1.8}
+      >
+        {hasPages
+          ? `PAGE ${pageIndex + 1}/${pageCount} // TOUCH PANEL OR USE PREV / NEXT`
+          : `PAGE ${pageIndex + 1}/${pageCount}`}
+      </Text>
+    </group>
+  )
+}
+
 function PanelShell({
   position,
   rotation,
   title,
   pageIndex,
   pageCount,
+  onPreviousPage,
   onNextPage,
   children,
 }: {
@@ -101,66 +238,74 @@ function PanelShell({
   title: string
   pageIndex: number
   pageCount: number
+  onPreviousPage: () => void
   onNextPage: () => void
   children: ReactNode
 }) {
   const hasPages = pageCount > 1
+  const [hovered, setHovered] = useState(false)
 
   return (
     <group
       position={position}
       rotation={rotation}
+      onPointerOver={(event) => {
+        event.stopPropagation()
+        if (hasPages) setHovered(true)
+      }}
+      onPointerOut={(event) => {
+        event.stopPropagation()
+        setHovered(false)
+      }}
       onClick={(event) => {
         event.stopPropagation()
         if (hasPages) onNextPage()
       }}
     >
       <mesh>
-        <planeGeometry args={[2.1, 2.5]} />
+        <planeGeometry args={[2.2, 2.65]} />
         <meshStandardMaterial
-          color="#140707"
-          emissive="#2a0a0a"
-          emissiveIntensity={0.35}
+          color="#120606"
+          emissive={hovered && hasPages ? '#401010' : '#2a0a0a'}
+          emissiveIntensity={hovered && hasPages ? 0.52 : 0.38}
           transparent
           opacity={0.94}
         />
       </mesh>
 
-      <mesh position={[0, 0, 0.005]}>
-        <planeGeometry args={[2.16, 2.56]} />
-        <meshBasicMaterial color="#6a2b10" transparent opacity={0.28} />
+      <mesh position={[0, 0, 0.006]}>
+        <planeGeometry args={[2.28, 2.73]} />
+        <meshBasicMaterial
+          color={hovered && hasPages ? '#ffcf7c' : '#6a2b10'}
+          transparent
+          opacity={hovered && hasPages ? 0.34 : 0.26}
+        />
       </mesh>
 
-      <mesh position={[0, 1.16, 0.01]}>
-        <planeGeometry args={[1.92, 0.22]} />
-        <meshBasicMaterial color="#2a0a0a" transparent opacity={0.72} />
+      <mesh position={[0, 1.21, 0.012]}>
+        <planeGeometry args={[2.0, 0.24]} />
+        <meshBasicMaterial color="#2a0a0a" transparent opacity={0.74} />
       </mesh>
 
       <Text
-        position={[-0.9, 1.08, 0.02]}
+        position={[-0.94, 1.12, 0.026]}
         anchorX="left"
         anchorY="top"
-        fontSize={0.07}
+        fontSize={0.075}
         color="#ffcf7c"
-        maxWidth={1.8}
+        maxWidth={1.88}
       >
         {title}
       </Text>
 
       {children}
 
-      <Text
-        position={[0, -1.12, 0.02]}
-        anchorX="center"
-        anchorY="middle"
-        fontSize={0.04}
-        color={hasPages ? '#ffcf7c' : '#8b6a45'}
-        maxWidth={1.8}
-      >
-        {hasPages
-          ? `TAP / SELECT PANEL FOR NEXT PAGE ${pageIndex + 1}/${pageCount}`
-          : `PAGE ${pageIndex + 1}/${pageCount}`}
-      </Text>
+      <PaginationControls
+        pageIndex={pageIndex}
+        pageCount={pageCount}
+        onPrevious={onPreviousPage}
+        onNext={onNextPage}
+      />
     </group>
   )
 }
@@ -171,6 +316,7 @@ function PagedPanel({
   title,
   pages,
   pageIndex,
+  onPreviousPage,
   onNextPage,
 }: {
   position: [number, number, number]
@@ -178,6 +324,7 @@ function PagedPanel({
   title: string
   pages: PanelPage[]
   pageIndex: number
+  onPreviousPage: () => void
   onNextPage: () => void
 }) {
   const safePages =
@@ -201,27 +348,28 @@ function PagedPanel({
       title={title}
       pageIndex={safeIndex}
       pageCount={safePages.length}
+      onPreviousPage={onPreviousPage}
       onNextPage={onNextPage}
     >
       <Text
-        position={[-0.9, 0.86, 0.02]}
+        position={[-0.94, 0.86, 0.03]}
         anchorX="left"
         anchorY="top"
-        fontSize={0.055}
+        fontSize={0.058}
         color="#c58a53"
-        maxWidth={1.8}
+        maxWidth={1.88}
       >
         {page.heading.toUpperCase()}
       </Text>
 
       <Text
-        position={[-0.9, 0.72, 0.02]}
+        position={[-0.94, 0.68, 0.03]}
         anchorX="left"
         anchorY="top"
-        fontSize={0.049}
+        fontSize={0.06}
         color={page.color ?? '#f2d4a2'}
-        maxWidth={1.8}
-        lineHeight={1.34}
+        maxWidth={1.88}
+        lineHeight={1.32}
       >
         {page.body}
       </Text>
@@ -242,6 +390,18 @@ export function InWorldOraclePanels({
   const [cardPageIndex, setCardPageIndex] = useState(0)
   const [oraclePageIndex, setOraclePageIndex] = useState(0)
 
+  useEffect(() => {
+    setDossierPageIndex(0)
+  }, [dossier?.subject, dossier?.summary])
+
+  useEffect(() => {
+    setCardPageIndex(0)
+  }, [focusedCard?.id])
+
+  useEffect(() => {
+    setOraclePageIndex(0)
+  }, [oracleReading?.id])
+
   const dossierPages = useMemo(() => {
     if (!dossier) return []
 
@@ -250,13 +410,13 @@ export function InWorldOraclePanels({
         heading: 'Subject',
         body: dossier.subject,
         color: '#ffcf7c',
-        limit: 260,
+        limit: 220,
       },
       {
         heading: 'Archetype',
         body: dossier.archetype,
         color: '#f2d4a2',
-        limit: 320,
+        limit: 240,
       },
       {
         heading: 'Omen',
@@ -316,7 +476,7 @@ export function InWorldOraclePanels({
         heading: 'Question',
         body: oracleReading.question,
         color: '#ffcf7c',
-        limit: 260,
+        limit: 220,
       },
       {
         heading: 'Answer',
@@ -347,7 +507,7 @@ export function InWorldOraclePanels({
         heading: 'Keywords',
         body: oracleReading.keywords.join(', '),
         color: '#d8bf9b',
-        limit: 260,
+        limit: 220,
       },
     ])
   }, [oracleReading])
@@ -361,9 +521,14 @@ export function InWorldOraclePanels({
           title="Dossier"
           pages={dossierPages}
           pageIndex={dossierPageIndex}
+          onPreviousPage={() => {
+            setDossierPageIndex((current) =>
+              previousPage(current, dossierPages.length),
+            )
+          }}
           onNextPage={() => {
             setDossierPageIndex((current) =>
-              dossierPages.length ? (current + 1) % dossierPages.length : 0,
+              nextPage(current, dossierPages.length),
             )
           }}
         />
@@ -376,9 +541,14 @@ export function InWorldOraclePanels({
           title={focusedCard.name}
           pages={cardPages}
           pageIndex={cardPageIndex}
+          onPreviousPage={() => {
+            setCardPageIndex((current) =>
+              previousPage(current, cardPages.length),
+            )
+          }}
           onNextPage={() => {
             setCardPageIndex((current) =>
-              cardPages.length ? (current + 1) % cardPages.length : 0,
+              nextPage(current, cardPages.length),
             )
           }}
         />
@@ -391,9 +561,14 @@ export function InWorldOraclePanels({
           title="Oracle"
           pages={oraclePages}
           pageIndex={oraclePageIndex}
+          onPreviousPage={() => {
+            setOraclePageIndex((current) =>
+              previousPage(current, oraclePages.length),
+            )
+          }}
           onNextPage={() => {
             setOraclePageIndex((current) =>
-              oraclePages.length ? (current + 1) % oraclePages.length : 0,
+              nextPage(current, oraclePages.length),
             )
           }}
         />
