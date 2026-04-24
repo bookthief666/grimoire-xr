@@ -27,6 +27,7 @@ const DEFAULT_PANEL_OFFSETS: Record<PanelKind, Vec3> = {
 }
 
 const DEPTH_STEP = 0.24
+const PANEL_POSITION_STORAGE_KEY = 'grimoire-xr:reading-panel-offsets:v1'
 
 function cloneDefaultOffsets(): Record<PanelKind, Vec3> {
   return {
@@ -50,6 +51,51 @@ function clampPanelOffset([x, y, z]: Vec3): Vec3 {
 
 function rotationForOffset([x]: Vec3): [number, number, number] {
   return [0, clamp(-x * 0.14, -0.38, 0.38), 0]
+}
+
+function isStoredVec3(value: unknown): value is Vec3 {
+  return (
+    Array.isArray(value) &&
+    value.length === 3 &&
+    value.every((entry) => typeof entry === 'number' && Number.isFinite(entry))
+  )
+}
+
+function readStoredPanelOffsets(): Record<PanelKind, Vec3> {
+  const defaults = cloneDefaultOffsets()
+
+  if (typeof window === 'undefined') return defaults
+
+  try {
+    const raw = window.localStorage.getItem(PANEL_POSITION_STORAGE_KEY)
+    if (!raw) return defaults
+
+    const parsed = JSON.parse(raw) as Partial<Record<PanelKind, unknown>>
+
+    return {
+      dossier: isStoredVec3(parsed.dossier)
+        ? clampPanelOffset(parsed.dossier)
+        : defaults.dossier,
+      card: isStoredVec3(parsed.card)
+        ? clampPanelOffset(parsed.card)
+        : defaults.card,
+      oracle: isStoredVec3(parsed.oracle)
+        ? clampPanelOffset(parsed.oracle)
+        : defaults.oracle,
+    }
+  } catch {
+    return defaults
+  }
+}
+
+function writeStoredPanelOffsets(offsets: Record<PanelKind, Vec3>) {
+  if (typeof window === 'undefined') return
+
+  try {
+    window.localStorage.setItem(PANEL_POSITION_STORAGE_KEY, JSON.stringify(offsets))
+  } catch {
+    // Non-critical: VR layout should still work without persistence.
+  }
 }
 
 function asRecord(value: unknown): UnknownRecord {
@@ -792,8 +838,12 @@ export function InWorldOraclePanels({
   oracleReading = null,
 }: InWorldOraclePanelsProps) {
   const [panelOffsets, setPanelOffsets] = useState<Record<PanelKind, Vec3>>(
-    cloneDefaultOffsets,
+    readStoredPanelOffsets,
   )
+
+  useEffect(() => {
+    writeStoredPanelOffsets(panelOffsets)
+  }, [panelOffsets])
   const [draggingPanel, setDraggingPanel] = useState<PanelKind | null>(null)
   const dragStateRef = useRef<DragState | null>(null)
 

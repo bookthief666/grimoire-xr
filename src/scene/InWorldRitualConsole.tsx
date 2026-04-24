@@ -10,6 +10,8 @@ import type { ForgePhase, TechLevel, Tone, Tradition } from '../types/grimoire'
 
 type ConsoleVec3 = [number, number, number]
 
+const CONSOLE_POSITION_STORAGE_KEY = 'grimoire-xr:ritual-console-offset:v1'
+
 type ConsoleDragState = {
   startPoint: THREE.Vector3
   startOffset: ConsoleVec3
@@ -33,6 +35,38 @@ function addConsoleOffset(base: ConsoleVec3, offset: ConsoleVec3): ConsoleVec3 {
     base[1] + offset[1],
     base[2] + offset[2],
   ]
+}
+
+function isStoredConsoleVec3(value: unknown): value is ConsoleVec3 {
+  return (
+    Array.isArray(value) &&
+    value.length === 3 &&
+    value.every((entry) => typeof entry === 'number' && Number.isFinite(entry))
+  )
+}
+
+function readStoredConsoleOffset(): ConsoleVec3 {
+  if (typeof window === 'undefined') return [0, 0, 0]
+
+  try {
+    const raw = window.localStorage.getItem(CONSOLE_POSITION_STORAGE_KEY)
+    if (!raw) return [0, 0, 0]
+
+    const parsed = JSON.parse(raw)
+    return isStoredConsoleVec3(parsed) ? clampConsoleOffset(parsed) : [0, 0, 0]
+  } catch {
+    return [0, 0, 0]
+  }
+}
+
+function writeStoredConsoleOffset(offset: ConsoleVec3) {
+  if (typeof window === 'undefined') return
+
+  try {
+    window.localStorage.setItem(CONSOLE_POSITION_STORAGE_KEY, JSON.stringify(offset))
+  } catch {
+    // Non-critical: VR layout should still work without persistence.
+  }
 }
 
 function ConsoleDragHandle({
@@ -549,9 +583,13 @@ export function InWorldRitualConsole({
   const [collapsed, setCollapsed] = useState(true)
   const [targetLabel, setTargetLabel] = useState<string | null>(null)
   const [editorField, setEditorField] = useState<EditableField | null>(null)
-  const [consoleOffset, setConsoleOffset] = useState<ConsoleVec3>([0, 0, 0])
+  const [consoleOffset, setConsoleOffset] = useState<ConsoleVec3>(readStoredConsoleOffset)
   const [consoleDragging, setConsoleDragging] = useState(false)
   const consoleDragRef = useRef<ConsoleDragState | null>(null)
+
+  useEffect(() => {
+    writeStoredConsoleOffset(consoleOffset)
+  }, [consoleOffset])
 
   const getConsolePosition = (base: ConsoleVec3): ConsoleVec3 => {
     return addConsoleOffset(base, consoleOffset)
