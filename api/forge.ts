@@ -9,7 +9,7 @@ import {
   type Tradition,
 } from '../src/types/grimoire.js'
 
-export const maxDuration = 60
+export const runtime = 'edge'
 
 const apiKey = process.env.GEMINI_API_KEY
 const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
@@ -428,63 +428,62 @@ async function forgeOnce(
   return finalDeck
 }
 
-export default {
-  async fetch(request: Request) {
-    const startTime = Date.now()
+export default async function handler(request: Request): Promise<Response> {
+  const startTime = Date.now()
 
-    logForge('Request received', startTime, {
-      method: request.method,
-      contentType:
-        request && request.headers && typeof request.headers.get === 'function'
-          ? request.headers.get('content-type')
-          : 'unknown',
+  logForge('Request received', startTime, {
+    method: request.method,
+    contentType:
+      request && request.headers && typeof request.headers.get === 'function'
+        ? request.headers.get('content-type')
+        : 'unknown',
+  })
+
+  if (request.method !== 'POST') {
+    return Response.json({ ok: false, error: 'Method not allowed.' }, { status: 405 })
+  }
+
+  let body: unknown
+  try {
+    body = await request.json()
+    logForge('Body parsed successfully', startTime)
+  } catch (error: any) {
+    logForge('Body parse failed', startTime, {
+      message: error?.message || String(error),
+    })
+    return Response.json({ ok: false, error: 'Invalid JSON body.' }, { status: 400 })
+  }
+
+  const parsedConfig = ritualConfigSchema.safeParse(body)
+
+  if (!parsedConfig.success) {
+    return Response.json(
+      { ok: false, error: 'Invalid ritual configuration.' },
+      { status: 400 },
+    )
+  }
+
+  const { subject, tradition, tone, techLevel, intent } = parsedConfig.data
+
+  try {
+    const deck = await forgeOnce(
+      subject,
+      tradition,
+      tone,
+      techLevel,
+      intent,
+      startTime,
+    )
+
+    return Response.json({ ok: true, deck }, { status: 200 })
+  } catch (error: any) {
+    logForge('Forge process failed', startTime, {
+      message: error?.message || String(error),
     })
 
-    if (request.method !== 'POST') {
-      return Response.json({ ok: false, error: 'Method not allowed.' }, { status: 405 })
-    }
-
-    let body: unknown
-    try {
-      body = await request.json()
-      logForge('Body parsed successfully', startTime)
-    } catch (error: any) {
-      logForge('Body parse failed', startTime, {
-        message: error?.message || String(error),
-      })
-      return Response.json({ ok: false, error: 'Invalid JSON body.' }, { status: 400 })
-    }
-
-    const parsedConfig = ritualConfigSchema.safeParse(body)
-
-    if (!parsedConfig.success) {
-      return Response.json(
-        { ok: false, error: 'Invalid ritual configuration.' },
-        { status: 400 },
-      )
-    }
-
-    const { subject, tradition, tone, techLevel, intent } = parsedConfig.data
-
-    try {
-      const deck = await forgeOnce(
-        subject,
-        tradition,
-        tone,
-        techLevel,
-        intent,
-        startTime,
-      )
-      return Response.json({ ok: true, deck }, { status: 200 })
-    } catch (error: any) {
-      logForge('Forge process failed', startTime, {
-        message: error?.message || String(error),
-      })
-
-      return Response.json(
-        { ok: false, error: 'The forge failed to assemble a valid deck. Check server logs.' },
-        { status: 502 },
-      )
-    }
-  },
+    return Response.json(
+      { ok: false, error: 'The forge failed to assemble a valid deck. Check server logs.' },
+      { status: 502 },
+    )
+  }
 }

@@ -13,7 +13,7 @@ import {
   type Tradition,
 } from '../src/types/grimoire.js'
 
-export const maxDuration = 60
+export const runtime = 'edge'
 
 const apiKey = process.env.GEMINI_API_KEY
 const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
@@ -431,66 +431,64 @@ async function consultOnce({
   return reading
 }
 
-export default {
-  async fetch(request: Request) {
-    const startTime = Date.now()
+export default async function handler(request: Request): Promise<Response> {
+  const startTime = Date.now()
 
-    logOracle('Request received', startTime, {
-      method: request.method,
-      contentType:
-        request && request.headers && typeof request.headers.get === 'function'
-          ? request.headers.get('content-type')
-          : 'unknown',
+  logOracle('Request received', startTime, {
+    method: request.method,
+    contentType:
+      request && request.headers && typeof request.headers.get === 'function'
+        ? request.headers.get('content-type')
+        : 'unknown',
+  })
+
+  if (request.method !== 'POST') {
+    return Response.json({ ok: false, error: 'Method not allowed.' }, { status: 405 })
+  }
+
+  let body: unknown
+  try {
+    body = await request.json()
+    logOracle('Body parsed successfully', startTime)
+  } catch (error: any) {
+    logOracle('Body parse failed', startTime, {
+      message: error?.message || String(error),
     })
 
-    if (request.method !== 'POST') {
-      return Response.json({ ok: false, error: 'Method not allowed.' }, { status: 405 })
-    }
+    return Response.json({ ok: false, error: 'Invalid JSON body.' }, { status: 400 })
+  }
 
-    let body: unknown
-    try {
-      body = await request.json()
-      logOracle('Body parsed successfully', startTime)
-    } catch (error: any) {
-      logOracle('Body parse failed', startTime, {
-        message: error?.message || String(error),
-      })
+  const parsedRequest = oracleConsultationRequestSchema.safeParse(body)
 
-      return Response.json({ ok: false, error: 'Invalid JSON body.' }, { status: 400 })
-    }
+  if (!parsedRequest.success) {
+    logOracle('Invalid oracle request', startTime, parsedRequest.error.flatten())
 
-    const parsedRequest = oracleConsultationRequestSchema.safeParse(body)
+    return Response.json(
+      { ok: false, error: 'Invalid oracle consultation request.' },
+      { status: 400 },
+    )
+  }
 
-    if (!parsedRequest.success) {
-      logOracle('Invalid oracle request', startTime, parsedRequest.error.flatten())
+  const { config, deck, question, selectedCardIds } = parsedRequest.data
 
-      return Response.json(
-        { ok: false, error: 'Invalid oracle consultation request.' },
-        { status: 400 },
-      )
-    }
+  try {
+    const reading = await consultOnce({
+      config,
+      deck,
+      question,
+      selectedCardIds,
+      startTime,
+    })
 
-    const { config, deck, question, selectedCardIds } = parsedRequest.data
+    return Response.json({ ok: true, reading }, { status: 200 })
+  } catch (error: any) {
+    logOracle('Oracle process failed', startTime, {
+      message: error?.message || String(error),
+    })
 
-    try {
-      const reading = await consultOnce({
-        config,
-        deck,
-        question,
-        selectedCardIds,
-        startTime,
-      })
-
-      return Response.json({ ok: true, reading }, { status: 200 })
-    } catch (error: any) {
-      logOracle('Oracle process failed', startTime, {
-        message: error?.message || String(error),
-      })
-
-      return Response.json(
-        { ok: false, error: 'The oracle failed to assemble a valid reading. Check server logs.' },
-        { status: 502 },
-      )
-    }
-  },
+    return Response.json(
+      { ok: false, error: 'The oracle failed to assemble a valid reading. Check server logs.' },
+      { status: 502 },
+    )
+  }
 }
