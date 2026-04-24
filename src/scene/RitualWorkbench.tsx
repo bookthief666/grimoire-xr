@@ -76,6 +76,21 @@ const INTENT_OPTIONS = [
   'What is the initiatory opportunity?',
 ]
 
+const VISUAL_STYLE_OPTIONS = [
+  'Hierophantic',
+  'Astral',
+  'Venusian',
+  'Goetic',
+  'Alchemical',
+  'Xenotheurgic',
+]
+
+const EROS_FIELD_OPTIONS = [
+  'Veiled',
+  'Charged',
+  'Ecstatic',
+]
+
 const TABLE_Y = 0.08
 const WORKBENCH_SCALE = 0.48
 
@@ -356,11 +371,15 @@ function FloatingForgeMenu({
   tone,
   techLevel,
   activeIntent,
+  visualStyle,
+  erosField,
   onSubjectChange,
   onTraditionChange,
   onToneChange,
   onTechLevelChange,
   onIntentChange,
+  onVisualStyleChange,
+  onErosFieldChange,
   onOracleQuestionChange,
   loading,
   canForge,
@@ -371,6 +390,8 @@ function FloatingForgeMenu({
   tone: Tone
   techLevel: TechLevel
   activeIntent: string
+  visualStyle: string
+  erosField: string
   loading: boolean
   canForge: boolean
   onBeginRitual: () => void
@@ -379,12 +400,14 @@ function FloatingForgeMenu({
   onToneChange: (tone: Tone) => void
   onTechLevelChange: (techLevel: TechLevel) => void
   onIntentChange: (intent: string) => void
+  onVisualStyleChange: (style: string) => void
+  onErosFieldChange: (field: string) => void
   onOracleQuestionChange: (question: string) => void
 }) {
   return (
-    <group position={[0, 1.06, 0.05]} scale={1.32}>
+    <group position={[0, 1.1, 0.05]} scale={1.18}>
       <mesh>
-        <planeGeometry args={[1.75, 1.3]} />
+        <planeGeometry args={[1.92, 1.76]} />
         <meshStandardMaterial
           color="#0a0505"
           emissive="#241006"
@@ -398,7 +421,7 @@ function FloatingForgeMenu({
       </mesh>
 
       <mesh position={[0, 0, 0.012]}>
-        <planeGeometry args={[1.88, 1.42]} />
+        <planeGeometry args={[2.06, 1.92]} />
         <meshBasicMaterial
           color="#ff9a00"
           transparent
@@ -410,10 +433,11 @@ function FloatingForgeMenu({
       </mesh>
 
       {([[-1, 1], [1, 1], [-1, -1], [1, -1]] as [number, number][]).map(([sx, sy], ci) => {
-        const cx = sx * 0.84
-        const cy = sy * 0.615
+        const cx = sx * 0.92
+        const cy = sy * 0.835
         const armLen = 0.11
         const armW = 0.014
+
         return (
           <group key={ci} position={[cx, cy, 0.02]}>
             <mesh position={[sx * armLen * 0.5, 0, 0]}>
@@ -454,18 +478,18 @@ function FloatingForgeMenu({
       })}
 
       <Text
-        position={[0, 0.45, 0.07]}
+        position={[0, 0.67, 0.07]}
         fontSize={0.05}
         color="#ffd18a"
         anchorX="center"
         anchorY="middle"
-        maxWidth={1.38}
+        maxWidth={1.5}
       >
-        FORGE CONFIGURATION
+        GRIMOIRE ENGINE FORGE
       </Text>
 
-      <mesh position={[0, 0.398, 0.065]}>
-        <planeGeometry args={[1.52, 0.012]} />
+      <mesh position={[0, 0.615, 0.065]}>
+        <planeGeometry args={[1.62, 0.012]} />
         <meshBasicMaterial
           color="#ff9a00"
           transparent
@@ -477,20 +501,20 @@ function FloatingForgeMenu({
       </mesh>
 
       <Text
-        position={[0, 0.36, 0.07]}
+        position={[0, 0.57, 0.07]}
         fontSize={0.026}
         color="#8f6742"
         anchorX="center"
         anchorY="middle"
-        maxWidth={1.42}
+        maxWidth={1.48}
       >
-        Choose the current. The table remembers the operation.
+        Tune the deck-current. Ignite only when the engine is aligned.
       </Text>
 
       <FloatingDial
         label="SUBJECT"
         value={activeSubject}
-        y={0.23}
+        y={0.39}
         onPrevious={() =>
           onSubjectChange(cycleString(SUBJECT_OPTIONS, activeSubject, -1))
         }
@@ -502,7 +526,7 @@ function FloatingForgeMenu({
       <FloatingDial
         label="TRADITION"
         value={optionLabel(TRADITION_OPTIONS, tradition)}
-        y={0.07}
+        y={0.23}
         onPrevious={() =>
           onTraditionChange(cycleOption(TRADITION_OPTIONS, tradition, -1))
         }
@@ -514,7 +538,7 @@ function FloatingForgeMenu({
       <FloatingDial
         label="TONE"
         value={optionLabel(TONE_OPTIONS, tone)}
-        y={-0.09}
+        y={0.07}
         onPrevious={() => onToneChange(cycleOption(TONE_OPTIONS, tone, -1))}
         onNext={() => onToneChange(cycleOption(TONE_OPTIONS, tone, 1))}
       />
@@ -522,7 +546,7 @@ function FloatingForgeMenu({
       <FloatingDial
         label="LEVEL"
         value={optionLabel(TECH_LEVEL_OPTIONS, techLevel)}
-        y={-0.25}
+        y={-0.09}
         onPrevious={() =>
           onTechLevelChange(cycleOption(TECH_LEVEL_OPTIONS, techLevel, -1))
         }
@@ -532,9 +556,33 @@ function FloatingForgeMenu({
       />
 
       <FloatingDial
+        label="ART STYLE"
+        value={visualStyle}
+        y={-0.25}
+        onPrevious={() =>
+          onVisualStyleChange(cycleString(VISUAL_STYLE_OPTIONS, visualStyle, -1))
+        }
+        onNext={() =>
+          onVisualStyleChange(cycleString(VISUAL_STYLE_OPTIONS, visualStyle, 1))
+        }
+      />
+
+      <FloatingDial
+        label="EROS FIELD"
+        value={erosField}
+        y={-0.41}
+        onPrevious={() =>
+          onErosFieldChange(cycleString(EROS_FIELD_OPTIONS, erosField, -1))
+        }
+        onNext={() =>
+          onErosFieldChange(cycleString(EROS_FIELD_OPTIONS, erosField, 1))
+        }
+      />
+
+      <FloatingDial
         label="INTENT"
         value={activeIntent}
-        y={-0.36}
+        y={-0.57}
         onPrevious={() => {
           const next = cycleString(INTENT_OPTIONS, activeIntent, -1)
           onIntentChange(next)
@@ -550,7 +598,7 @@ function FloatingForgeMenu({
       <FloatingMenuButton
         label={loading ? 'FORGING…' : 'IGNITE FORGE'}
         x={0.18}
-        y={-0.5}
+        y={-0.74}
         width={0.98}
         disabled={!canForge}
         onClick={onBeginRitual}
@@ -1036,6 +1084,8 @@ export function RitualWorkbench({
   const [cardOffsets, setCardOffsets] = useState<Record<number, Vec2>>({})
   const [dragState, setDragState] = useState<DragState | null>(null)
   const [menuMode, setMenuMode] = useState<WorkbenchMode>('closed')
+  const [visualStyle, setVisualStyle] = useState(VISUAL_STYLE_OPTIONS[0])
+  const [erosField, setErosField] = useState(EROS_FIELD_OPTIONS[0])
 
   const displayedCards = cards.slice(0, 7)
 
@@ -1228,6 +1278,8 @@ export function RitualWorkbench({
           tone={tone}
           techLevel={techLevel}
           activeIntent={activeIntent}
+          visualStyle={visualStyle}
+          erosField={erosField}
           loading={loading}
           canForge={canForge}
           onBeginRitual={() => void onBeginRitual()}
@@ -1236,6 +1288,8 @@ export function RitualWorkbench({
           onToneChange={onToneChange}
           onTechLevelChange={onTechLevelChange}
           onIntentChange={onIntentChange}
+          onVisualStyleChange={setVisualStyle}
+          onErosFieldChange={setErosField}
           onOracleQuestionChange={onOracleQuestionChange}
         />
       ) : null}
