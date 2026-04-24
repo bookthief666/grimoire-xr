@@ -9,6 +9,7 @@ type Props = {
   oracleLoading?: boolean
   hasActiveCard?: boolean
   hasOracleReading?: boolean
+  hasDeck?: boolean
 }
 
 const noRaycast = () => null
@@ -592,10 +593,187 @@ function RitualStateConduit({
   )
 }
 
-export function TempleXenotheurgy({ ritualImpulseRef, loading = false, oracleLoading = false, hasActiveCard = false, hasOracleReading = false }: Props) {
+
+function DeckConstellation({
+  ritualImpulseRef,
+  loading = false,
+  hasDeck = false,
+  oracleLoading = false,
+  hasActiveCard = false,
+  hasOracleReading = false,
+}: Props) {
+  const rootRef = useRef<THREE.Group>(null)
+  const majorRef = useRef<THREE.Group>(null)
+  const minorRef = useRef<THREE.Group>(null)
+
+  const active =
+    loading || hasDeck || oracleLoading || hasActiveCard || hasOracleReading
+
+  const cards = useMemo(() => {
+    return Array.from({ length: 78 }, (_, index) => {
+      const isMajor = index < 22
+      const lane = isMajor ? 0 : 1 + ((index - 22) % 4)
+      const laneIndex = isMajor ? index : Math.floor((index - 22) / 4)
+      const laneCount = isMajor ? 22 : 14
+      const t = laneCount <= 1 ? 0 : laneIndex / (laneCount - 1)
+      const arc = -Math.PI * 0.82 + t * Math.PI * 1.64
+      const radius = isMajor ? 1.68 : 1.95 + lane * 0.09
+
+      return {
+        index,
+        isMajor,
+        x: Math.sin(arc) * radius,
+        y: 0.12 + Math.cos(arc) * 0.54 + lane * 0.015,
+        z: -0.02 - lane * 0.018,
+        rot: -arc * 0.18,
+        delay: index * 0.037,
+      }
+    })
+  }, [])
+
+  useFrame(({ clock }, delta) => {
+    const t = clock.getElapsedTime()
+    const impulse = ritualImpulseRef.current
+    const boost = active ? 1 : 0
+
+    if (rootRef.current) {
+      rootRef.current.rotation.y = Math.sin(t * 0.18) * 0.045
+      rootRef.current.position.y = 1.44 + Math.sin(t * 0.62) * 0.025
+      const scale = 1 + boost * 0.035 + impulse * 0.04
+      rootRef.current.scale.setScalar(scale)
+    }
+
+    if (majorRef.current) {
+      majorRef.current.rotation.z += delta * (0.025 + boost * 0.018)
+    }
+
+    if (minorRef.current) {
+      minorRef.current.rotation.z -= delta * (0.014 + boost * 0.012)
+    }
+  })
+
+  const label = loading
+    ? 'SEVENTY-EIGHT ARCANA FORGING'
+    : hasDeck
+      ? 'SEVENTY-EIGHT ARCANA ONLINE'
+      : hasOracleReading
+        ? 'DECK MEMORY INSCRIBED'
+        : 'DECK MATRIX DORMANT'
+
+  return (
+    <group ref={rootRef} position={[0, 1.44, -2.05]} raycast={noRaycast}>
+      <group ref={minorRef} raycast={noRaycast}>
+        {cards
+          .filter((card) => !card.isMajor)
+          .map((card) => {
+            const awakened = active || card.index % 7 === 0
+            const opacity = awakened ? 0.28 : 0.095
+            return (
+              <mesh
+                key={card.index}
+                position={[card.x, card.y, card.z]}
+                rotation={[0, card.rot, 0]}
+                raycast={noRaycast}
+              >
+                <planeGeometry args={[0.055, 0.09]} />
+                <meshBasicMaterial
+                  color={oracleLoading || hasOracleReading ? '#9a6bff' : '#b8860b'}
+                  transparent
+                  opacity={opacity}
+                  depthWrite={false}
+                  blending={THREE.AdditiveBlending}
+                  side={THREE.DoubleSide}
+                />
+              </mesh>
+            )
+          })}
+      </group>
+
+      <group ref={majorRef} raycast={noRaycast}>
+        {cards
+          .filter((card) => card.isMajor)
+          .map((card) => {
+            const opacity = active ? 0.52 : 0.18
+            return (
+              <group
+                key={card.index}
+                position={[card.x, card.y, card.z + 0.035]}
+                rotation={[0, card.rot, 0]}
+                raycast={noRaycast}
+              >
+                <mesh raycast={noRaycast}>
+                  <planeGeometry args={[0.075, 0.12]} />
+                  <meshBasicMaterial
+                    color={loading ? '#ff3d5a' : hasDeck ? '#ffcf7c' : '#8a35ff'}
+                    transparent
+                    opacity={opacity}
+                    depthWrite={false}
+                    blending={THREE.AdditiveBlending}
+                    side={THREE.DoubleSide}
+                  />
+                </mesh>
+
+                <mesh position={[0, 0, 0.008]} raycast={noRaycast}>
+                  <ringGeometry args={[0.018, 0.024, 12]} />
+                  <meshBasicMaterial
+                    color="#ffd18a"
+                    transparent
+                    opacity={active ? 0.7 : 0.25}
+                    depthWrite={false}
+                    blending={THREE.AdditiveBlending}
+                    side={THREE.DoubleSide}
+                  />
+                </mesh>
+              </group>
+            )
+          })}
+      </group>
+
+      <HoloRing
+        position={[0, 0.08, -0.035]}
+        rotation={[0, 0, 0]}
+        radius={1.52}
+        tube={0.008}
+        color={hasDeck ? '#ffd18a' : '#8a35ff'}
+        opacity={active ? 0.34 : 0.12}
+      />
+
+      <HoloRing
+        position={[0, 0.08, -0.045]}
+        rotation={[0, 0, Math.PI / 2]}
+        radius={2.06}
+        tube={0.006}
+        color={oracleLoading || hasOracleReading ? '#d9b5ff' : '#b8860b'}
+        opacity={active ? 0.22 : 0.075}
+      />
+
+      <Text
+        position={[0, -0.92, 0.06]}
+        fontSize={0.062}
+        color={active ? '#ffd18a' : '#7b5536'}
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={2.5}
+        raycast={noRaycast}
+      >
+        {label}
+      </Text>
+    </group>
+  )
+}
+
+export function TempleXenotheurgy({ ritualImpulseRef, loading = false, oracleLoading = false, hasActiveCard = false, hasOracleReading = false, hasDeck = false }: Props) {
   return (
     <group>
       <ProcessionCircuits />
+      <DeckConstellation
+        ritualImpulseRef={ritualImpulseRef}
+        loading={loading}
+        oracleLoading={oracleLoading}
+        hasActiveCard={hasActiveCard}
+        hasOracleReading={hasOracleReading}
+        hasDeck={hasDeck}
+      />
       <RitualStateConduit
         ritualImpulseRef={ritualImpulseRef}
         loading={loading}
