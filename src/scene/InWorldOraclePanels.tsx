@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -14,15 +14,19 @@ type UnknownRecord = Record<string, unknown>
 type PanelKind = 'dossier' | 'card' | 'oracle'
 type Vec3 = [number, number, number]
 
+type DragState = {
+  kind: PanelKind
+  startPoint: THREE.Vector3
+  startOffset: Vec3
+}
+
 const DEFAULT_PANEL_OFFSETS: Record<PanelKind, Vec3> = {
   dossier: [-1.36, 0.0, -0.28],
   card: [0, 0.08, -0.36],
   oracle: [1.36, 0.0, -0.28],
 }
 
-const MOVE_STEP_X = 0.18
-const MOVE_STEP_Y = 0.14
-const MOVE_STEP_Z = 0.22
+const DEPTH_STEP = 0.24
 
 function cloneDefaultOffsets(): Record<PanelKind, Vec3> {
   return {
@@ -38,14 +42,14 @@ function clamp(value: number, min: number, max: number) {
 
 function clampPanelOffset([x, y, z]: Vec3): Vec3 {
   return [
-    clamp(x, -2.45, 2.45),
-    clamp(y, -0.85, 0.85),
-    clamp(z, -1.35, 0.75),
+    clamp(x, -2.55, 2.55),
+    clamp(y, -0.95, 0.95),
+    clamp(z, -1.55, 0.82),
   ]
 }
 
 function rotationForOffset([x]: Vec3): [number, number, number] {
-  return [0, clamp(-x * 0.14, -0.36, 0.36), 0]
+  return [0, clamp(-x * 0.14, -0.38, 0.38), 0]
 }
 
 function asRecord(value: unknown): UnknownRecord {
@@ -57,9 +61,7 @@ function readString(source: unknown, keys: string[]) {
 
   for (const key of keys) {
     const value = record[key]
-    if (typeof value === 'string' && value.trim()) {
-      return value.trim()
-    }
+    if (typeof value === 'string' && value.trim()) return value.trim()
   }
 
   return ''
@@ -423,101 +425,157 @@ function PanelButton({
   )
 }
 
-function MoveControls({
+function DepthControls({
   accent,
-  onMove,
+  onNear,
+  onFar,
   onReset,
-  onDone,
 }: {
   accent: string
-  onMove: (delta: Vec3) => void
+  onNear: () => void
+  onFar: () => void
   onReset: () => void
-  onDone: () => void
 }) {
   return (
     <group>
-      <Text
-        position={[0, -0.69, 0.07]}
-        anchorX="center"
-        anchorY="middle"
-        fontSize={0.028}
-        color="#b98855"
-        maxWidth={1.05}
-      >
-        MOVE PANEL
-      </Text>
-
-      <PanelButton
-        label="LEFT"
-        x={-0.45}
-        y={-0.86}
-        accent={accent}
-        width={0.28}
-        onClick={() => onMove([-MOVE_STEP_X, 0, 0])}
-      />
-
-      <PanelButton
-        label="RIGHT"
-        x={-0.12}
-        y={-0.86}
-        accent={accent}
-        width={0.32}
-        onClick={() => onMove([MOVE_STEP_X, 0, 0])}
-      />
-
-      <PanelButton
-        label="UP"
-        x={0.22}
-        y={-0.86}
-        accent={accent}
-        width={0.22}
-        onClick={() => onMove([0, MOVE_STEP_Y, 0])}
-      />
-
-      <PanelButton
-        label="DOWN"
-        x={0.5}
-        y={-0.86}
-        accent={accent}
-        width={0.3}
-        onClick={() => onMove([0, -MOVE_STEP_Y, 0])}
-      />
-
       <PanelButton
         label="NEAR"
-        x={-0.43}
-        y={-1.06}
+        x={-0.38}
+        y={-0.73}
         accent={accent}
         width={0.3}
-        onClick={() => onMove([0, 0, MOVE_STEP_Z])}
+        onClick={onNear}
       />
 
       <PanelButton
         label="FAR"
-        x={-0.1}
-        y={-1.06}
+        x={0}
+        y={-0.73}
         accent={accent}
-        width={0.24}
-        onClick={() => onMove([0, 0, -MOVE_STEP_Z])}
+        width={0.26}
+        onClick={onFar}
       />
 
       <PanelButton
         label="HOME"
-        x={0.22}
-        y={-1.06}
+        x={0.38}
+        y={-0.73}
         accent={accent}
-        width={0.3}
+        width={0.32}
         onClick={onReset}
       />
+    </group>
+  )
+}
 
-      <PanelButton
-        label="DONE"
-        x={0.53}
-        y={-1.06}
-        accent={accent}
-        width={0.3}
-        onClick={onDone}
-      />
+function DragHeader({
+  title,
+  accent,
+  dragging,
+  onDragStart,
+  onDragMove,
+  onDragEnd,
+}: {
+  title: string
+  accent: string
+  dragging: boolean
+  onDragStart: (point: THREE.Vector3) => void
+  onDragMove: (point: THREE.Vector3) => void
+  onDragEnd: () => void
+}) {
+  const [hovered, setHovered] = useState(false)
+
+  return (
+    <group
+      position={[0, 0.62, 0.07]}
+      onPointerOver={(event) => {
+        event.stopPropagation()
+        setHovered(true)
+      }}
+      onPointerOut={(event) => {
+        event.stopPropagation()
+        setHovered(false)
+      }}
+      onPointerDown={(event) => {
+        event.stopPropagation()
+
+        const target = event.target as unknown as {
+          setPointerCapture?: (pointerId: number) => void
+        }
+
+        target.setPointerCapture?.(event.pointerId)
+        onDragStart(event.point.clone())
+      }}
+      onPointerMove={(event) => {
+        if (!dragging) return
+        event.stopPropagation()
+        onDragMove(event.point.clone())
+      }}
+      onPointerUp={(event) => {
+        event.stopPropagation()
+
+        const target = event.target as unknown as {
+          releasePointerCapture?: (pointerId: number) => void
+        }
+
+        target.releasePointerCapture?.(event.pointerId)
+        onDragEnd()
+      }}
+    >
+      <mesh>
+        <planeGeometry args={[1.08, 0.24]} />
+        <meshBasicMaterial
+          color={dragging ? '#3c1608' : hovered ? '#2a1208' : '#220d07'}
+          transparent
+          opacity={dragging ? 0.95 : 0.82}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, 0, 0.012]}>
+        <planeGeometry args={[1.18, 0.34]} />
+        <meshBasicMaterial
+          color={accent}
+          transparent
+          opacity={dragging ? 0.32 : hovered ? 0.22 : 0.1}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <Text
+        position={[-0.43, 0.005, 0.03]}
+        anchorX="left"
+        anchorY="middle"
+        fontSize={0.044}
+        color="#ffd18a"
+        maxWidth={0.68}
+      >
+        {title}
+      </Text>
+
+      <Text
+        position={[0.42, 0.005, 0.03]}
+        anchorX="center"
+        anchorY="middle"
+        fontSize={0.03}
+        color={dragging || hovered ? '#ffffff' : '#b98855'}
+        maxWidth={0.28}
+      >
+        {dragging ? 'MOVING' : 'DRAG'}
+      </Text>
+
+      <mesh position={[0, 0, 0.04]}>
+        <planeGeometry args={[1.24, 0.42]} />
+        <meshBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.001}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
     </group>
   )
 }
@@ -527,20 +585,27 @@ function PanelShell({
   subtitle,
   pages,
   accent,
-  onMove,
+  dragging,
+  onDragStart,
+  onDragMove,
+  onDragEnd,
+  onNear,
+  onFar,
   onReset,
-  children,
 }: {
   title: string
   subtitle: string
   pages: string[]
   accent: string
-  onMove: (delta: Vec3) => void
+  dragging: boolean
+  onDragStart: (point: THREE.Vector3) => void
+  onDragMove: (point: THREE.Vector3) => void
+  onDragEnd: () => void
+  onNear: () => void
+  onFar: () => void
   onReset: () => void
-  children?: ReactNode
 }) {
   const [pageIndex, setPageIndex] = useState(0)
-  const [moveMode, setMoveMode] = useState(false)
   const groupRef = useRef<THREE.Group>(null)
   const pageSignature = pages.join('\u0000')
   const safePages = pages.length ? pages : ['No text available.']
@@ -551,9 +616,9 @@ function PanelShell({
   }, [pageSignature])
 
   useFrame(({ clock }) => {
-    if (!groupRef.current || moveMode) return
+    if (!groupRef.current || dragging) return
     const t = clock.getElapsedTime()
-    groupRef.current.position.y = Math.sin(t * 0.85 + title.length) * 0.012
+    groupRef.current.position.y = Math.sin(t * 0.85 + title.length) * 0.01
   })
 
   const goPrevious = () => {
@@ -571,81 +636,48 @@ function PanelShell({
       <mesh
         onClick={(event) => {
           event.stopPropagation()
-          if (!moveMode) goNext()
+          if (!dragging) goNext()
         }}
       >
-        <planeGeometry args={[1.16, 1.38]} />
+        <planeGeometry args={[1.16, 1.66]} />
         <meshStandardMaterial
           color="#100606"
           emissive="#251006"
-          emissiveIntensity={moveMode ? 0.48 : 0.34}
+          emissiveIntensity={dragging ? 0.48 : 0.34}
           transparent
-          opacity={moveMode ? 0.94 : 0.86}
+          opacity={dragging ? 0.94 : 0.86}
           side={THREE.DoubleSide}
         />
       </mesh>
 
       <mesh position={[0, 0, 0.008]}>
-        <planeGeometry args={[1.26, 1.48]} />
+        <planeGeometry args={[1.26, 1.76]} />
         <meshBasicMaterial
           color={accent}
           transparent
-          opacity={moveMode ? 0.18 : 0.105}
+          opacity={dragging ? 0.18 : 0.105}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
         />
       </mesh>
 
-      <mesh position={[0, 0.57, 0.02]}>
-        <planeGeometry args={[0.98, 0.18]} />
-        <meshBasicMaterial
-          color="#220d07"
-          transparent
-          opacity={0.78}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <CornerGlyph x={-0.48} y={0.55} accent={accent} />
-      <CornerGlyph x={0.48} y={0.55} accent={accent} />
-      <CornerGlyph x={-0.48} y={-0.55} accent={accent} />
-      <CornerGlyph x={0.48} y={-0.55} accent={accent} />
-
-      <mesh position={[0, 0.69, -0.006]}>
-        <ringGeometry args={[0.12, 0.15, 28]} />
-        <meshBasicMaterial
-          color={accent}
-          transparent
-          opacity={moveMode ? 0.48 : 0.32}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <Text
-        position={[0, 0.6, 0.045]}
-        anchorX="center"
-        anchorY="middle"
-        fontSize={0.048}
-        color="#ffd18a"
-        maxWidth={0.72}
-      >
-        {title}
-      </Text>
-
-      <PanelButton
-        label={moveMode ? 'READ' : 'MOVE'}
-        x={0.42}
-        y={0.6}
+      <DragHeader
+        title={title}
         accent={accent}
-        width={0.25}
-        onClick={() => setMoveMode((current) => !current)}
+        dragging={dragging}
+        onDragStart={onDragStart}
+        onDragMove={onDragMove}
+        onDragEnd={onDragEnd}
       />
 
+      <CornerGlyph x={-0.48} y={0.68} accent={accent} />
+      <CornerGlyph x={0.48} y={0.68} accent={accent} />
+      <CornerGlyph x={-0.48} y={-0.68} accent={accent} />
+      <CornerGlyph x={0.48} y={-0.68} accent={accent} />
+
       <Text
-        position={[0, 0.47, 0.045]}
+        position={[0, 0.45, 0.045]}
         anchorX="center"
         anchorY="middle"
         fontSize={0.029}
@@ -656,62 +688,54 @@ function PanelShell({
       </Text>
 
       <Text
-        position={[-0.46, 0.31, 0.045]}
+        position={[-0.46, 0.29, 0.045]}
         anchorX="left"
         anchorY="top"
         fontSize={0.036}
-        color={moveMode ? '#c89a6a' : '#f2d4a2'}
+        color="#f2d4a2"
         maxWidth={0.92}
         lineHeight={1.22}
       >
-        {moveMode
-          ? 'Use the movement controls below to reposition this reading panel. Press READ when done.'
-          : currentPage}
+        {currentPage}
       </Text>
 
-      {moveMode ? (
-        <MoveControls
-          accent={accent}
-          onMove={onMove}
-          onReset={onReset}
-          onDone={() => setMoveMode(false)}
-        />
-      ) : (
-        <>
-          <PanelButton
-            label="‹"
-            x={-0.34}
-            y={-0.54}
-            accent={accent}
-            disabled={safePages.length <= 1}
-            onClick={goPrevious}
-          />
+      <PanelButton
+        label="‹"
+        x={-0.34}
+        y={-0.52}
+        accent={accent}
+        disabled={safePages.length <= 1}
+        onClick={goPrevious}
+      />
 
-          <Text
-            position={[0, -0.54, 0.055]}
-            anchorX="center"
-            anchorY="middle"
-            fontSize={0.031}
-            color="#9a6b48"
-            maxWidth={0.38}
-          >
-            {safePages.length > 1
-              ? `${pageIndex + 1}/${safePages.length}`
-              : 'TAP PANEL'}
-          </Text>
+      <Text
+        position={[0, -0.52, 0.055]}
+        anchorX="center"
+        anchorY="middle"
+        fontSize={0.031}
+        color="#9a6b48"
+        maxWidth={0.38}
+      >
+        {safePages.length > 1
+          ? `${pageIndex + 1}/${safePages.length}`
+          : 'TAP PANEL'}
+      </Text>
 
-          <PanelButton
-            label="›"
-            x={0.34}
-            y={-0.54}
-            accent={accent}
-            disabled={safePages.length <= 1}
-            onClick={goNext}
-          />
-        </>
-      )}
+      <PanelButton
+        label="›"
+        x={0.34}
+        y={-0.52}
+        accent={accent}
+        disabled={safePages.length <= 1}
+        onClick={goNext}
+      />
 
-      {children}
+      <DepthControls
+        accent={accent}
+        onNear={onNear}
+        onFar={onFar}
+        onReset={onReset}
+      />
     </group>
   )
 }
@@ -724,17 +748,61 @@ export function InWorldOraclePanels({
   const [panelOffsets, setPanelOffsets] = useState<Record<PanelKind, Vec3>>(
     cloneDefaultOffsets,
   )
+  const [draggingPanel, setDraggingPanel] = useState<PanelKind | null>(null)
+  const dragStateRef = useRef<DragState | null>(null)
 
-  const movePanel = (kind: PanelKind, delta: Vec3) => {
+  useEffect(() => {
+    const clearDrag = () => {
+      dragStateRef.current = null
+      setDraggingPanel(null)
+    }
+
+    window.addEventListener('pointerup', clearDrag)
+    window.addEventListener('pointercancel', clearDrag)
+
+    return () => {
+      window.removeEventListener('pointerup', clearDrag)
+      window.removeEventListener('pointercancel', clearDrag)
+    }
+  }, [])
+
+  const startDrag = (kind: PanelKind, point: THREE.Vector3) => {
+    dragStateRef.current = {
+      kind,
+      startPoint: point,
+      startOffset: [...panelOffsets[kind]],
+    }
+    setDraggingPanel(kind)
+  }
+
+  const updateDrag = (point: THREE.Vector3) => {
+    const drag = dragStateRef.current
+    if (!drag) return
+
+    const dx = point.x - drag.startPoint.x
+    const dy = point.y - drag.startPoint.y
+
+    setPanelOffsets((current) => ({
+      ...current,
+      [drag.kind]: clampPanelOffset([
+        drag.startOffset[0] + dx,
+        drag.startOffset[1] + dy,
+        drag.startOffset[2],
+      ]),
+    }))
+  }
+
+  const endDrag = () => {
+    dragStateRef.current = null
+    setDraggingPanel(null)
+  }
+
+  const movePanelDepth = (kind: PanelKind, deltaZ: number) => {
     setPanelOffsets((current) => {
       const base = current[kind]
       return {
         ...current,
-        [kind]: clampPanelOffset([
-          base[0] + delta[0],
-          base[1] + delta[1],
-          base[2] + delta[2],
-        ]),
+        [kind]: clampPanelOffset([base[0], base[1], base[2] + deltaZ]),
       }
     })
   }
@@ -764,11 +832,11 @@ export function InWorldOraclePanels({
   if (!hasAnyPanel) return null
 
   const dossierTitle = dossier
-    ? shortText(readString(dossier, ['subject', 'title', 'name']) || 'DOSSIER', 20)
+    ? shortText(readString(dossier, ['subject', 'title', 'name']) || 'DOSSIER', 18)
     : 'DOSSIER'
 
-  const cardTitle = focusedCard ? shortText(focusedCard.name, 20) : 'ARCANUM'
-  const oracleTitle = oracleReading ? 'ORACLE' : 'ORACLE'
+  const cardTitle = focusedCard ? shortText(focusedCard.name, 18) : 'ARCANUM'
+  const oracleTitle = 'ORACLE'
 
   return (
     <group position={[0, 1.76, -2.84]}>
@@ -782,7 +850,12 @@ export function InWorldOraclePanels({
             subtitle="SUBJECT DOSSIER"
             pages={dossierPages}
             accent="#ff9a00"
-            onMove={(delta) => movePanel('dossier', delta)}
+            dragging={draggingPanel === 'dossier'}
+            onDragStart={(point) => startDrag('dossier', point)}
+            onDragMove={updateDrag}
+            onDragEnd={endDrag}
+            onNear={() => movePanelDepth('dossier', DEPTH_STEP)}
+            onFar={() => movePanelDepth('dossier', -DEPTH_STEP)}
             onReset={() => resetPanel('dossier')}
           />
         </group>
@@ -798,7 +871,12 @@ export function InWorldOraclePanels({
             subtitle="ACTIVE ARCANUM"
             pages={cardPages}
             accent="#ffcf7c"
-            onMove={(delta) => movePanel('card', delta)}
+            dragging={draggingPanel === 'card'}
+            onDragStart={(point) => startDrag('card', point)}
+            onDragMove={updateDrag}
+            onDragEnd={endDrag}
+            onNear={() => movePanelDepth('card', DEPTH_STEP)}
+            onFar={() => movePanelDepth('card', -DEPTH_STEP)}
             onReset={() => resetPanel('card')}
           />
         </group>
@@ -814,7 +892,12 @@ export function InWorldOraclePanels({
             subtitle="CONSULTATION"
             pages={oraclePages}
             accent="#8a2cff"
-            onMove={(delta) => movePanel('oracle', delta)}
+            dragging={draggingPanel === 'oracle'}
+            onDragStart={(point) => startDrag('oracle', point)}
+            onDragMove={updateDrag}
+            onDragEnd={endDrag}
+            onNear={() => movePanelDepth('oracle', DEPTH_STEP)}
+            onFar={() => movePanelDepth('oracle', -DEPTH_STEP)}
             onReset={() => resetPanel('oracle')}
           />
         </group>
