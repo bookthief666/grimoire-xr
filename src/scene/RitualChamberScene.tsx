@@ -773,7 +773,8 @@ export function RitualChamberScene({
   }
 
   const shouldShowOraclePanels =
-    showInWorldPanels && (Boolean(dossier) || Boolean(focusedCard) || Boolean(oracleReading))
+    showInWorldPanels &&
+    (Boolean(dossier) || Boolean(focusedCard) || Boolean(oracleReading))
 
   return (
     <group>
@@ -783,11 +784,13 @@ export function RitualChamberScene({
       <Pillar x={2.1} />
       <CeilingCrown ritualImpulseRef={ritualImpulseRef} />
       <Embers ritualImpulseRef={ritualImpulseRef} />
+
       <Altar
         manifest={manifest}
         ritualImpulseRef={ritualImpulseRef}
         onLanding={handleLanding}
       />
+
       <CardArc
         cards={cards}
         selectedId={selectedCardId}

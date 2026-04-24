@@ -7,18 +7,28 @@ function trimText(text: string | undefined | null, max = 220) {
   return text.length > max ? `${text.slice(0, max - 1)}…` : text
 }
 
+function formatDrawnCards(reading: OracleReading) {
+  if (!reading.drawnCards.length) return ''
+
+  return reading.drawnCards
+    .map((card) => `${card.position}: ${card.cardName}`)
+    .join(' • ')
+}
+
 function Field({
   title,
   value,
   y,
   color = '#f2d4a2',
   maxWidth = 1.8,
+  fontSize = 0.05,
 }: {
   title: string
   value: string
   y: number
   color?: string
   maxWidth?: number
+  fontSize?: number
 }) {
   if (!value) return null
 
@@ -34,11 +44,12 @@ function Field({
       >
         {title.toUpperCase()}
       </Text>
+
       <Text
         position={[-0.9, y - 0.09, 0.01]}
         anchorX="left"
         anchorY="top"
-        fontSize={0.05}
+        fontSize={fontSize}
         color={color}
         maxWidth={maxWidth}
         lineHeight={1.35}
@@ -78,8 +89,13 @@ function PanelBase({
         <meshBasicMaterial color="#6a2b10" transparent opacity={0.28} />
       </mesh>
 
+      <mesh position={[0, 1.16, 0.01]}>
+        <planeGeometry args={[1.92, 0.22]} />
+        <meshBasicMaterial color="#2a0a0a" transparent opacity={0.72} />
+      </mesh>
+
       <Text
-        position={[-0.9, 1.08, 0.01]}
+        position={[-0.9, 1.08, 0.02]}
         anchorX="left"
         anchorY="top"
         fontSize={0.07}
@@ -94,12 +110,6 @@ function PanelBase({
   )
 }
 
-function formatOracleCards(reading: OracleReading) {
-  return reading.drawnCards
-    .map((card) => `${card.position}: ${card.cardName}`)
-    .join(' • ')
-}
-
 export function InWorldOraclePanels({
   dossier,
   focusedCard,
@@ -112,7 +122,11 @@ export function InWorldOraclePanels({
   return (
     <group>
       {dossier ? (
-        <PanelBase position={[-2.15, 1.65, -1.65]} rotation={[0, 0.42, 0]} title="Dossier">
+        <PanelBase
+          position={[-2.2, 1.65, -1.65]}
+          rotation={[0, 0.42, 0]}
+          title="Dossier"
+        >
           <Field title="Subject" value={trimText(dossier.subject, 50)} y={0.9} />
           <Field title="Archetype" value={trimText(dossier.archetype, 80)} y={0.63} />
           <Field title="Omen" value={trimText(dossier.omen, 90)} y={0.34} />
@@ -126,20 +140,28 @@ export function InWorldOraclePanels({
       ) : null}
 
       {focusedCard ? (
-        <PanelBase position={[2.15, 1.65, -1.65]} rotation={[0, -0.42, 0]} title={focusedCard.name}>
+        <PanelBase
+          position={[2.2, 1.65, -1.65]}
+          rotation={[0, -0.42, 0]}
+          title={focusedCard.name}
+        >
           <Field title="Exegesis" value={trimText(focusedCard.exegesis, 220)} y={0.9} />
+
           <Field
             title="Ritual Function"
             value={trimText(focusedCard.ritualFunction ?? '', 150)}
             y={0.18}
           />
+
           <Field
             title="Correspondences"
             value={trimText(
               [
                 focusedCard.metadata.element ? `Element: ${focusedCard.metadata.element}` : '',
                 focusedCard.metadata.planet ? `Planet: ${focusedCard.metadata.planet}` : '',
-                focusedCard.metadata.alchemical ? `Alchemy: ${focusedCard.metadata.alchemical}` : '',
+                focusedCard.metadata.alchemical
+                  ? `Alchemy: ${focusedCard.metadata.alchemical}`
+                  : '',
                 focusedCard.metadata.hebrew ? `Hebrew: ${focusedCard.metadata.hebrew}` : '',
                 focusedCard.metadata.daimon ? `Daimon: ${focusedCard.metadata.daimon}` : '',
                 focusedCard.metadata.gematria !== undefined
@@ -156,12 +178,49 @@ export function InWorldOraclePanels({
       ) : null}
 
       {oracleReading ? (
-        <PanelBase position={[0, 1.62, -2.92]} rotation={[0, 0, 0]} title="Oracle">
-          <Field title="Question" value={trimText(oracleReading.question, 90)} y={0.9} />
-          <Field title="Spread" value={trimText(oracleReading.spreadName, 80)} y={0.62} />
-          <Field title="Cards" value={trimText(formatOracleCards(oracleReading), 160)} y={0.36} />
-          <Field title="Answer" value={trimText(oracleReading.answer, 230)} y={-0.08} />
-          <Field title="Prescription" value={trimText(oracleReading.prescription, 190)} y={-0.82} />
+        <PanelBase
+          position={[0, 2.05, -2.62]}
+          rotation={[0, 0, 0]}
+          title="Oracle"
+        >
+          <Field
+            title="Question"
+            value={trimText(oracleReading.question, 120)}
+            y={0.9}
+            color="#ffcf7c"
+          />
+
+          <Field
+            title="Answer"
+            value={trimText(oracleReading.answer, 240)}
+            y={0.48}
+            color="#f2d4a2"
+          />
+
+          <Field
+            title="Prescription"
+            value={trimText(oracleReading.prescription, 190)}
+            y={-0.2}
+            color="#ffcf7c"
+          />
+
+          <Field
+            title="Drawn Cards"
+            value={trimText(formatDrawnCards(oracleReading), 180)}
+            y={-0.78}
+            color="#d8bf9b"
+            fontSize={0.045}
+          />
+
+          {oracleReading.warning ? (
+            <Field
+              title="Warning"
+              value={trimText(oracleReading.warning, 110)}
+              y={-1.08}
+              color="#ff9b7a"
+              fontSize={0.043}
+            />
+          ) : null}
         </PanelBase>
       ) : null}
     </group>
