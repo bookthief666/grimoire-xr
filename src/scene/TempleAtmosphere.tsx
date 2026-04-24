@@ -350,6 +350,83 @@ function SephiroticWall({
   )
 }
 
+type SealDef = { label: string; symbol: string; color: string }
+
+function AmbientSigilSeal({ label, symbol, color }: SealDef) {
+  return (
+    <group>
+      <mesh>
+        <circleGeometry args={[0.148, 28]} />
+        <meshBasicMaterial
+          color="#080404"
+          transparent
+          opacity={0.78}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, 0, 0.004]}>
+        <ringGeometry args={[0.155, 0.168, 36]} />
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={0.68}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, 0, 0.007]}>
+        <ringGeometry args={[0.208, 0.22, 36]} />
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={0.3}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, 0, 0.01]}>
+        <circleGeometry args={[0.31, 28]} />
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={0.048}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <Text
+        position={[0, 0.002, 0.026]}
+        fontSize={0.092}
+        color={color}
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={0.22}
+      >
+        {symbol}
+      </Text>
+
+      <Text
+        position={[0, -0.258, 0.026]}
+        fontSize={0.03}
+        color={color}
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={0.52}
+      >
+        {label}
+      </Text>
+    </group>
+  )
+}
+
 function FloatingSigils({
   ritualImpulseRef,
   hasOracleReading,
@@ -365,36 +442,45 @@ function FloatingSigils({
 
     if (!groupRef.current) return
 
-    groupRef.current.rotation.y += delta * (0.045 + impulse * 0.06)
-    groupRef.current.position.y = 1.85 + Math.sin(t * 0.7) * 0.035
+    groupRef.current.rotation.y += delta * (0.04 + impulse * 0.055)
+    groupRef.current.position.y = 1.88 + Math.sin(t * 0.68) * 0.032
   })
 
-  const labels = hasOracleReading
-    ? ['ORACLE', 'AGAPE', 'ABRAHADABRA', '93']
-    : ['THELEMA', 'AGAPE', 'WILL', '93']
+  const seals: SealDef[] = hasOracleReading
+    ? [
+        { label: 'ORACLE', symbol: '☉', color: '#8a2cff' },
+        { label: 'AGAPE', symbol: '✶', color: '#ffcf7c' },
+        { label: 'ABRAHADABRA', symbol: '⌬', color: '#ff4a1a' },
+        { label: '93', symbol: '☽', color: '#ffcf7c' },
+      ]
+    : [
+        { label: 'THELEMA', symbol: '✶', color: '#ffcf7c' },
+        { label: 'AGAPE', symbol: '☽', color: '#ff4a1a' },
+        { label: 'WILL', symbol: '⌬', color: '#ffcf7c' },
+        { label: '93', symbol: '☉', color: '#ff4a1a' },
+      ]
 
   return (
-    <group ref={groupRef} position={[0, 1.85, -1.55]}>
-      {labels.map((label, index) => {
-        const angle = (index / labels.length) * Math.PI * 2
-        const radius = 2.65
+    <group ref={groupRef} position={[0, 1.88, -1.55]}>
+      {seals.map((seal, index) => {
+        const angle = (index / seals.length) * Math.PI * 2
+        const radius = 2.55
         return (
-          <Text
-            key={label}
+          <group
+            key={seal.label}
             position={[
               Math.cos(angle) * radius,
-              index % 2 === 0 ? 0.16 : -0.1,
+              index % 2 === 0 ? 0.13 : -0.09,
               Math.sin(angle) * radius,
             ]}
             rotation={[0, -angle + Math.PI / 2, 0]}
-            anchorX="center"
-            anchorY="middle"
-            fontSize={0.09}
-            color={index % 2 === 0 ? '#ffcf7c' : '#ff2a00'}
-            maxWidth={1.0}
           >
-            {label}
-          </Text>
+            <AmbientSigilSeal
+              label={seal.label}
+              symbol={seal.symbol}
+              color={seal.color}
+            />
+          </group>
         )
       })}
     </group>

@@ -208,10 +208,15 @@ function TabletRune({
   y: number
   accent: string
 }) {
+  const sx = x > 0 ? -1 : 1
+  const sy = y > 0 ? -1 : 1
+  const arm = 0.13
+  const w = 0.015
+
   return (
     <group position={[x, y, 0.08]}>
-      <mesh rotation={[0, 0, Math.PI / 4]}>
-        <planeGeometry args={[0.16, 0.018]} />
+      <mesh position={[sx * arm * 0.5, 0, 0]}>
+        <planeGeometry args={[arm, w]} />
         <meshBasicMaterial
           color={accent}
           transparent
@@ -222,12 +227,24 @@ function TabletRune({
         />
       </mesh>
 
-      <mesh rotation={[0, 0, -Math.PI / 4]}>
-        <planeGeometry args={[0.16, 0.018]} />
+      <mesh position={[0, sy * arm * 0.5, 0]}>
+        <planeGeometry args={[w, arm]} />
         <meshBasicMaterial
           color={accent}
           transparent
           opacity={0.72}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, 0, 0.005]}>
+        <circleGeometry args={[0.022, 12]} />
+        <meshBasicMaterial
+          color={accent}
+          transparent
+          opacity={0.6}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
@@ -317,6 +334,7 @@ function TabletButton({
 
 function TempleTablet({ data }: { data: TabletData }) {
   const groupRef = useRef<THREE.Group>(null)
+  const frameMat = useRef<THREE.MeshBasicMaterial>(null)
   const [pageIndex, setPageIndex] = useState(0)
 
   const pages = useMemo(() => paginateText(data.body), [data.body])
@@ -328,9 +346,11 @@ function TempleTablet({ data }: { data: TabletData }) {
 
   useFrame(({ clock }) => {
     if (!groupRef.current) return
-
     const t = clock.getElapsedTime()
     groupRef.current.position.y = Math.sin(t * 0.75) * 0.018
+    if (frameMat.current) {
+      frameMat.current.opacity = 0.2 + Math.sin(t * 0.9) * 0.07
+    }
   })
 
   const previous = () => {
@@ -375,6 +395,53 @@ function TempleTablet({ data }: { data: TabletData }) {
           color={data.accent}
           transparent
           opacity={0.16}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      {/* Pulsing rectangular border frame */}
+      <mesh position={[0, 0.775, 0.013]}>
+        <planeGeometry args={[1.92, 0.016]} />
+        <meshBasicMaterial
+          ref={frameMat}
+          color={data.accent}
+          transparent
+          opacity={0.22}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+      <mesh position={[0, -0.775, 0.013]}>
+        <planeGeometry args={[1.92, 0.016]} />
+        <meshBasicMaterial
+          color={data.accent}
+          transparent
+          opacity={0.22}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+      <mesh position={[-0.968, 0, 0.013]}>
+        <planeGeometry args={[0.016, 1.55]} />
+        <meshBasicMaterial
+          color={data.accent}
+          transparent
+          opacity={0.22}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+      <mesh position={[0.968, 0, 0.013]}>
+        <planeGeometry args={[0.016, 1.55]} />
+        <meshBasicMaterial
+          color={data.accent}
+          transparent
+          opacity={0.22}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
