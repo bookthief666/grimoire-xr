@@ -91,7 +91,7 @@ function GrandAstralDome({
       (hasOracleReading ? 0.28 : 0)
 
     if (domeRef.current) {
-      domeRef.current.opacity = Math.min(0.34, 0.075 + Math.sin(t * 0.55) * 0.018 + boost * 0.08 + impulse * 0.04)
+      domeRef.current.opacity = Math.min(0.16, 0.032 + Math.sin(t * 0.55) * 0.01 + boost * 0.035 + impulse * 0.018)
     }
 
     if (ringRootRef.current) {
@@ -101,12 +101,12 @@ function GrandAstralDome({
   })
 
   return (
-    <group position={[0, 0, -1.15]} raycast={noRaycast}>
+    <group position={[0, 0.46, -1.55]} raycast={noRaycast}>
       <mesh position={[0, 0.02, 0]} raycast={noRaycast}>
-        <sphereGeometry args={[3.55, 48, 18, 0, Math.PI * 2, 0, Math.PI * 0.5]} />
+        <sphereGeometry args={[3.95, 48, 18, 0, Math.PI * 2, 0, Math.PI * 0.5]} />
         <meshBasicMaterial
           ref={domeRef}
-          color="#5f1dff"
+          color="#37108f"
           transparent
           opacity={0.09}
           wireframe
@@ -117,10 +117,10 @@ function GrandAstralDome({
       </mesh>
 
       <group ref={ringRootRef} position={[0, 2.72, 0]}>
-        <Ring position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]} radius={2.6} tube={0.012} color="#8a35ff" opacity={0.24} />
-        <Ring position={[0, 0, 0]} rotation={[Math.PI / 2, 0, Math.PI / 5]} radius={2.08} tube={0.01} color="#b8860b" opacity={0.22} />
-        <Ring position={[0, 0, 0]} rotation={[Math.PI / 2, 0, -Math.PI / 7]} radius={1.36} tube={0.009} color="#ff3d5a" opacity={0.18} />
-        <Ring position={[0, 0, 0]} rotation={[0.9, 0, 0]} radius={1.72} tube={0.007} color="#d9b5ff" opacity={0.16} />
+        <Ring position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]} radius={2.75} tube={0.009} color="#8a35ff" opacity={0.13} />
+        <Ring position={[0, 0, 0]} rotation={[Math.PI / 2, 0, Math.PI / 5]} radius={2.22} tube={0.008} color="#b8860b" opacity={0.12} />
+        <Ring position={[0, 0, 0]} rotation={[Math.PI / 2, 0, -Math.PI / 7]} radius={1.48} tube={0.007} color="#ff3d5a" opacity={0.095} />
+        <Ring position={[0, 0, 0]} rotation={[0.9, 0, 0]} radius={1.84} tube={0.006} color="#d9b5ff" opacity={0.085} />
       </group>
     </group>
   )
@@ -151,7 +151,7 @@ function CeilingOrrery({
   })
 
   return (
-    <group ref={rootRef} position={[0, 3.05, -1.1]} raycast={noRaycast}>
+    <group ref={rootRef} position={[0, 3.25, -1.65]} scale={0.82} raycast={noRaycast}>
       <Ring position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]} radius={0.92} tube={0.012} color="#ffcf7c" opacity={0.46} />
       <Ring position={[0, 0, 0]} rotation={[0.9, 0, 0]} radius={0.72} tube={0.01} color="#8a35ff" opacity={0.36} />
       <Ring position={[0, 0, 0]} rotation={[0, Math.PI / 2, 0]} radius={0.55} tube={0.008} color="#ff3d5a" opacity={0.25} />
@@ -218,13 +218,13 @@ function TreeOfLifeMachineWall({
   const active = oracleLoading || hasOracleReading || hasDeck
 
   return (
-    <group position={[0, 1.78, -3.25]} scale={1.38} raycast={noRaycast}>
+    <group position={[0, 1.74, -3.62]} scale={0.92} raycast={noRaycast}>
       <mesh position={[0, 0.05, -0.03]} raycast={noRaycast}>
-        <planeGeometry args={[2.25, 2.8]} />
+        <planeGeometry args={[1.82, 2.32]} />
         <meshBasicMaterial
           color="#090205"
           transparent
-          opacity={0.44}
+          opacity={0.16}
           depthWrite={false}
           side={THREE.DoubleSide}
         />
@@ -249,7 +249,7 @@ function TreeOfLifeMachineWall({
             <meshBasicMaterial
               color={i % 3 === 0 ? '#9a6bff' : '#b8860b'}
               transparent
-              opacity={active ? 0.48 : 0.22}
+              opacity={active ? 0.32 : 0.105}
               depthWrite={false}
               blending={THREE.AdditiveBlending}
               side={THREE.DoubleSide}
@@ -265,7 +265,7 @@ function TreeOfLifeMachineWall({
             <meshBasicMaterial
               color={active ? (i % 2 === 0 ? '#ffd18a' : '#d9b5ff') : '#8a6a3a'}
               transparent
-              opacity={active ? 0.76 : 0.34}
+              opacity={active ? 0.48 : 0.16}
               depthWrite={false}
               blending={THREE.AdditiveBlending}
               side={THREE.DoubleSide}
@@ -307,7 +307,7 @@ function ChamberRaySystem({
         rotation={[0, 0, 0]}
         size={[0.42, 2.65]}
         color={oracleColor}
-        opacity={active ? 0.16 : 0.055}
+        opacity={active ? 0.075 : 0.025}
       />
 
       <Beam
@@ -315,7 +315,7 @@ function ChamberRaySystem({
         rotation={[0, 0, -0.22]}
         size={[0.18, 2.45]}
         color="#8a1034"
-        opacity={active ? 0.12 : 0.045}
+        opacity={active ? 0.06 : 0.018}
       />
 
       <Beam
@@ -323,7 +323,7 @@ function ChamberRaySystem({
         rotation={[0, 0, 0.22]}
         size={[0.18, 2.45]}
         color="#6b35ff"
-        opacity={active ? 0.12 : 0.045}
+        opacity={active ? 0.06 : 0.018}
       />
 
       <Beam
@@ -331,34 +331,14 @@ function ChamberRaySystem({
         rotation={[-Math.PI / 2, 0, 0]}
         size={[2.2, 0.06]}
         color={forgeColor}
-        opacity={loading ? 0.38 : 0.14}
+        opacity={loading ? 0.24 : 0.07}
       />
     </group>
   )
 }
 
-function HumanScaleMarkerText({ hasDeck = false, oracleLoading = false, hasOracleReading = false }: Props) {
-  const text = oracleLoading
-    ? 'THE ORACLE IS SPEAKING THROUGH THE MACHINE'
-    : hasOracleReading
-      ? 'THE READING HAS BEEN INSCRIBED INTO THE TEMPLE'
-      : hasDeck
-        ? 'THE DECK IS ALIVE IN THE MATRIX'
-        : 'APPROACH THE ALTAR AND CONFIGURE THE FORGE'
-
-  return (
-    <Text
-      position={[0, 1.2, -0.18]}
-      fontSize={0.052}
-      color={oracleLoading || hasOracleReading ? '#d9b5ff' : '#b8860b'}
-      anchorX="center"
-      anchorY="middle"
-      maxWidth={2.25}
-      raycast={noRaycast}
-    >
-      {text}
-    </Text>
-  )
+function HumanScaleMarkerText(_props: Props) {
+  return null
 }
 
 export function TempleGrandArchitecture({

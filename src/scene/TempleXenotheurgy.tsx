@@ -811,14 +811,14 @@ function HumanScaleTempleLife({
 
     if (veilRef.current) {
       veilRef.current.opacity = Math.min(
-        0.42,
+        0.22,
         0.09 + Math.sin(t * 0.72) * 0.025 + (oracleActive ? 0.18 : 0) + impulse * 0.08,
       )
     }
 
     if (auraRef.current) {
       auraRef.current.opacity = Math.min(
-        0.48,
+        0.24,
         0.08 + Math.sin(t * 1.05) * 0.035 + (active ? 0.12 : 0) + impulse * 0.1,
       )
     }
@@ -828,13 +828,7 @@ function HumanScaleTempleLife({
     }
   })
 
-  const phrase = oracleActive
-    ? 'THE ORACLE FIELD BREATHES'
-    : loading
-      ? 'THE FORGE HEATS THE ASTRAL DECK'
-      : hasDeck
-        ? 'THE DECK MEMORY HUMS BENEATH THE ALTAR'
-        : 'THE TEMPLE WAITS FOR THE WILL'
+
 
   return (
     <group raycast={noRaycast}>
@@ -936,17 +930,6 @@ function HumanScaleTempleLife({
         </Text>
       </group>
 
-      <Text
-        position={[0, 0.96, -0.34]}
-        fontSize={0.052}
-        color={active ? '#ffd18a' : '#7b5536'}
-        anchorX="center"
-        anchorY="middle"
-        maxWidth={1.92}
-        raycast={noRaycast}
-      >
-        {phrase}
-      </Text>
     </group>
   )
 }
