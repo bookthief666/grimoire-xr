@@ -21,20 +21,20 @@ type DragState = {
 }
 
 const DEFAULT_PANEL_OFFSETS: Record<PanelKind, Vec3> = {
-  dossier: [-1.36, 0.0, -0.28],
-  card: [0, 0.08, -0.36],
-  oracle: [1.36, 0.0, -0.28],
+  dossier: [-1.18, 0.02, -0.18],
+  card: [0, 0.12, -0.24],
+  oracle: [1.18, 0.02, -0.18],
 }
 
 const DEPTH_STEP = 0.24
 
 const DEFAULT_PANEL_SCALES: Record<PanelKind, number> = {
-  dossier: 0.92,
-  card: 0.92,
-  oracle: 0.92,
+  dossier: 0.96,
+  card: 1.04,
+  oracle: 1.08,
 }
-const PANEL_POSITION_STORAGE_KEY = 'grimoire-xr:reading-panel-offsets:v1'
-const PANEL_SCALE_STORAGE_KEY = 'grimoire-xr:reading-panel-scales:v1'
+const PANEL_POSITION_STORAGE_KEY = 'grimoire-xr:reading-panel-offsets:v2'
+const PANEL_SCALE_STORAGE_KEY = 'grimoire-xr:reading-panel-scales:v2'
 
 function cloneDefaultOffsets(): Record<PanelKind, Vec3> {
   return {
@@ -58,7 +58,7 @@ function clampPanelOffset([x, y, z]: Vec3): Vec3 {
 
 
 function clampPanelScale(value: number) {
-  return clamp(value, 0.68, 1.18)
+  return clamp(value, 0.72, 1.34)
 }
 
 function cloneDefaultScales(): Record<PanelKind, number> {
@@ -550,7 +550,7 @@ function DepthControls({
   return (
     <group>
       <PanelButton
-        label="NEAR"
+        label="DRAW"
         x={-0.38}
         y={-0.73}
         accent={accent}
@@ -559,7 +559,7 @@ function DepthControls({
       />
 
       <PanelButton
-        label="FAR"
+        label="SEND"
         x={0}
         y={-0.73}
         accent={accent}
@@ -568,7 +568,7 @@ function DepthControls({
       />
 
       <PanelButton
-        label="HOME"
+        label="CENTER"
         x={0.38}
         y={-0.73}
         accent={accent}
@@ -577,7 +577,7 @@ function DepthControls({
       />
 
       <PanelButton
-        label="SMALL"
+        label="DIM"
         x={-0.24}
         y={-0.93}
         accent={accent}
@@ -586,7 +586,7 @@ function DepthControls({
       />
 
       <PanelButton
-        label="BIG"
+        label="MAGNIFY"
         x={0.24}
         y={-0.93}
         accent={accent}
@@ -652,7 +652,7 @@ function DragHeader({
       }}
     >
       <mesh>
-        <planeGeometry args={[1.08, 0.24]} />
+        <planeGeometry args={[1.24, 0.25]} />
         <meshBasicMaterial
           color={dragging ? '#3c1608' : hovered ? '#2a1208' : '#220d07'}
           transparent
@@ -662,7 +662,7 @@ function DragHeader({
       </mesh>
 
       <mesh position={[0, 0, 0.012]}>
-        <planeGeometry args={[1.18, 0.34]} />
+        <planeGeometry args={[1.36, 0.36]} />
         <meshBasicMaterial
           color={accent}
           transparent
@@ -679,7 +679,7 @@ function DragHeader({
         anchorY="middle"
         fontSize={0.044}
         color="#ffd18a"
-        maxWidth={0.68}
+        maxWidth={0.82}
       >
         {title}
       </Text>
@@ -692,7 +692,7 @@ function DragHeader({
         color={dragging || hovered ? '#ffffff' : '#b98855'}
         maxWidth={0.28}
       >
-        {dragging ? 'MOVING' : 'DRAG'}
+        {dragging ? 'MOVING' : 'MOVE'}
       </Text>
 
       <mesh position={[0, 0, 0.04]}>
@@ -812,7 +812,7 @@ function PanelShell({
           if (!dragging) goNext()
         }}
       >
-        <planeGeometry args={[1.16, 1.88]} />
+        <planeGeometry args={[1.34, 2.08]} />
         <meshStandardMaterial
           color="#100606"
           emissive="#251006"
@@ -824,7 +824,7 @@ function PanelShell({
       </mesh>
 
       <mesh position={[0, 0, 0.008]}>
-        <planeGeometry args={[1.26, 1.98]} />
+        <planeGeometry args={[1.5, 2.24]} />
         <meshBasicMaterial
           color={accent}
           transparent
@@ -859,20 +859,20 @@ function PanelShell({
         position={[0, 0.45, 0.045]}
         anchorX="center"
         anchorY="middle"
-        fontSize={0.029}
+        fontSize={0.031}
         color="#b98855"
-        maxWidth={0.92}
+        maxWidth={1.02}
       >
         {subtitle}
       </Text>
 
       <Text
-        position={[-0.46, 0.29, 0.045]}
+        position={[-0.53, 0.31, 0.045]}
         anchorX="left"
         anchorY="top"
-        fontSize={0.036}
+        fontSize={0.039}
         color="#f2d4a2"
-        maxWidth={0.92}
+        maxWidth={1.05}
         lineHeight={1.22}
       >
         {currentPage}
