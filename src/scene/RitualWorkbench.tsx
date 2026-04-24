@@ -209,6 +209,10 @@ function FloatingMenuButton({
 }) {
   const [hovered, setHovered] = useState(false)
 
+  const trigger = () => {
+    if (!disabled) onClick()
+  }
+
   return (
     <group
       position={[x, y, 0.075]}
@@ -221,27 +225,45 @@ function FloatingMenuButton({
         event.stopPropagation()
         setHovered(false)
       }}
+      onPointerDown={(event) => {
+        event.stopPropagation()
+
+        const target = event.target as unknown as {
+          setPointerCapture?: (pointerId: number) => void
+        }
+
+        target.setPointerCapture?.(event.pointerId)
+      }}
+      onPointerUp={(event) => {
+        event.stopPropagation()
+
+        const target = event.target as unknown as {
+          releasePointerCapture?: (pointerId: number) => void
+        }
+
+        target.releasePointerCapture?.(event.pointerId)
+        trigger()
+      }}
       onClick={(event) => {
         event.stopPropagation()
-        if (!disabled) onClick()
       }}
     >
       <mesh>
-        <planeGeometry args={[width, 0.14]} />
+        <planeGeometry args={[width, 0.16]} />
         <meshBasicMaterial
           color={disabled ? '#100807' : '#241008'}
           transparent
-          opacity={disabled ? 0.42 : 0.86}
+          opacity={disabled ? 0.42 : 0.9}
           side={THREE.DoubleSide}
         />
       </mesh>
 
       <mesh position={[0, 0, 0.012]}>
-        <planeGeometry args={[width + 0.12, 0.24]} />
+        <planeGeometry args={[width + 0.16, 0.28]} />
         <meshBasicMaterial
           color="#ffb000"
           transparent
-          opacity={hovered && !disabled ? 0.32 : 0.08}
+          opacity={hovered && !disabled ? 0.36 : 0.1}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
@@ -249,7 +271,7 @@ function FloatingMenuButton({
       </mesh>
 
       <Text
-        position={[0, 0.002, 0.026]}
+        position={[0, 0.002, 0.03]}
         fontSize={0.04}
         color={disabled ? '#6d5135' : hovered ? '#ffffff' : '#ffd18a'}
         anchorX="center"
@@ -259,8 +281,8 @@ function FloatingMenuButton({
         {label}
       </Text>
 
-      <mesh position={[0, 0, 0.04]}>
-        <planeGeometry args={[width + 0.2, 0.3]} />
+      <mesh position={[0, 0, 0.055]}>
+        <planeGeometry args={[width + 0.26, 0.38]} />
         <meshBasicMaterial
           color="#ffffff"
           transparent
@@ -272,6 +294,7 @@ function FloatingMenuButton({
     </group>
   )
 }
+
 
 function FloatingDial({
   label,
@@ -471,8 +494,8 @@ function FloatingForgeMenu({
       <FloatingMenuButton
         label={loading ? 'FORGING…' : 'IGNITE FORGE'}
         x={0.18}
-        y={-0.55}
-        width={0.82}
+        y={-0.5}
+        width={0.98}
         disabled={!canForge}
         onClick={onBeginRitual}
       />
@@ -662,6 +685,8 @@ function FloatingSigilButton({
   sigil,
   label,
   x,
+  y = TABLE_Y + 0.42,
+  z = 0.92,
   active = false,
   disabled = false,
   danger = false,
@@ -670,6 +695,8 @@ function FloatingSigilButton({
   sigil: string
   label: string
   x: number
+  y?: number
+  z?: number
   active?: boolean
   disabled?: boolean
   danger?: boolean
@@ -681,9 +708,13 @@ function FloatingSigilButton({
   const glowColor = danger ? '#ff3030' : active ? '#ffcf7c' : '#ff9a00'
   const textColor = disabled ? '#5f4932' : hovered || active ? '#fff0c0' : '#d99b58'
 
+  const trigger = () => {
+    if (!disabled) onClick()
+  }
+
   return (
     <group
-      position={[x, TABLE_Y + 0.42, 0.92]}
+      position={[x, y, z]}
       rotation={[-0.18, 0, 0]}
       scale={hovered && !disabled ? 1.08 : 1}
       onPointerOver={(event) => {
@@ -694,9 +725,27 @@ function FloatingSigilButton({
         event.stopPropagation()
         setHovered(false)
       }}
+      onPointerDown={(event) => {
+        event.stopPropagation()
+
+        const target = event.target as unknown as {
+          setPointerCapture?: (pointerId: number) => void
+        }
+
+        target.setPointerCapture?.(event.pointerId)
+      }}
+      onPointerUp={(event) => {
+        event.stopPropagation()
+
+        const target = event.target as unknown as {
+          releasePointerCapture?: (pointerId: number) => void
+        }
+
+        target.releasePointerCapture?.(event.pointerId)
+        trigger()
+      }}
       onClick={(event) => {
         event.stopPropagation()
-        if (!disabled) onClick()
       }}
     >
       <mesh>
@@ -722,11 +771,11 @@ function FloatingSigilButton({
       </mesh>
 
       <mesh position={[0, 0, 0.018]}>
-        <circleGeometry args={[0.25, 32]} />
+        <circleGeometry args={[0.27, 32]} />
         <meshBasicMaterial
           color={glowColor}
           transparent
-          opacity={disabled ? 0.035 : hovered || active ? 0.18 : 0.075}
+          opacity={disabled ? 0.035 : hovered || active ? 0.2 : 0.075}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
@@ -751,14 +800,14 @@ function FloatingSigilButton({
           color="#ffd18a"
           anchorX="center"
           anchorY="middle"
-          maxWidth={0.52}
+          maxWidth={0.58}
         >
           {label}
         </Text>
       ) : null}
 
       <mesh position={[0, 0, 0.07]}>
-        <planeGeometry args={[0.48, 0.48]} />
+        <planeGeometry args={[0.52, 0.52]} />
         <meshBasicMaterial
           color="#ffffff"
           transparent
@@ -792,14 +841,43 @@ function FloatingSigilDock({
   onClearOracle: () => void
   onReset: () => void
 }) {
+  const sideDock = menuMode === 'spread'
+
+  const dockPlanePosition: [number, number, number] = sideDock
+    ? [1.42, TABLE_Y + 0.28, 0.32]
+    : [0, TABLE_Y + 0.42, 0.94]
+
+  const dockPlaneSize: [number, number] = sideDock ? [0.34, 1.72] : [2.18, 0.34]
+
+  const sigilPosition = (
+    normalX: number,
+    sideIndex: number,
+  ): { x: number; y: number; z: number } => {
+    if (!sideDock) {
+      return { x: normalX, y: TABLE_Y + 0.42, z: 0.92 }
+    }
+
+    return {
+      x: 1.42,
+      y: TABLE_Y + 0.86 - sideIndex * 0.32,
+      z: 0.34,
+    }
+  }
+
+  const config = sigilPosition(-0.66, 0)
+  const spread = sigilPosition(-0.33, 1)
+  const oracle = sigilPosition(0, 2)
+  const clear = sigilPosition(0.33, 3)
+  const reset = sigilPosition(0.66, 4)
+
   return (
     <group>
-      <mesh position={[0, TABLE_Y + 0.42, 0.94]} rotation={[-0.18, 0, 0]}>
-        <planeGeometry args={[2.18, 0.34]} />
+      <mesh position={dockPlanePosition} rotation={[-0.18, 0, 0]}>
+        <planeGeometry args={dockPlaneSize} />
         <meshBasicMaterial
           color="#050202"
           transparent
-          opacity={0.36}
+          opacity={sideDock ? 0.28 : 0.36}
           depthWrite={false}
           side={THREE.DoubleSide}
         />
@@ -808,7 +886,9 @@ function FloatingSigilDock({
       <FloatingSigilButton
         sigil="✶"
         label={menuMode === 'forge' ? 'Close Forge Menu' : 'Open Forge Menu'}
-        x={-0.66}
+        x={config.x}
+        y={config.y}
+        z={config.z}
         active={menuMode === 'forge'}
         onClick={onToggleForge}
       />
@@ -816,7 +896,9 @@ function FloatingSigilDock({
       <FloatingSigilButton
         sigil="⌬"
         label={menuMode === 'spread' ? 'Hide Spread' : 'Reveal Spread'}
-        x={-0.33}
+        x={spread.x}
+        y={spread.y}
+        z={spread.z}
         active={menuMode === 'spread'}
         onClick={onToggleSpread}
       />
@@ -824,7 +906,9 @@ function FloatingSigilDock({
       <FloatingSigilButton
         sigil={oracleLoading ? '…' : '☉'}
         label={oracleLoading ? 'Consulting Oracle' : 'Consult Oracle'}
-        x={0}
+        x={oracle.x}
+        y={oracle.y}
+        z={oracle.z}
         active={oracleLoading}
         disabled={!canConsult}
         onClick={onConsultOracle}
@@ -833,7 +917,9 @@ function FloatingSigilDock({
       <FloatingSigilButton
         sigil="✕"
         label="Clear Oracle"
-        x={0.33}
+        x={clear.x}
+        y={clear.y}
+        z={clear.z}
         disabled={!hasOracleReading}
         onClick={onClearOracle}
       />
@@ -841,13 +927,16 @@ function FloatingSigilDock({
       <FloatingSigilButton
         sigil="↺"
         label="Reset Ritual"
-        x={0.66}
+        x={reset.x}
+        y={reset.y}
+        z={reset.z}
         danger
         onClick={onReset}
       />
     </group>
   )
 }
+
 
 
 export function RitualWorkbench({
