@@ -1114,6 +1114,27 @@ export default function App() {
             dossier={engine.dossier}
             oracleReading={engine.oracleReading}
             showInWorldPanels={showInWorldPanels}
+              subject={engine.subject}
+              tradition={engine.tradition}
+              tone={engine.tone}
+              techLevel={engine.techLevel}
+              intent={engine.intent}
+              forgePhase={engine.forgePhase}
+              loading={engine.loading}
+              hasDeck={Boolean(engine.deck)}
+              oracleQuestion={engine.oracleQuestion}
+              oracleLoading={engine.oracleLoading}
+              hasOracleReading={Boolean(engine.oracleReading)}
+              onSubjectChange={engine.setSubject}
+              onTraditionChange={engine.setTradition}
+              onToneChange={engine.setTone}
+              onTechLevelChange={engine.setTechLevel}
+              onIntentChange={engine.setIntent}
+              onOracleQuestionChange={engine.setOracleQuestion}
+              onBeginRitual={engine.beginRitual}
+              onConsultOracle={engine.consultActiveOracle}
+              onClearOracle={engine.clearOracleReading}
+              onClearRitual={engine.clearRitual}
             onCardActivate={(card) => engine.activateCard(card.id)}
             onAltarLanding={engine.acknowledgeAltarLanding}
           />

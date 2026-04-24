@@ -9,9 +9,18 @@ import { Edges, Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { PALETTE } from '../theme/palette'
-import type { GrimoireCard, OracleReading, SubjectDossier } from '../types/grimoire'
+import type {
+  ForgePhase,
+  GrimoireCard,
+  OracleReading,
+  SubjectDossier,
+  TechLevel,
+  Tone,
+  Tradition,
+} from '../types/grimoire'
 import { InWorldOraclePanels } from './InWorldOraclePanels'
 import { TempleAtmosphere } from './TempleAtmosphere'
+import { InWorldRitualConsole } from './InWorldRitualConsole'
 
 type ManifestState = {
   card: GrimoireCard
@@ -720,6 +729,27 @@ export function RitualChamberScene({
   dossier = null,
   oracleReading = null,
   showInWorldPanels = true,
+  subject,
+  tradition,
+  tone,
+  techLevel,
+  intent,
+  forgePhase,
+  loading,
+  hasDeck,
+  oracleQuestion,
+  oracleLoading,
+  hasOracleReading,
+  onSubjectChange,
+  onTraditionChange,
+  onToneChange,
+  onTechLevelChange,
+  onIntentChange,
+  onOracleQuestionChange,
+  onBeginRitual,
+  onConsultOracle,
+  onClearOracle,
+  onClearRitual,
   onCardActivate,
   onAltarLanding,
 }: {
@@ -730,6 +760,27 @@ export function RitualChamberScene({
   dossier?: SubjectDossier | null
   oracleReading?: OracleReading | null
   showInWorldPanels?: boolean
+  subject: string
+  tradition: Tradition
+  tone: Tone
+  techLevel: TechLevel
+  intent: string
+  forgePhase: ForgePhase
+  loading: boolean
+  hasDeck: boolean
+  oracleQuestion: string
+  oracleLoading: boolean
+  hasOracleReading: boolean
+  onSubjectChange: (subject: string) => void
+  onTraditionChange: (tradition: Tradition) => void
+  onToneChange: (tone: Tone) => void
+  onTechLevelChange: (techLevel: TechLevel) => void
+  onIntentChange: (intent: string) => void
+  onOracleQuestionChange: (question: string) => void
+  onBeginRitual: () => Promise<void>
+  onConsultOracle: () => Promise<void>
+  onClearOracle: () => void
+  onClearRitual: () => void
   onCardActivate: (card: GrimoireCard) => void
   onAltarLanding: () => void
 }) {
@@ -791,6 +842,30 @@ export function RitualChamberScene({
       <Pillar x={2.1} />
       <CeilingCrown ritualImpulseRef={ritualImpulseRef} />
       <Embers ritualImpulseRef={ritualImpulseRef} />
+
+      <InWorldRitualConsole
+        subject={subject}
+        tradition={tradition}
+        tone={tone}
+        techLevel={techLevel}
+        intent={intent}
+        forgePhase={forgePhase}
+        loading={loading}
+        hasDeck={hasDeck}
+        oracleQuestion={oracleQuestion}
+        oracleLoading={oracleLoading}
+        hasOracleReading={hasOracleReading}
+        onSubjectChange={onSubjectChange}
+        onTraditionChange={onTraditionChange}
+        onToneChange={onToneChange}
+        onTechLevelChange={onTechLevelChange}
+        onIntentChange={onIntentChange}
+        onOracleQuestionChange={onOracleQuestionChange}
+        onBeginRitual={onBeginRitual}
+        onConsultOracle={onConsultOracle}
+        onClearOracle={onClearOracle}
+        onClearRitual={onClearRitual}
+      />
 
       <Altar
         manifest={manifest}
