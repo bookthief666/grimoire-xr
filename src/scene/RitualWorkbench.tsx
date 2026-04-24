@@ -207,6 +207,114 @@ function TableHexagram({
   )
 }
 
+
+function AltarAstrolabeRings({
+  active,
+  erosField,
+}: {
+  active: boolean
+  erosField: string
+}) {
+  const outerRef = useRef<THREE.MeshBasicMaterial>(null)
+  const middleRef = useRef<THREE.MeshBasicMaterial>(null)
+  const innerRef = useRef<THREE.MeshBasicMaterial>(null)
+
+  const erosAccent =
+    erosField === 'Ecstatic'
+      ? '#9a35ff'
+      : erosField === 'Charged'
+        ? '#ff3d5a'
+        : '#d6a642'
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime()
+
+    if (outerRef.current) {
+      outerRef.current.opacity = active ? 0.18 + Math.sin(t * 0.55) * 0.05 : 0.1
+    }
+
+    if (middleRef.current) {
+      middleRef.current.opacity = active ? 0.28 + Math.sin(t * 0.82 + 1.1) * 0.07 : 0.14
+    }
+
+    if (innerRef.current) {
+      innerRef.current.opacity = active ? 0.34 + Math.sin(t * 1.1 + 0.4) * 0.08 : 0.18
+    }
+  })
+
+  return (
+    <group>
+      <mesh position={[0, TABLE_Y + 0.006, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.9, 0.905, 96]} />
+        <meshBasicMaterial
+          ref={outerRef}
+          color="#d6a642"
+          transparent
+          opacity={0.16}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, TABLE_Y + 0.007, 0]} rotation={[-Math.PI / 2, 0, Math.PI / 8]}>
+        <ringGeometry args={[0.48, 0.486, 80]} />
+        <meshBasicMaterial
+          ref={middleRef}
+          color={erosAccent}
+          transparent
+          opacity={0.22}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, TABLE_Y + 0.008, 0]} rotation={[-Math.PI / 2, 0, -Math.PI / 5]}>
+        <ringGeometry args={[0.26, 0.268, 64]} />
+        <meshBasicMaterial
+          ref={innerRef}
+          color="#ffcf7c"
+          transparent
+          opacity={0.26}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      {Array.from({ length: 12 }, (_, i) => {
+        const angle = (i / 12) * Math.PI * 2
+        const r1 = 0.74
+        const r2 = i % 3 === 0 ? 0.86 : 0.81
+
+        return (
+          <TableBar
+            key={i}
+            a={[Math.cos(angle) * r1, Math.sin(angle) * r1]}
+            b={[Math.cos(angle) * r2, Math.sin(angle) * r2]}
+            color={i % 3 === 0 ? erosAccent : '#b8860b'}
+            opacity={active ? 0.38 : 0.2}
+            width={i % 3 === 0 ? 0.014 : 0.008}
+          />
+        )
+      })}
+
+      <Text
+        position={[0, TABLE_Y + 0.05, 0.72]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        fontSize={0.032}
+        color={active ? '#ffd18a' : '#7b5536'}
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={0.72}
+      >
+        GRIMOIRE ENGINE
+      </Text>
+    </group>
+  )
+}
+
 function FloatingMenuButton({
   label,
   x,
@@ -1208,6 +1316,10 @@ export function RitualWorkbench({
         />
       </mesh>
 
+      <AltarAstrolabeRings
+        active={hasDeck || menuMode !== 'closed' || loading || oracleLoading || hasOracleReading}
+        erosField={erosField}
+      />
       <TableHexagram active={hasDeck || loading || oracleLoading || hasOracleReading} />
 
       <DeckTray count={cards.length} active={hasDeck} />
