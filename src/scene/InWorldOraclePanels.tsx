@@ -11,6 +11,42 @@ type InWorldOraclePanelsProps = {
 }
 
 type UnknownRecord = Record<string, unknown>
+type PanelKind = 'dossier' | 'card' | 'oracle'
+type Vec3 = [number, number, number]
+
+const DEFAULT_PANEL_OFFSETS: Record<PanelKind, Vec3> = {
+  dossier: [-1.36, 0.0, -0.28],
+  card: [0, 0.08, -0.36],
+  oracle: [1.36, 0.0, -0.28],
+}
+
+const MOVE_STEP_X = 0.18
+const MOVE_STEP_Y = 0.14
+const MOVE_STEP_Z = 0.22
+
+function cloneDefaultOffsets(): Record<PanelKind, Vec3> {
+  return {
+    dossier: [...DEFAULT_PANEL_OFFSETS.dossier],
+    card: [...DEFAULT_PANEL_OFFSETS.card],
+    oracle: [...DEFAULT_PANEL_OFFSETS.oracle],
+  }
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value))
+}
+
+function clampPanelOffset([x, y, z]: Vec3): Vec3 {
+  return [
+    clamp(x, -2.45, 2.45),
+    clamp(y, -0.85, 0.85),
+    clamp(z, -1.35, 0.75),
+  ]
+}
+
+function rotationForOffset([x]: Vec3): [number, number, number] {
+  return [0, clamp(-x * 0.14, -0.36, 0.36), 0]
+}
 
 function asRecord(value: unknown): UnknownRecord {
   return value && typeof value === 'object' ? (value as UnknownRecord) : {}
@@ -309,6 +345,7 @@ function PanelButton({
   x,
   y,
   accent,
+  width = 0.22,
   disabled = false,
   onClick,
 }: {
@@ -316,6 +353,7 @@ function PanelButton({
   x: number
   y: number
   accent: string
+  width?: number
   disabled?: boolean
   onClick: () => void
 }) {
@@ -339,7 +377,7 @@ function PanelButton({
       }}
     >
       <mesh>
-        <planeGeometry args={[0.22, 0.16]} />
+        <planeGeometry args={[width, 0.16]} />
         <meshBasicMaterial
           color={disabled ? '#120808' : '#251008'}
           transparent
@@ -349,7 +387,7 @@ function PanelButton({
       </mesh>
 
       <mesh position={[0, 0, 0.01]}>
-        <planeGeometry args={[0.32, 0.28]} />
+        <planeGeometry args={[width + 0.1, 0.28]} />
         <meshBasicMaterial
           color={accent}
           transparent
@@ -364,14 +402,15 @@ function PanelButton({
         position={[0, 0.004, 0.025]}
         anchorX="center"
         anchorY="middle"
-        fontSize={0.052}
+        fontSize={0.042}
         color={disabled ? '#6e4934' : hovered ? '#ffffff' : '#ffd18a'}
+        maxWidth={width - 0.03}
       >
         {label}
       </Text>
 
       <mesh position={[0, 0, 0.04]}>
-        <planeGeometry args={[0.42, 0.34]} />
+        <planeGeometry args={[width + 0.2, 0.34]} />
         <meshBasicMaterial
           color="#ffffff"
           transparent
@@ -384,20 +423,124 @@ function PanelButton({
   )
 }
 
+function MoveControls({
+  accent,
+  onMove,
+  onReset,
+  onDone,
+}: {
+  accent: string
+  onMove: (delta: Vec3) => void
+  onReset: () => void
+  onDone: () => void
+}) {
+  return (
+    <group>
+      <Text
+        position={[0, -0.69, 0.07]}
+        anchorX="center"
+        anchorY="middle"
+        fontSize={0.028}
+        color="#b98855"
+        maxWidth={1.05}
+      >
+        MOVE PANEL
+      </Text>
+
+      <PanelButton
+        label="LEFT"
+        x={-0.45}
+        y={-0.86}
+        accent={accent}
+        width={0.28}
+        onClick={() => onMove([-MOVE_STEP_X, 0, 0])}
+      />
+
+      <PanelButton
+        label="RIGHT"
+        x={-0.12}
+        y={-0.86}
+        accent={accent}
+        width={0.32}
+        onClick={() => onMove([MOVE_STEP_X, 0, 0])}
+      />
+
+      <PanelButton
+        label="UP"
+        x={0.22}
+        y={-0.86}
+        accent={accent}
+        width={0.22}
+        onClick={() => onMove([0, MOVE_STEP_Y, 0])}
+      />
+
+      <PanelButton
+        label="DOWN"
+        x={0.5}
+        y={-0.86}
+        accent={accent}
+        width={0.3}
+        onClick={() => onMove([0, -MOVE_STEP_Y, 0])}
+      />
+
+      <PanelButton
+        label="NEAR"
+        x={-0.43}
+        y={-1.06}
+        accent={accent}
+        width={0.3}
+        onClick={() => onMove([0, 0, MOVE_STEP_Z])}
+      />
+
+      <PanelButton
+        label="FAR"
+        x={-0.1}
+        y={-1.06}
+        accent={accent}
+        width={0.24}
+        onClick={() => onMove([0, 0, -MOVE_STEP_Z])}
+      />
+
+      <PanelButton
+        label="HOME"
+        x={0.22}
+        y={-1.06}
+        accent={accent}
+        width={0.3}
+        onClick={onReset}
+      />
+
+      <PanelButton
+        label="DONE"
+        x={0.53}
+        y={-1.06}
+        accent={accent}
+        width={0.3}
+        onClick={onDone}
+      />
+    </group>
+  )
+}
+
 function PanelShell({
   title,
   subtitle,
   pages,
   accent,
+  onMove,
+  onReset,
   children,
 }: {
   title: string
   subtitle: string
   pages: string[]
   accent: string
+  onMove: (delta: Vec3) => void
+  onReset: () => void
   children?: ReactNode
 }) {
   const [pageIndex, setPageIndex] = useState(0)
+  const [moveMode, setMoveMode] = useState(false)
   const groupRef = useRef<THREE.Group>(null)
   const pageSignature = pages.join('\u0000')
   const safePages = pages.length ? pages : ['No text available.']
@@ -408,9 +551,9 @@ function PanelShell({
   }, [pageSignature])
 
   useFrame(({ clock }) => {
-    if (!groupRef.current) return
+    if (!groupRef.current || moveMode) return
     const t = clock.getElapsedTime()
-    groupRef.current.position.y = Math.sin(t * 0.85 + title.length) * 0.018
+    groupRef.current.position.y = Math.sin(t * 0.85 + title.length) * 0.012
   })
 
   const goPrevious = () => {
@@ -428,16 +571,16 @@ function PanelShell({
       <mesh
         onClick={(event) => {
           event.stopPropagation()
-          goNext()
+          if (!moveMode) goNext()
         }}
       >
         <planeGeometry args={[1.16, 1.38]} />
         <meshStandardMaterial
           color="#100606"
           emissive="#251006"
-          emissiveIntensity={0.34}
+          emissiveIntensity={moveMode ? 0.48 : 0.34}
           transparent
-          opacity={0.88}
+          opacity={moveMode ? 0.94 : 0.86}
           side={THREE.DoubleSide}
         />
       </mesh>
@@ -447,7 +590,7 @@ function PanelShell({
         <meshBasicMaterial
           color={accent}
           transparent
-          opacity={0.105}
+          opacity={moveMode ? 0.18 : 0.105}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
@@ -474,7 +617,7 @@ function PanelShell({
         <meshBasicMaterial
           color={accent}
           transparent
-          opacity={0.32}
+          opacity={moveMode ? 0.48 : 0.32}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
@@ -487,10 +630,19 @@ function PanelShell({
         anchorY="middle"
         fontSize={0.048}
         color="#ffd18a"
-        maxWidth={0.96}
+        maxWidth={0.72}
       >
         {title}
       </Text>
+
+      <PanelButton
+        label={moveMode ? 'READ' : 'MOVE'}
+        x={0.42}
+        y={0.6}
+        accent={accent}
+        width={0.25}
+        onClick={() => setMoveMode((current) => !current)}
+      />
 
       <Text
         position={[0, 0.47, 0.045]}
@@ -508,43 +660,56 @@ function PanelShell({
         anchorX="left"
         anchorY="top"
         fontSize={0.036}
-        color="#f2d4a2"
+        color={moveMode ? '#c89a6a' : '#f2d4a2'}
         maxWidth={0.92}
         lineHeight={1.22}
       >
-        {currentPage}
+        {moveMode
+          ? 'Use the movement controls below to reposition this reading panel. Press READ when done.'
+          : currentPage}
       </Text>
 
-      <PanelButton
-        label="‹"
-        x={-0.34}
-        y={-0.54}
-        accent={accent}
-        disabled={safePages.length <= 1}
-        onClick={goPrevious}
-      />
+      {moveMode ? (
+        <MoveControls
+          accent={accent}
+          onMove={onMove}
+          onReset={onReset}
+          onDone={() => setMoveMode(false)}
+        />
+      ) : (
+        <>
+          <PanelButton
+            label="‹"
+            x={-0.34}
+            y={-0.54}
+            accent={accent}
+            disabled={safePages.length <= 1}
+            onClick={goPrevious}
+          />
 
-      <Text
-        position={[0, -0.54, 0.055]}
-        anchorX="center"
-        anchorY="middle"
-        fontSize={0.031}
-        color="#9a6b48"
-        maxWidth={0.38}
-      >
-        {safePages.length > 1
-          ? `${pageIndex + 1}/${safePages.length}`
-          : 'TAP PANEL'}
-      </Text>
+          <Text
+            position={[0, -0.54, 0.055]}
+            anchorX="center"
+            anchorY="middle"
+            fontSize={0.031}
+            color="#9a6b48"
+            maxWidth={0.38}
+          >
+            {safePages.length > 1
+              ? `${pageIndex + 1}/${safePages.length}`
+              : 'TAP PANEL'}
+          </Text>
 
-      <PanelButton
-        label="›"
-        x={0.34}
-        y={-0.54}
-        accent={accent}
-        disabled={safePages.length <= 1}
-        onClick={goNext}
-      />
+          <PanelButton
+            label="›"
+            x={0.34}
+            y={-0.54}
+            accent={accent}
+            disabled={safePages.length <= 1}
+            onClick={goNext}
+          />
+        </>
+      )}
 
       {children}
     </group>
@@ -556,6 +721,31 @@ export function InWorldOraclePanels({
   focusedCard = null,
   oracleReading = null,
 }: InWorldOraclePanelsProps) {
+  const [panelOffsets, setPanelOffsets] = useState<Record<PanelKind, Vec3>>(
+    cloneDefaultOffsets,
+  )
+
+  const movePanel = (kind: PanelKind, delta: Vec3) => {
+    setPanelOffsets((current) => {
+      const base = current[kind]
+      return {
+        ...current,
+        [kind]: clampPanelOffset([
+          base[0] + delta[0],
+          base[1] + delta[1],
+          base[2] + delta[2],
+        ]),
+      }
+    })
+  }
+
+  const resetPanel = (kind: PanelKind) => {
+    setPanelOffsets((current) => ({
+      ...current,
+      [kind]: [...DEFAULT_PANEL_OFFSETS[kind]],
+    }))
+  }
+
   const dossierPages = useMemo(() => {
     return dossier ? paginateText(makeDossierText(dossier), 300) : []
   }, [dossier])
@@ -581,36 +771,51 @@ export function InWorldOraclePanels({
   const oracleTitle = oracleReading ? 'ORACLE' : 'ORACLE'
 
   return (
-    <group position={[0, 1.76, -2.62]}>
+    <group position={[0, 1.76, -2.84]}>
       {dossierPages.length ? (
-        <group position={[-1.24, 0.03, 0]} rotation={[0, 0.18, 0]}>
+        <group
+          position={panelOffsets.dossier}
+          rotation={rotationForOffset(panelOffsets.dossier)}
+        >
           <PanelShell
             title={dossierTitle.toUpperCase()}
             subtitle="SUBJECT DOSSIER"
             pages={dossierPages}
             accent="#ff9a00"
+            onMove={(delta) => movePanel('dossier', delta)}
+            onReset={() => resetPanel('dossier')}
           />
         </group>
       ) : null}
 
       {cardPages.length ? (
-        <group position={[0, 0.1, -0.04]}>
+        <group
+          position={panelOffsets.card}
+          rotation={rotationForOffset(panelOffsets.card)}
+        >
           <PanelShell
             title={cardTitle.toUpperCase()}
             subtitle="ACTIVE ARCANUM"
             pages={cardPages}
             accent="#ffcf7c"
+            onMove={(delta) => movePanel('card', delta)}
+            onReset={() => resetPanel('card')}
           />
         </group>
       ) : null}
 
       {oraclePages.length ? (
-        <group position={[1.24, 0.03, 0]} rotation={[0, -0.18, 0]}>
+        <group
+          position={panelOffsets.oracle}
+          rotation={rotationForOffset(panelOffsets.oracle)}
+        >
           <PanelShell
             title={oracleTitle}
             subtitle="CONSULTATION"
             pages={oraclePages}
             accent="#8a2cff"
+            onMove={(delta) => movePanel('oracle', delta)}
+            onReset={() => resetPanel('oracle')}
           />
         </group>
       ) : null}
