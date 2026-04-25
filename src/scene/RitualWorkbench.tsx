@@ -17,7 +17,7 @@ import type {
 
 type Vec2 = [number, number]
 
-type WorkbenchMode = 'closed' | 'forge' | 'spread'
+type WorkbenchMode = 'closed' | 'forge' | 'spread' | 'archive'
 
 type DragState = {
   cardId: number
@@ -39,6 +39,12 @@ type RitualWorkbenchProps = {
   oracleQuestion: string
   oracleLoading: boolean
   hasOracleReading: boolean
+  hasSavedRitual: boolean
+  lastSavedAt: string | null
+  archiveMessage: string | null
+  onSaveRitual: () => boolean
+  onLoadArchive: () => boolean
+  onClearArchive: () => void
   onSubjectChange: (subject: string) => void
   onTraditionChange: (tradition: Tradition) => void
   onToneChange: (tone: Tone) => void
@@ -101,6 +107,20 @@ function clamp(value: number, min: number, max: number) {
 function shortText(value: string, max = 32) {
   const cleaned = value.replace(/\s+/g, ' ').trim()
   return cleaned.length > max ? `${cleaned.slice(0, max - 1)}…` : cleaned
+}
+
+function formatArchiveTime(value: string | null) {
+  if (!value) return 'NO SAVED RITUAL'
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+
+  return date.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).toUpperCase()
 }
 
 function cycleString(values: string[], current: string, direction: -1 | 1) {
@@ -1379,13 +1399,135 @@ function FloatingSigilButton({
   )
 }
 
+function FloatingArchiveMenu({
+  hasSavedRitual,
+  lastSavedAt,
+  archiveMessage,
+  onSaveRitual,
+  onLoadArchive,
+  onClearArchive,
+}: {
+  hasSavedRitual: boolean
+  lastSavedAt: string | null
+  archiveMessage: string | null
+  onSaveRitual: () => boolean
+  onLoadArchive: () => boolean
+  onClearArchive: () => void
+}) {
+  return (
+    <group position={[-1.05, 0.98, 0.08]} scale={0.98}>
+      <mesh>
+        <planeGeometry args={[1.48, 1.02]} />
+        <meshStandardMaterial
+          color="#090404"
+          emissive="#1d0907"
+          emissiveIntensity={0.36}
+          transparent
+          opacity={0.9}
+          roughness={0.32}
+          metalness={0.65}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, 0, 0.012]}>
+        <planeGeometry args={[1.62, 1.15]} />
+        <meshBasicMaterial
+          color={hasSavedRitual ? '#8a35ff' : '#b8860b'}
+          transparent
+          opacity={hasSavedRitual ? 0.12 : 0.075}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <Text
+        position={[0, 0.39, 0.05]}
+        fontSize={0.045}
+        color="#ffd18a"
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={1.1}
+      >
+        RITUAL ARCHIVE
+      </Text>
+
+      <Text
+        position={[0, 0.26, 0.05]}
+        fontSize={0.028}
+        color={hasSavedRitual ? '#d9b5ff' : '#9f744b'}
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={1.18}
+      >
+        {hasSavedRitual ? 'LOCAL MEMORY SEALED' : 'NO RITUAL SEALED'}
+      </Text>
+
+      <Text
+        position={[0, 0.13, 0.05]}
+        fontSize={0.026}
+        color="#bfa788"
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={1.18}
+      >
+        {formatArchiveTime(lastSavedAt)}
+      </Text>
+
+      <FloatingMenuButton
+        label="SEAL CURRENT"
+        x={-0.42}
+        y={-0.08}
+        width={0.5}
+        onClick={() => {
+          onSaveRitual()
+        }}
+      />
+
+      <FloatingMenuButton
+        label="LOAD LAST"
+        x={0.18}
+        y={-0.08}
+        width={0.5}
+        disabled={!hasSavedRitual}
+        onClick={() => {
+          onLoadArchive()
+        }}
+      />
+
+      <FloatingMenuButton
+        label="CLEAR SEAL"
+        x={-0.12}
+        y={-0.31}
+        width={0.62}
+        disabled={!hasSavedRitual}
+        onClick={onClearArchive}
+      />
+
+      <Text
+        position={[0, -0.48, 0.05]}
+        fontSize={0.026}
+        color="#8f6742"
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={1.2}
+      >
+        {archiveMessage ?? 'Deck, selection, and ritual configuration persist locally.'}
+      </Text>
+    </group>
+  )
+}
+
 function FloatingSigilDock({
   menuMode,
   oracleLoading,
   canConsult,
   hasOracleReading,
+  hasSavedRitual,
   onToggleForge,
   onToggleSpread,
+  onToggleArchive,
   onConsultOracle,
   onClearOracle,
   onReset,
@@ -1394,19 +1536,21 @@ function FloatingSigilDock({
   oracleLoading: boolean
   canConsult: boolean
   hasOracleReading: boolean
+  hasSavedRitual: boolean
   onToggleForge: () => void
   onToggleSpread: () => void
+  onToggleArchive: () => void
   onConsultOracle: () => void
   onClearOracle: () => void
   onReset: () => void
 }) {
-  const sideDock = menuMode === 'spread' || menuMode === 'forge'
+  const sideDock = menuMode === 'spread' || menuMode === 'forge' || menuMode === 'archive'
 
   const dockPlanePosition: [number, number, number] = sideDock
     ? [1.54, TABLE_Y + 0.2, 0.22]
     : [0, TABLE_Y + 0.42, 0.94]
 
-  const dockPlaneSize: [number, number] = sideDock ? [0.42, 1.92] : [2.18, 0.34]
+  const dockPlaneSize: [number, number] = sideDock ? [0.42, 2.12] : [2.38, 0.34]
 
   const sigilPosition = (
     normalX: number,
@@ -1418,16 +1562,17 @@ function FloatingSigilDock({
 
     return {
       x: 1.54,
-      y: TABLE_Y + 0.72 - sideIndex * 0.27,
+      y: TABLE_Y + 0.82 - sideIndex * 0.26,
       z: 0.22,
     }
   }
 
-  const config = sigilPosition(-0.66, 0)
-  const spread = sigilPosition(-0.33, 1)
-  const oracle = sigilPosition(0, 2)
-  const clear = sigilPosition(0.33, 3)
-  const reset = sigilPosition(0.66, 4)
+  const config = sigilPosition(-0.78, 0)
+  const spread = sigilPosition(-0.47, 1)
+  const oracle = sigilPosition(-0.16, 2)
+  const archive = sigilPosition(0.16, 3)
+  const clear = sigilPosition(0.47, 4)
+  const reset = sigilPosition(0.78, 5)
 
   return (
     <group>
@@ -1476,6 +1621,16 @@ function FloatingSigilDock({
           />
 
           <FloatingSigilButton
+            sigil={hasSavedRitual ? '◈' : '◇'}
+            label={menuMode === 'archive' ? 'Seal Archive Tablet' : 'Open Archive Tablet'}
+            x={archive.x}
+            y={archive.y}
+            z={archive.z}
+            active={menuMode === 'archive' || hasSavedRitual}
+            onClick={onToggleArchive}
+          />
+
+          <FloatingSigilButton
             sigil="✕"
             label="Clear Oracle Tablet"
             x={clear.x}
@@ -1515,6 +1670,12 @@ export function RitualWorkbench({
   oracleQuestion,
   oracleLoading,
   hasOracleReading,
+  hasSavedRitual,
+  lastSavedAt,
+  archiveMessage,
+  onSaveRitual,
+  onLoadArchive,
+  onClearArchive,
   onSubjectChange,
   onTraditionChange,
   onToneChange,
@@ -1749,13 +1910,26 @@ export function RitualWorkbench({
         />
       ) : null}
 
+      {menuMode === 'archive' ? (
+        <FloatingArchiveMenu
+          hasSavedRitual={hasSavedRitual}
+          lastSavedAt={lastSavedAt}
+          archiveMessage={archiveMessage}
+          onSaveRitual={onSaveRitual}
+          onLoadArchive={onLoadArchive}
+          onClearArchive={onClearArchive}
+        />
+      ) : null}
+
       <FloatingSigilDock
         menuMode={menuMode}
         oracleLoading={oracleLoading}
         canConsult={canConsult}
         hasOracleReading={hasOracleReading}
+        hasSavedRitual={hasSavedRitual}
         onToggleForge={() => setMenuMode(menuMode === 'forge' ? 'closed' : 'forge')}
         onToggleSpread={() => setMenuMode(menuMode === 'spread' ? 'closed' : 'spread')}
+        onToggleArchive={() => setMenuMode(menuMode === 'archive' ? 'closed' : 'archive')}
         onConsultOracle={() => void onConsultOracle()}
         onClearOracle={onClearOracle}
         onReset={() => {
