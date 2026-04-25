@@ -500,6 +500,8 @@ async function forgeOnce(
     tradition,
     tone,
     techLevel,
+    visualStyle,
+    erosField,
     intent,
   })
 
@@ -543,6 +545,15 @@ async function forgeOnce(
   logForge('Payload normalized', startTime)
 
   const finalDeck = grimoireDeckSchema.parse(normalized)
+
+  logForge('Art-ready deck summary', startTime, {
+    cardCount: finalDeck.cards.length,
+    firstCardName: finalDeck.cards[0]?.name,
+    firstCardHasArtPrompt: Boolean(finalDeck.cards[0]?.artPrompt),
+    firstCardImageStatus: finalDeck.cards[0]?.imageStatus,
+    firstArtPromptLength: finalDeck.cards[0]?.artPrompt?.length ?? 0,
+  })
+
   logForge('Schema validated. Response returning.', startTime)
 
   return finalDeck
