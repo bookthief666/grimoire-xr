@@ -28,25 +28,6 @@ function logOracle(stage: string, startTime: number, extra?: unknown) {
   }
 }
 
-function stripJsonSchemaNoise(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(stripJsonSchemaNoise)
-
-  if (value && typeof value === 'object') {
-    const out: Record<string, unknown> = {}
-
-    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
-      if (key === '$schema') continue
-      out[key] = stripJsonSchemaNoise(child)
-    }
-
-    return out
-  }
-
-  return value
-}
-
-const responseJsonSchema = stripJsonSchemaNoise(z.toJSONSchema(oracleReadingSchema))
-
 function cleanJsonText(text: string) {
   return text
     .trim()
@@ -206,6 +187,7 @@ function buildPrompt({
 }) {
   return [
     'Return exactly one JSON object.',
+    'Return valid JSON only. No prose outside the JSON object.',
     'Do not return markdown.',
     'Do not wrap the object in quotes.',
     'Do not stringify nested objects.',
@@ -230,6 +212,8 @@ function buildPrompt({
     '',
     'CRITICAL INSTRUCTIONS:',
     `You MUST visibly obey Tradition=${config.tradition}, Tone=${config.tone}, and TechLevel=${config.techLevel}.`,
+    `Visual style: ${config.visualStyle ?? 'Hierophantic'}.`,
+    `Eros field: ${config.erosField ?? 'Veiled'}.`,
     traditionDirective(config.tradition),
     toneDirective(config.tone),
     techLevelDirective(config.techLevel),
@@ -440,7 +424,6 @@ async function consultOnce({
     config: {
       temperature: 0.45,
       responseMimeType: 'application/json',
-      responseJsonSchema,
     },
   })
 
