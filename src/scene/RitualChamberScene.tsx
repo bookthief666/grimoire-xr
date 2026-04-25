@@ -17,6 +17,8 @@ import type {
   TechLevel,
   Tone,
   Tradition,
+  VisualStyle,
+  ErosField,
 } from '../types/grimoire'
 import { InWorldOraclePanels } from './InWorldOraclePanels'
 import { TempleAtmosphere } from './TempleAtmosphere'
@@ -896,6 +898,8 @@ export function RitualChamberScene({
   tradition,
   tone,
   techLevel,
+  visualStyle,
+  erosField,
   intent,
   forgePhase,
   loading,
@@ -913,6 +917,8 @@ export function RitualChamberScene({
   onTraditionChange,
   onToneChange,
   onTechLevelChange,
+  onVisualStyleChange,
+  onErosFieldChange,
   onIntentChange,
   onOracleQuestionChange,
   onBeginRitual,
@@ -933,6 +939,8 @@ export function RitualChamberScene({
   tradition: Tradition
   tone: Tone
   techLevel: TechLevel
+  visualStyle: VisualStyle
+  erosField: ErosField
   intent: string
   forgePhase: ForgePhase
   loading: boolean
@@ -950,6 +958,8 @@ export function RitualChamberScene({
   onTraditionChange: (tradition: Tradition) => void
   onToneChange: (tone: Tone) => void
   onTechLevelChange: (techLevel: TechLevel) => void
+  onVisualStyleChange: (visualStyle: VisualStyle) => void
+  onErosFieldChange: (erosField: ErosField) => void
   onIntentChange: (intent: string) => void
   onOracleQuestionChange: (question: string) => void
   onBeginRitual: () => Promise<void>
@@ -1049,6 +1059,8 @@ export function RitualChamberScene({
         tradition={tradition}
         tone={tone}
         techLevel={techLevel}
+        visualStyle={visualStyle}
+        erosField={erosField}
         intent={intent}
         forgePhase={forgePhase}
         loading={loading}
@@ -1066,6 +1078,8 @@ export function RitualChamberScene({
         onTraditionChange={onTraditionChange}
         onToneChange={onToneChange}
         onTechLevelChange={onTechLevelChange}
+        onVisualStyleChange={onVisualStyleChange}
+        onErosFieldChange={onErosFieldChange}
         onIntentChange={onIntentChange}
         onOracleQuestionChange={onOracleQuestionChange}
         onBeginRitual={onBeginRitual}

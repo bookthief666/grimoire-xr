@@ -83,6 +83,16 @@ function ensureOptionalString(value: unknown) {
   return typeof value === 'string' && value.trim() ? value.trim() : undefined
 }
 
+function ensureOptionalUrl(value: unknown) {
+  if (typeof value !== 'string' || !value.trim()) return undefined
+
+  try {
+    return new URL(value.trim()).toString()
+  } catch {
+    return undefined
+  }
+}
+
 function ensureOptionalGematria(value: unknown) {
   if (typeof value === 'number' && Number.isFinite(value)) {
     return Math.max(0, Math.round(value))
@@ -139,6 +149,29 @@ function ensureSuggestedQuestions(value: unknown, subject: string) {
   ]
 }
 
+function buildFallbackArtPrompt({
+  subject,
+  cardName,
+  sigil,
+  visualStyle,
+  erosField,
+}: {
+  subject: string
+  cardName: string
+  sigil: string
+  visualStyle?: string
+  erosField?: string
+}) {
+  return [
+    `Vertical occult tarot-card illustration for "${cardName}" in a custom deck about "${subject}".`,
+    `Central sigil: ${sigil}.`,
+    `Visual style: ${visualStyle ?? 'Hierophantic'}.`,
+    `Eros field: ${erosField ?? 'Veiled'}; symbolic, devotional, veiled sensuality only; no explicit nudity.`,
+    'Obsidian and burnished gold altar atmosphere, Hermetic/Thelemic symbolism, luminous planetary geometry, elegant ritual composition.',
+    'Beautiful painterly card art, sharp sacred geometry, rich symbolic detail, no text labels, no watermark.',
+  ].join(' ')
+}
+
 function normalizeMetadata(raw: unknown, subject: string) {
   const source = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
 
@@ -169,13 +202,17 @@ function normalizeMetadata(raw: unknown, subject: string) {
   return metadata
 }
 
-function normalizeCard(raw: unknown, index: number, subject: string) {
+function normalizeCard(raw: unknown, index: number, subject: string, visualStyle?: string, erosField?: string) {
   const source = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
 
+  const id = typeof source.id === 'number' && Number.isInteger(source.id) ? source.id : index + 1
+  const name = ensureString(source.name, `Unnamed Arcanum ${index + 1}`)
+  const sigil = ensureString(source.sigil, `SIGIL-${(index + 1).toString(16).toUpperCase()}`)
+
   return {
-    id: typeof source.id === 'number' && Number.isInteger(source.id) ? source.id : index + 1,
-    name: ensureString(source.name, `Unnamed Arcanum ${index + 1}`),
-    sigil: ensureString(source.sigil, `SIGIL-${(index + 1).toString(16).toUpperCase()}`),
+    id,
+    name,
+    sigil,
     exegesis: ensureString(
       source.exegesis,
       `${subject} encounters a sealed current here. Symbolic discipline is required.`,
@@ -184,6 +221,17 @@ function normalizeCard(raw: unknown, index: number, subject: string) {
       source.ritualFunction,
       `This arcanum concentrates one operative aspect of the working and shows how the subject must be handled with precision.`,
     ),
+    artPrompt: ensureString(
+      source.artPrompt,
+      buildFallbackArtPrompt({ subject, cardName: name, sigil, visualStyle, erosField }),
+    ),
+    imageUrl: ensureOptionalUrl(source.imageUrl),
+    imageStatus:
+      source.imageStatus === 'ready' ||
+      source.imageStatus === 'generating' ||
+      source.imageStatus === 'error'
+        ? source.imageStatus
+        : 'pending',
     metadata: normalizeMetadata(maybeParseJsonString(source.metadata), subject),
   }
 }
@@ -208,13 +256,13 @@ function normalizeDossier(raw: unknown, subject: string) {
   }
 }
 
-function coerceDeckPayload(raw: unknown, subject: string) {
+function coerceDeckPayload(raw: unknown, subject: string, visualStyle?: string, erosField?: string) {
   const source = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
   const dossier = normalizeDossier(maybeParseJsonString(source.dossier), subject)
   const rawCards = maybeParseJsonString(source.cards)
 
   const cards = Array.isArray(rawCards)
-    ? rawCards.map((card, index) => normalizeCard(maybeParseJsonString(card), index, subject))
+    ? rawCards.map((card, index) => normalizeCard(maybeParseJsonString(card), index, subject, visualStyle, erosField))
     : []
 
   return {
@@ -293,12 +341,16 @@ function buildPrompt({
   tradition,
   tone,
   techLevel,
+  visualStyle,
+  erosField,
   intent,
 }: {
   subject: string
   tradition: Tradition
   tone: Tone
   techLevel: TechLevel
+  visualStyle?: string
+  erosField?: string
   intent?: string
 }) {
   return [
@@ -343,6 +395,15 @@ function buildPrompt({
     '- magicalDiagnosis: 120-220 words identifying the central tension, hidden cost, shadow, or occult mechanism.',
     '- operativeAdvice: 100-180 words giving practical symbolic/ritual orientation.',
     '- suggestedQuestions: 3 strong questions the user could ask the oracle.',
+    '',
+    'CARD ART REQUIREMENTS:',
+    '- Every card must include artPrompt.',
+    '- artPrompt must be a direct image-generation prompt for a vertical tarot/oracle card.',
+    '- artPrompt must include: central image, composition, palette, symbols, correspondences, ritual atmosphere, and visual style.',
+    '- artPrompt must honor visualStyle and erosField.',
+    '- Eros field must remain symbolic and non-explicit: veiled sensuality, devotional tension, sacred polarity, no explicit nudity.',
+    '- Do not reference copyrighted living artists, franchises, or style names that would create an IP problem.',
+    '- Set imageStatus to "pending".',
     '',
     'CARD REQUIREMENTS:',
     '- Create 7 cards unless the schema/request elsewhere requires more.',
@@ -410,6 +471,8 @@ function buildPrompt({
     `Tradition: ${tradition}`,
     `Tone: ${tone}`,
     `Tech level: ${techLevel}`,
+    `Visual style: ${visualStyle ?? 'Hierophantic'}`,
+    `Eros field: ${erosField ?? 'Veiled'}`,
     intent ? `Ritual intent: ${intent}` : 'Ritual intent: none supplied',
   ]
     .filter(Boolean)
@@ -421,6 +484,8 @@ async function forgeOnce(
   tradition: Tradition,
   tone: Tone,
   techLevel: TechLevel,
+  visualStyle: string | undefined,
+  erosField: string | undefined,
   intent: string | undefined,
   startTime: number,
 ) {
@@ -445,6 +510,8 @@ async function forgeOnce(
       tradition,
       tone,
       techLevel,
+      visualStyle,
+      erosField,
       intent,
     }),
     config: {
@@ -472,7 +539,7 @@ async function forgeOnce(
     throw new Error('Gemini returned invalid JSON.')
   }
 
-  const normalized = coerceDeckPayload(parsed, subject)
+  const normalized = coerceDeckPayload(parsed, subject, visualStyle, erosField)
   logForge('Payload normalized', startTime)
 
   const finalDeck = grimoireDeckSchema.parse(normalized)
@@ -579,7 +646,7 @@ export default async function handler(
     })
   }
 
-  const { subject, tradition, tone, techLevel, intent } = parsedConfig.data
+  const { subject, tradition, tone, techLevel, visualStyle, erosField, intent } = parsedConfig.data
 
   try {
     const deck = await forgeOnce(
@@ -587,6 +654,8 @@ export default async function handler(
       tradition,
       tone,
       techLevel,
+      visualStyle,
+      erosField,
       intent,
       startTime,
     )

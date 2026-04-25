@@ -13,6 +13,8 @@ import type {
   TechLevel,
   Tone,
   Tradition,
+  VisualStyle,
+  ErosField,
 } from '../types/grimoire'
 
 type Vec2 = [number, number]
@@ -32,6 +34,8 @@ type RitualWorkbenchProps = {
   tradition: Tradition
   tone: Tone
   techLevel: TechLevel
+  visualStyle: VisualStyle
+  erosField: ErosField
   intent: string
   forgePhase: ForgePhase
   loading: boolean
@@ -49,6 +53,8 @@ type RitualWorkbenchProps = {
   onTraditionChange: (tradition: Tradition) => void
   onToneChange: (tone: Tone) => void
   onTechLevelChange: (techLevel: TechLevel) => void
+  onVisualStyleChange: (visualStyle: VisualStyle) => void
+  onErosFieldChange: (erosField: ErosField) => void
   onIntentChange: (intent: string) => void
   onOracleQuestionChange: (question: string) => void
   onBeginRitual: () => Promise<void>
@@ -82,7 +88,7 @@ const INTENT_OPTIONS = [
   'What is the initiatory opportunity?',
 ]
 
-const VISUAL_STYLE_OPTIONS = [
+const VISUAL_STYLE_OPTIONS: VisualStyle[] = [
   'Hierophantic',
   'Astral',
   'Venusian',
@@ -91,7 +97,7 @@ const VISUAL_STYLE_OPTIONS = [
   'Xenotheurgic',
 ]
 
-const EROS_FIELD_OPTIONS = [
+const EROS_FIELD_OPTIONS: ErosField[] = [
   'Veiled',
   'Charged',
   'Ecstatic',
@@ -123,7 +129,11 @@ function formatArchiveTime(value: string | null) {
   }).toUpperCase()
 }
 
-function cycleString(values: string[], current: string, direction: -1 | 1) {
+function cycleString<T extends string>(
+  values: ReadonlyArray<T>,
+  current: T,
+  direction: -1 | 1,
+): T {
   const index = Math.max(0, values.findIndex((value) => value === current))
   const next = (index + direction + values.length) % values.length
   return values[next]
@@ -233,7 +243,7 @@ function AltarAstrolabeRings({
   erosField,
 }: {
   active: boolean
-  erosField: string
+  erosField: ErosField
 }) {
   const outerRef = useRef<THREE.MeshBasicMaterial>(null)
   const middleRef = useRef<THREE.MeshBasicMaterial>(null)
@@ -505,21 +515,20 @@ function FloatingForgeMenu({
   onTraditionChange,
   onToneChange,
   onTechLevelChange,
-  onIntentChange,
   onVisualStyleChange,
   onErosFieldChange,
+  onIntentChange,
   onOracleQuestionChange,
   loading,
   canForge,
-  onBeginRitual,
-}: {
+  onBeginRitual,}: {
   activeSubject: string
   tradition: Tradition
   tone: Tone
   techLevel: TechLevel
   activeIntent: string
-  visualStyle: string
-  erosField: string
+  visualStyle: VisualStyle
+  erosField: ErosField
   loading: boolean
   canForge: boolean
   onBeginRitual: () => void
@@ -528,8 +537,8 @@ function FloatingForgeMenu({
   onToneChange: (tone: Tone) => void
   onTechLevelChange: (techLevel: TechLevel) => void
   onIntentChange: (intent: string) => void
-  onVisualStyleChange: (style: string) => void
-  onErosFieldChange: (field: string) => void
+  onVisualStyleChange: (style: VisualStyle) => void
+  onErosFieldChange: (field: ErosField) => void
   onOracleQuestionChange: (question: string) => void
 }) {
   return (
@@ -1057,6 +1066,17 @@ function WorkbenchCard({
         maxWidth={0.24}
       >
         {card.name}
+      </Text>
+
+      <Text
+        position={[0, 0.2, 0.036]}
+        fontSize={0.022}
+        color={card.artPrompt ? '#d9b5ff' : '#7b5536'}
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={0.26}
+      >
+        {card.imageStatus === 'ready' ? 'IMAGE SEALED' : card.artPrompt ? 'ART SEED' : 'NO IMAGE'}
       </Text>
     </group>
   )
@@ -1663,6 +1683,8 @@ export function RitualWorkbench({
   tradition,
   tone,
   techLevel,
+  visualStyle,
+  erosField,
   intent,
   forgePhase,
   loading,
@@ -1680,19 +1702,18 @@ export function RitualWorkbench({
   onTraditionChange,
   onToneChange,
   onTechLevelChange,
+  onVisualStyleChange,
+  onErosFieldChange,
   onIntentChange,
   onOracleQuestionChange,
   onBeginRitual,
   onConsultOracle,
   onClearOracle,
   onClearRitual,
-  onCardSelect,
-}: RitualWorkbenchProps) {
+  onCardSelect,}: RitualWorkbenchProps) {
   const [cardOffsets, setCardOffsets] = useState<Record<number, Vec2>>({})
   const [dragState, setDragState] = useState<DragState | null>(null)
   const [menuMode, setMenuMode] = useState<WorkbenchMode>('closed')
-  const [visualStyle, setVisualStyle] = useState(VISUAL_STYLE_OPTIONS[0])
-  const [erosField, setErosField] = useState(EROS_FIELD_OPTIONS[0])
 
   const displayedCards = cards.slice(0, 7)
 
@@ -1903,9 +1924,9 @@ export function RitualWorkbench({
           onTraditionChange={onTraditionChange}
           onToneChange={onToneChange}
           onTechLevelChange={onTechLevelChange}
+          onVisualStyleChange={onVisualStyleChange}
+          onErosFieldChange={onErosFieldChange}
           onIntentChange={onIntentChange}
-          onVisualStyleChange={setVisualStyle}
-          onErosFieldChange={setErosField}
           onOracleQuestionChange={onOracleQuestionChange}
         />
       ) : null}

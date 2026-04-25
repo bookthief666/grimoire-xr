@@ -24,11 +24,35 @@ export const techLevelSchema = z.enum([
   'magus',
 ])
 
+export const visualStyleSchema = z.enum([
+  'Hierophantic',
+  'Astral',
+  'Venusian',
+  'Goetic',
+  'Alchemical',
+  'Xenotheurgic',
+])
+
+export const erosFieldSchema = z.enum([
+  'Veiled',
+  'Charged',
+  'Ecstatic',
+])
+
+export const imageStatusSchema = z.enum([
+  'pending',
+  'generating',
+  'ready',
+  'error',
+])
+
 export const ritualConfigSchema = z.object({
   subject: z.string().min(2),
   tradition: traditionSchema,
   tone: toneSchema,
   techLevel: techLevelSchema,
+  visualStyle: visualStyleSchema.optional(),
+  erosField: erosFieldSchema.optional(),
   intent: z.string().min(4).max(400).optional(),
 })
 
@@ -49,6 +73,9 @@ export const grimoireCardSchema = z.object({
   sigil: z.string().min(2),
   exegesis: z.string().min(12),
   ritualFunction: z.string().min(12).optional(),
+  artPrompt: z.string().min(24).optional(),
+  imageUrl: z.string().url().optional(),
+  imageStatus: imageStatusSchema.optional(),
   metadata: cardMetadataSchema,
 })
 
@@ -109,6 +136,9 @@ export const ritualSelectionSchema = z.object({
 export type Tradition = z.infer<typeof traditionSchema>
 export type Tone = z.infer<typeof toneSchema>
 export type TechLevel = z.infer<typeof techLevelSchema>
+export type VisualStyle = z.infer<typeof visualStyleSchema>
+export type ErosField = z.infer<typeof erosFieldSchema>
+export type ImageStatus = z.infer<typeof imageStatusSchema>
 export type RitualConfig = z.infer<typeof ritualConfigSchema>
 
 export type CardMetadata = z.infer<typeof cardMetadataSchema>

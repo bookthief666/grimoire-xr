@@ -3,6 +3,8 @@ import { consultOracle, generateDeck } from '../services/content'
 import {
   grimoireDeckSchema,
   techLevelSchema,
+  visualStyleSchema,
+  erosFieldSchema,
   toneSchema,
   traditionSchema,
   type ForgePhase,
@@ -13,6 +15,8 @@ import {
   type RitualSelection,
   type SubjectDossier,
   type TechLevel,
+  type VisualStyle,
+  type ErosField,
   type Tone,
   type Tradition,
 } from '../types/grimoire'
@@ -25,6 +29,8 @@ type GrimoireEngineState = {
   tradition: Tradition
   tone: Tone
   techLevel: TechLevel
+  visualStyle: VisualStyle
+  erosField: ErosField
   intent: string
 
   forgePhase: ForgePhase
@@ -54,6 +60,8 @@ export type GrimoireEngine = GrimoireEngineState & {
   setTradition: (tradition: Tradition) => void
   setTone: (tone: Tone) => void
   setTechLevel: (techLevel: TechLevel) => void
+  setVisualStyle: (visualStyle: VisualStyle) => void
+  setErosField: (erosField: ErosField) => void
   setIntent: (intent: string) => void
 
   beginRitual: () => Promise<void>
@@ -135,6 +143,8 @@ function normalizeRitualConfig(raw: unknown, deck: GrimoireDeck): RitualConfig {
   const traditionResult = traditionSchema.safeParse(source.tradition)
   const toneResult = toneSchema.safeParse(source.tone)
   const techLevelResult = techLevelSchema.safeParse(source.techLevel)
+  const visualStyleResult = visualStyleSchema.safeParse(source.visualStyle)
+  const erosFieldResult = erosFieldSchema.safeParse(source.erosField)
 
   const intent =
     typeof source.intent === 'string' && source.intent.trim().length >= 4
@@ -146,6 +156,8 @@ function normalizeRitualConfig(raw: unknown, deck: GrimoireDeck): RitualConfig {
     tradition: traditionResult.success ? traditionResult.data : 'thelemic',
     tone: toneResult.success ? toneResult.data : 'oracular',
     techLevel: techLevelResult.success ? techLevelResult.data : 'adept',
+    visualStyle: visualStyleResult.success ? visualStyleResult.data : 'Hierophantic',
+    erosField: erosFieldResult.success ? erosFieldResult.data : 'Veiled',
     intent,
   }
 }
@@ -233,6 +245,8 @@ export function useGrimoireEngine(): GrimoireEngine {
   const [tradition, setTraditionState] = useState<Tradition>('thelemic')
   const [tone, setToneState] = useState<Tone>('oracular')
   const [techLevel, setTechLevelState] = useState<TechLevel>('adept')
+  const [visualStyle, setVisualStyleState] = useState<VisualStyle>('Hierophantic')
+  const [erosField, setErosFieldState] = useState<ErosField>('Veiled')
   const [intent, setIntentState] = useState('')
 
   const [forgePhase, setForgePhase] = useState<ForgePhase>('idle')
@@ -271,6 +285,8 @@ export function useGrimoireEngine(): GrimoireEngine {
       tradition,
       tone,
       techLevel,
+      visualStyle,
+      erosField,
       intent: intent.trim() || undefined,
     }),
     [subject, tradition, tone, techLevel, intent],
@@ -281,6 +297,8 @@ export function useGrimoireEngine(): GrimoireEngine {
     setTraditionState(archive.ritualConfig.tradition)
     setToneState(archive.ritualConfig.tone)
     setTechLevelState(archive.ritualConfig.techLevel)
+    setVisualStyleState(archive.ritualConfig.visualStyle ?? 'Hierophantic')
+    setErosFieldState(archive.ritualConfig.erosField ?? 'Veiled')
     setIntentState(archive.ritualConfig.intent ?? '')
 
     setDeck(archive.deck)
@@ -354,6 +372,16 @@ export function useGrimoireEngine(): GrimoireEngine {
     if (error) setError(null)
   }
 
+  const setVisualStyle = (nextVisualStyle: VisualStyle) => {
+    setVisualStyleState(nextVisualStyle)
+    if (error) setError(null)
+  }
+
+  const setErosField = (nextErosField: ErosField) => {
+    setErosFieldState(nextErosField)
+    if (error) setError(null)
+  }
+
   const setIntent = (nextIntent: string) => {
     setIntentState(nextIntent)
     if (error) setError(null)
@@ -378,6 +406,8 @@ export function useGrimoireEngine(): GrimoireEngine {
       tradition,
       tone,
       techLevel,
+      visualStyle,
+      erosField,
       intent: intent.trim() || undefined,
     }
 
@@ -540,6 +570,8 @@ export function useGrimoireEngine(): GrimoireEngine {
     tradition,
     tone,
     techLevel,
+    visualStyle,
+    erosField,
     intent,
 
     forgePhase,
@@ -567,6 +599,8 @@ export function useGrimoireEngine(): GrimoireEngine {
     setTradition,
     setTone,
     setTechLevel,
+    setVisualStyle,
+    setErosField,
     setIntent,
 
     beginRitual,
