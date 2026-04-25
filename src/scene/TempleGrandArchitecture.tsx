@@ -35,7 +35,7 @@ function Ring({
       <meshBasicMaterial
         color={color}
         transparent
-        opacity={opacity}
+        opacity={opacity * 0.5}
         depthWrite={false}
         blending={THREE.AdditiveBlending}
       />
@@ -62,7 +62,7 @@ function Beam({
       <meshBasicMaterial
         color={color}
         transparent
-        opacity={opacity}
+        opacity={opacity * 0.45}
         depthWrite={false}
         blending={THREE.AdditiveBlending}
         side={THREE.DoubleSide}
@@ -101,15 +101,14 @@ function GrandAstralDome({
   })
 
   return (
-    <group position={[0, 0.46, -1.55]} raycast={noRaycast}>
+    <group position={[0, -0.25, -7.0]} raycast={noRaycast}>
       <mesh position={[0, 0.02, 0]} raycast={noRaycast}>
-        <sphereGeometry args={[3.95, 48, 18, 0, Math.PI * 2, 0, Math.PI * 0.5]} />
+        <sphereGeometry args={[20, 32, 16, 0, Math.PI * 2, 0, Math.PI * 0.5]} />
         <meshBasicMaterial
           ref={domeRef}
           color="#37108f"
           transparent
-          opacity={0.09}
-          wireframe
+          opacity={0.02}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.BackSide}
@@ -117,10 +116,10 @@ function GrandAstralDome({
       </mesh>
 
       <group ref={ringRootRef} position={[0, 2.72, 0]}>
-        <Ring position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]} radius={2.75} tube={0.009} color="#8a35ff" opacity={0.13} />
-        <Ring position={[0, 0, 0]} rotation={[Math.PI / 2, 0, Math.PI / 5]} radius={2.22} tube={0.008} color="#b8860b" opacity={0.12} />
-        <Ring position={[0, 0, 0]} rotation={[Math.PI / 2, 0, -Math.PI / 7]} radius={1.48} tube={0.007} color="#ff3d5a" opacity={0.095} />
-        <Ring position={[0, 0, 0]} rotation={[0.9, 0, 0]} radius={1.84} tube={0.006} color="#d9b5ff" opacity={0.085} />
+        <Ring position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]} radius={11.0} tube={0.018} color="#8a35ff" opacity={0.045} />
+        <Ring position={[0, 0, 0]} rotation={[Math.PI / 2, 0, Math.PI / 5]} radius={8.4} tube={0.015} color="#b8860b" opacity={0.04} />
+        <Ring position={[0, 0, 0]} rotation={[Math.PI / 2, 0, -Math.PI / 7]} radius={5.8} tube={0.012} color="#ff3d5a" opacity={0.032} />
+        <Ring position={[0, 0, 0]} rotation={[0.9, 0, 0]} radius={7.0} tube={0.01} color="#d9b5ff" opacity={0.03} />
       </group>
     </group>
   )
@@ -146,12 +145,12 @@ function CeilingOrrery({
     }
 
     if (coreRef.current) {
-      coreRef.current.opacity = Math.min(0.86, 0.28 + Math.sin(t * 1.3) * 0.08 + impulse * 0.2 + oracleBoost * 0.2)
+      coreRef.current.opacity = Math.min(0.22, 0.06 + Math.sin(t * 1.3) * 0.018 + impulse * 0.045 + oracleBoost * 0.055)
     }
   })
 
   return (
-    <group ref={rootRef} position={[0, 3.25, -1.65]} scale={0.82} raycast={noRaycast}>
+    <group ref={rootRef} position={[0, 6.0, -3.0]} scale={2.0} raycast={noRaycast}>
       <Ring position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]} radius={0.92} tube={0.012} color="#ffcf7c" opacity={0.46} />
       <Ring position={[0, 0, 0]} rotation={[0.9, 0, 0]} radius={0.72} tube={0.01} color="#8a35ff" opacity={0.36} />
       <Ring position={[0, 0, 0]} rotation={[0, Math.PI / 2, 0]} radius={0.55} tube={0.008} color="#ff3d5a" opacity={0.25} />
@@ -171,7 +170,7 @@ function CeilingOrrery({
       {['☉', '☽', '♀', '☿', '♃', '♄', '♁'].map((glyph, i) => {
         const angle = (i / 7) * Math.PI * 2
         return (
-          <Text
+          <Text visible={false}
             key={glyph}
             position={[Math.cos(angle) * 1.14, Math.sin(angle) * 0.16, Math.sin(angle) * 1.14]}
             fontSize={0.11}
@@ -218,13 +217,13 @@ function TreeOfLifeMachineWall({
   const active = oracleLoading || hasOracleReading || hasDeck
 
   return (
-    <group position={[0, 1.74, -3.62]} scale={0.92} raycast={noRaycast}>
+    <group position={[0, 4.0, -15.0]} scale={3.5} raycast={noRaycast}>
       <mesh position={[0, 0.05, -0.03]} raycast={noRaycast}>
         <planeGeometry args={[1.82, 2.32]} />
         <meshBasicMaterial
           color="#090205"
           transparent
-          opacity={0.16}
+          opacity={0.045}
           depthWrite={false}
           side={THREE.DoubleSide}
         />
@@ -249,7 +248,7 @@ function TreeOfLifeMachineWall({
             <meshBasicMaterial
               color={i % 3 === 0 ? '#9a6bff' : '#b8860b'}
               transparent
-              opacity={active ? 0.32 : 0.105}
+              opacity={active ? 0.15 : 0.04}
               depthWrite={false}
               blending={THREE.AdditiveBlending}
               side={THREE.DoubleSide}
@@ -265,7 +264,7 @@ function TreeOfLifeMachineWall({
             <meshBasicMaterial
               color={active ? (i % 2 === 0 ? '#ffd18a' : '#d9b5ff') : '#8a6a3a'}
               transparent
-              opacity={active ? 0.48 : 0.16}
+              opacity={active ? 0.18 : 0.045}
               depthWrite={false}
               blending={THREE.AdditiveBlending}
               side={THREE.DoubleSide}
@@ -274,7 +273,7 @@ function TreeOfLifeMachineWall({
         </group>
       ))}
 
-      <Text
+      <Text visible={false}
         position={[0, -1.38, 0.1]}
         fontSize={0.066}
         color={active ? '#d9b5ff' : '#7b5536'}
@@ -307,7 +306,7 @@ function ChamberRaySystem({
         rotation={[0, 0, 0]}
         size={[0.42, 2.65]}
         color={oracleColor}
-        opacity={active ? 0.075 : 0.025}
+        opacity={active ? 0.035 : 0.012}
       />
 
       <Beam
@@ -315,7 +314,7 @@ function ChamberRaySystem({
         rotation={[0, 0, -0.22]}
         size={[0.18, 2.45]}
         color="#8a1034"
-        opacity={active ? 0.06 : 0.018}
+        opacity={active ? 0.028 : 0.009}
       />
 
       <Beam
@@ -323,7 +322,7 @@ function ChamberRaySystem({
         rotation={[0, 0, 0.22]}
         size={[0.18, 2.45]}
         color="#6b35ff"
-        opacity={active ? 0.06 : 0.018}
+        opacity={active ? 0.028 : 0.009}
       />
 
       <Beam
@@ -331,7 +330,7 @@ function ChamberRaySystem({
         rotation={[-Math.PI / 2, 0, 0]}
         size={[2.2, 0.06]}
         color={forgeColor}
-        opacity={loading ? 0.24 : 0.07}
+        opacity={loading ? 0.14 : 0.035}
       />
     </group>
   )

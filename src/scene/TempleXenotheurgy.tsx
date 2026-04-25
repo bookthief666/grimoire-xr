@@ -35,7 +35,7 @@ function HoloRing({
       <meshBasicMaterial
         color={color}
         transparent
-        opacity={opacity}
+        opacity={opacity * 0.42}
         depthWrite={false}
         blending={THREE.AdditiveBlending}
       />
@@ -79,7 +79,7 @@ function HoloBar({
       <meshBasicMaterial
         color={color}
         transparent
-        opacity={opacity}
+        opacity={opacity * 0.42}
         depthWrite={false}
         blending={THREE.AdditiveBlending}
         side={THREE.DoubleSide}
@@ -105,13 +105,13 @@ function ThelemicStarGate({ ritualImpulseRef, loading = false, oracleLoading = f
       groupRef.current.rotation.z = Math.sin(t * (0.18 + stateBoost * 0.2)) * (0.035 + stateBoost * 0.03)
       groupRef.current.rotation.y = Math.sin(t * 0.11) * (0.025 + stateBoost * 0.035)
       const scale = 1 + Math.sin(t * 1.4) * 0.012 + stateBoost * 0.045
-      groupRef.current.scale.setScalar(scale)
+      groupRef.current.scale.setScalar(4.0 * scale)
     }
 
     if (coreRef.current) {
       coreRef.current.opacity = Math.min(
-        0.88,
-        0.18 + Math.sin(t * 1.15) * 0.06 + impulse * 0.2 + stateBoost * 0.28,
+        0.16,
+        0.035 + Math.sin(t * 1.15) * 0.018 + impulse * 0.045 + stateBoost * 0.055,
       )
     }
   })
@@ -128,13 +128,13 @@ function ThelemicStarGate({ ritualImpulseRef, loading = false, oracleLoading = f
   }, [])
 
   return (
-    <group ref={groupRef} position={[0, 1.78, -2.58]} raycast={noRaycast}>
+    <group ref={groupRef} position={[0, 5.0, -12.0]} raycast={noRaycast}>
       <mesh position={[0, 0, -0.035]} raycast={noRaycast}>
         <planeGeometry args={[2.9, 2.55]} />
         <meshBasicMaterial
           color="#080106"
           transparent
-          opacity={0.34}
+          opacity={0.045}
           depthWrite={false}
           side={THREE.DoubleSide}
         />
@@ -146,7 +146,7 @@ function ThelemicStarGate({ ritualImpulseRef, loading = false, oracleLoading = f
           ref={coreRef}
           color="#8a35ff"
           transparent
-          opacity={0.18}
+          opacity={0.055}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
@@ -177,7 +177,7 @@ function ThelemicStarGate({ ritualImpulseRef, loading = false, oracleLoading = f
         </mesh>
       ))}
 
-      <Text
+      <Text visible={false}
         position={[0, 1.43, 0.1]}
         fontSize={0.105}
         color="#ffd18a"
@@ -189,7 +189,7 @@ function ThelemicStarGate({ ritualImpulseRef, loading = false, oracleLoading = f
         ASTRAL ENGINE OF THE WILL
       </Text>
 
-      <Text
+      <Text visible={false}
         position={[0, -1.45, 0.1]}
         fontSize={0.075}
         color="#9a6bff"
@@ -202,7 +202,7 @@ function ThelemicStarGate({ ritualImpulseRef, loading = false, oracleLoading = f
       </Text>
 
       {(loading || oracleLoading || hasActiveCard || hasOracleReading) ? (
-        <Text
+        <Text visible={false}
           position={[0, -1.66, 0.12]}
           fontSize={0.065}
           color={oracleLoading || hasOracleReading ? '#d9b5ff' : '#ffd18a'}
@@ -238,12 +238,12 @@ function FloatingOrrery({ ritualImpulseRef, loading = false, oracleLoading = fal
     if (inner.current) inner.current.rotation.x += delta * (0.22 + impulse * 0.12 + stateBoost * 0.16)
 
     if (core.current) {
-      core.current.opacity = Math.min(0.86, 0.35 + Math.sin(t * 1.4) * 0.08 + impulse * 0.18 + stateBoost * 0.24)
+      core.current.opacity = Math.min(0.22, 0.08 + Math.sin(t * 1.4) * 0.025 + impulse * 0.045 + stateBoost * 0.06)
     }
   })
 
   return (
-    <group position={[0, 1.48, -0.82]} scale={0.78} raycast={noRaycast}>
+    <group position={[0, 6.0, -1.0]} scale={1.5} raycast={noRaycast}>
       <group ref={root}>
         <HoloRing position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]} radius={0.86} tube={0.012} color="#b8860b" opacity={0.52} />
         <HoloRing position={[0, 0, 0]} rotation={[0.75, 0, 0]} radius={0.66} tube={0.01} color="#8a35ff" opacity={0.38} />
@@ -274,7 +274,7 @@ function FloatingOrrery({ ritualImpulseRef, loading = false, oracleLoading = fal
       ].map(([glyph, r, color], i) => {
         const a = (i / 4) * Math.PI * 2
         return (
-          <Text
+          <Text visible={false}
             key={glyph}
             position={[Math.cos(a) * Number(r), Math.sin(a) * 0.2, Math.sin(a) * Number(r)]}
             fontSize={0.13}
@@ -304,7 +304,7 @@ function QabalisticCircuitWall() {
   ]
 
   return (
-    <group position={[0, 1.62, -3.05]} scale={1.35} raycast={noRaycast}>
+    <group position={[0, 2.9, -10.0]} scale={3.0} raycast={noRaycast}>
       {lines.map(([a, b], i) => (
         <HoloBar
           key={i}
@@ -376,19 +376,19 @@ function EroticSacredVeils({ ritualImpulseRef, oracleLoading = false, hasActiveC
     const stateBoost = (oracleLoading ? 0.14 : 0) + (hasActiveCard ? 0.08 : 0) + (hasOracleReading ? 0.12 : 0)
     const opacity = 0.16 + Math.sin(t * 0.5) * 0.04 + impulse * 0.08 + stateBoost
 
-    if (left.current) left.current.opacity = Math.min(0.46, opacity)
-    if (right.current) right.current.opacity = Math.min(0.38, opacity * 0.82)
+    if (left.current) left.current.opacity = Math.min(0.16, opacity * 0.45)
+    if (right.current) right.current.opacity = Math.min(0.13, opacity * 0.36)
   })
 
   return (
-    <group position={[0, 1.24, -1.92]} raycast={noRaycast}>
+    <group position={[0, 1.55, -4.0]} raycast={noRaycast}>
       <mesh position={[-1.18, 0, 0]} rotation={[0, 0, -0.16]} raycast={noRaycast}>
-        <planeGeometry args={[0.48, 2.1]} />
+        <planeGeometry args={[0.24, 1.8]} />
         <meshBasicMaterial
           ref={left}
           color="#9a1034"
           transparent
-          opacity={0.14}
+          opacity={0.045}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
@@ -396,12 +396,12 @@ function EroticSacredVeils({ ritualImpulseRef, oracleLoading = false, hasActiveC
       </mesh>
 
       <mesh position={[1.18, 0, 0]} rotation={[0, 0, 0.16]} raycast={noRaycast}>
-        <planeGeometry args={[0.48, 2.1]} />
+        <planeGeometry args={[0.24, 1.8]} />
         <meshBasicMaterial
           ref={right}
           color="#6b35ff"
           transparent
-          opacity={0.12}
+          opacity={0.04}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
@@ -477,19 +477,19 @@ function RitualStateConduit({
 
     if (columnRef.current) {
       columnRef.current.opacity = active
-        ? Math.min(0.5, 0.16 + Math.sin(t * 2.2) * 0.05 + impulse * 0.18)
+        ? Math.min(0.26, 0.08 + Math.sin(t * 2.2) * 0.025 + impulse * 0.08)
         : 0.045 + Math.sin(t * 0.5) * 0.015
     }
 
     if (ringARef.current) {
       ringARef.current.opacity = active
-        ? 0.46 + Math.sin(t * 1.7) * 0.12
+        ? 0.22 + Math.sin(t * 1.7) * 0.055
         : 0.16
     }
 
     if (ringBRef.current) {
       ringBRef.current.opacity = active
-        ? 0.34 + Math.sin(t * 2.1 + 1.1) * 0.1
+        ? 0.17 + Math.sin(t * 2.1 + 1.1) * 0.045
         : 0.11
     }
 
@@ -563,7 +563,7 @@ function RitualStateConduit({
         {['✶', '☉', '☽', '♀'].map((glyph, i) => {
           const a = (i / 4) * Math.PI * 2
           return (
-            <Text
+            <Text visible={false}
               key={glyph}
               position={[Math.cos(a) * 0.48, Math.sin(a) * 0.1, Math.sin(a) * 0.48]}
               fontSize={0.075}
@@ -578,7 +578,7 @@ function RitualStateConduit({
         })}
       </group>
 
-      <Text
+      <Text visible={false}
         position={[0, 2.08, 0]}
         fontSize={0.065}
         color={active ? stateColor : '#7b5536'}
@@ -640,7 +640,7 @@ function DeckConstellation({
       rootRef.current.rotation.y = Math.sin(t * 0.18) * 0.045
       rootRef.current.position.y = 1.44 + Math.sin(t * 0.62) * 0.025
       const scale = 1 + boost * 0.035 + impulse * 0.04
-      rootRef.current.scale.setScalar(scale)
+      rootRef.current.scale.setScalar(2.5 * scale)
     }
 
     if (majorRef.current) {
@@ -661,13 +661,13 @@ function DeckConstellation({
         : 'DECK MATRIX DORMANT'
 
   return (
-    <group ref={rootRef} position={[0, 1.44, -2.05]} raycast={noRaycast}>
+    <group ref={rootRef} position={[0, 2.0, -8.0]} raycast={noRaycast}>
       <group ref={minorRef} raycast={noRaycast}>
         {cards
           .filter((card) => !card.isMajor)
           .map((card) => {
             const awakened = active || card.index % 7 === 0
-            const opacity = awakened ? 0.28 : 0.095
+            const opacity = awakened ? 0.08 : 0.025
             return (
               <mesh
                 key={card.index}
@@ -693,7 +693,7 @@ function DeckConstellation({
         {cards
           .filter((card) => card.isMajor)
           .map((card) => {
-            const opacity = active ? 0.52 : 0.18
+            const opacity = active ? 0.14 : 0.04
             return (
               <group
                 key={card.index}
@@ -747,7 +747,7 @@ function DeckConstellation({
         opacity={active ? 0.22 : 0.075}
       />
 
-      <Text
+      <Text visible={false}
         position={[0, -0.92, 0.06]}
         fontSize={0.062}
         color={active ? '#ffd18a' : '#7b5536'}
@@ -858,7 +858,7 @@ function HumanScaleTempleLife({
               />
             </mesh>
 
-            <Text
+            <Text visible={false}
               position={[0, 0, 0.018]}
               fontSize={0.064}
               color={g.color}
@@ -917,7 +917,7 @@ function HumanScaleTempleLife({
           opacity={active ? 0.34 : 0.13}
         />
 
-        <Text
+        <Text visible={false}
           position={[0, 2.92, 0.08]}
           fontSize={0.072}
           color={oracleActive ? '#d9b5ff' : '#9f744b'}
