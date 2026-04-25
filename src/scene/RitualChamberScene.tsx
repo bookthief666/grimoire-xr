@@ -903,6 +903,12 @@ export function RitualChamberScene({
   oracleQuestion,
   oracleLoading,
   hasOracleReading,
+  hasSavedRitual = false,
+  lastSavedAt = null,
+  archiveMessage = null,
+  onSaveRitual = () => false,
+  onLoadArchive = () => false,
+  onClearArchive = () => {},
   onSubjectChange,
   onTraditionChange,
   onToneChange,
@@ -934,6 +940,12 @@ export function RitualChamberScene({
   oracleQuestion: string
   oracleLoading: boolean
   hasOracleReading: boolean
+  hasSavedRitual?: boolean
+  lastSavedAt?: string | null
+  archiveMessage?: string | null
+  onSaveRitual?: () => boolean
+  onLoadArchive?: () => boolean
+  onClearArchive?: () => void
   onSubjectChange: (subject: string) => void
   onTraditionChange: (tradition: Tradition) => void
   onToneChange: (tone: Tone) => void
@@ -1044,6 +1056,12 @@ export function RitualChamberScene({
         oracleQuestion={oracleQuestion}
         oracleLoading={oracleLoading}
         hasOracleReading={hasOracleReading}
+        hasSavedRitual={hasSavedRitual}
+        lastSavedAt={lastSavedAt}
+        archiveMessage={archiveMessage}
+        onSaveRitual={onSaveRitual}
+        onLoadArchive={onLoadArchive}
+        onClearArchive={onClearArchive}
         onSubjectChange={onSubjectChange}
         onTraditionChange={onTraditionChange}
         onToneChange={onToneChange}
