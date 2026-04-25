@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from 'react'
-import { Text, useTexture } from '@react-three/drei'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import {
@@ -992,7 +992,82 @@ function SpreadSlot({
 }
 
 function CardFaceArt({ imageUrl }: { imageUrl: string }) {
-  const texture = useTexture(imageUrl) as THREE.Texture
+  const [texture, setTexture] = useState<THREE.Texture | null>(null)
+  const [failed, setFailed] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    setTexture(null)
+    setFailed(false)
+
+    const loader = new THREE.TextureLoader()
+
+    loader.load(
+      imageUrl,
+      (loadedTexture) => {
+        if (cancelled) {
+          loadedTexture.dispose()
+          return
+        }
+
+        loadedTexture.colorSpace = THREE.SRGBColorSpace
+        loadedTexture.needsUpdate = true
+        setTexture(loadedTexture)
+      },
+      undefined,
+      () => {
+        if (!cancelled) setFailed(true)
+      },
+    )
+
+    return () => {
+      cancelled = true
+    }
+  }, [imageUrl])
+
+  if (failed) {
+    return (
+      <group>
+        <mesh position={[0, 0, 0.027]}>
+          <planeGeometry args={[0.28, 0.45]} />
+          <meshBasicMaterial color="#160807" side={THREE.DoubleSide} />
+        </mesh>
+
+        <Text
+          position={[0, 0, 0.045]}
+          fontSize={0.024}
+          color="#ff9a7a"
+          anchorX="center"
+          anchorY="middle"
+          maxWidth={0.22}
+        >
+          IMAGE ERROR
+        </Text>
+      </group>
+    )
+  }
+
+  if (!texture) {
+    return (
+      <group>
+        <mesh position={[0, 0, 0.027]}>
+          <planeGeometry args={[0.28, 0.45]} />
+          <meshBasicMaterial color="#120806" side={THREE.DoubleSide} />
+        </mesh>
+
+        <Text
+          position={[0, 0, 0.045]}
+          fontSize={0.024}
+          color="#d9b5ff"
+          anchorX="center"
+          anchorY="middle"
+          maxWidth={0.22}
+        >
+          SEALING IMAGE
+        </Text>
+      </group>
+    )
+  }
 
   return (
     <mesh position={[0, 0, 0.027]}>

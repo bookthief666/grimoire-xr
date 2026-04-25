@@ -291,7 +291,7 @@ export function useGrimoireEngine(): GrimoireEngine {
       erosField,
       intent: intent.trim() || undefined,
     }),
-    [subject, tradition, tone, techLevel, intent],
+    [subject, tradition, tone, techLevel, visualStyle, erosField, intent],
   )
 
   const applyArchive = (archive: PersistedRitualArchive) => {
