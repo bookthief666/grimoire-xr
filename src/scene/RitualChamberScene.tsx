@@ -925,6 +925,7 @@ export function RitualChamberScene({
   onConsultOracle,
   onClearOracle,
   onClearRitual,
+  onGenerateCardImage = async () => false,
   onCardActivate,
   onAltarLanding,
 }: {
@@ -966,6 +967,7 @@ export function RitualChamberScene({
   onConsultOracle: () => Promise<void>
   onClearOracle: () => void
   onClearRitual: () => void
+  onGenerateCardImage?: (cardId: number) => Promise<boolean>
   onCardActivate: (card: GrimoireCard) => void
   onAltarLanding: () => void
 }) {
@@ -1086,6 +1088,7 @@ export function RitualChamberScene({
         onConsultOracle={onConsultOracle}
         onClearOracle={onClearOracle}
         onClearRitual={onClearRitual}
+        onGenerateCardImage={onGenerateCardImage}
         onCardSelect={handleSelect}
       />
 

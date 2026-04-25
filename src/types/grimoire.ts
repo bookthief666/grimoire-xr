@@ -74,7 +74,7 @@ export const grimoireCardSchema = z.object({
   exegesis: z.string().min(12),
   ritualFunction: z.string().min(12).optional(),
   artPrompt: z.string().min(24).optional(),
-  imageUrl: z.string().url().optional(),
+  imageUrl: z.string().min(8).optional(),
   imageStatus: imageStatusSchema.optional(),
   metadata: cardMetadataSchema,
 })

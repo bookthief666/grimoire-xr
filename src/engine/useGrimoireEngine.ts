@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { consultOracle, generateDeck } from '../services/content'
+import { generateCardImage } from '../services/images'
 import {
   grimoireDeckSchema,
   techLevelSchema,
@@ -68,6 +69,7 @@ export type GrimoireEngine = GrimoireEngineState & {
   activateCard: (cardId: number) => void
   clearCardSelection: () => void
   clearRitual: () => void
+  generateImageForCard: (cardId: number) => Promise<boolean>
 
   saveCurrentRitual: () => boolean
   loadMostRecentArchive: () => boolean
@@ -465,6 +467,110 @@ export function useGrimoireEngine(): GrimoireEngine {
     setOraclePlaceholder(null)
   }
 
+  const generateImageForCard = async (cardId: number) => {
+    if (!deck) {
+      setArchivePlaceholder('No active deck exists for image manifestation.')
+      return false
+    }
+
+    const target = deck.cards.find((card) => card.id === cardId)
+
+    if (!target) {
+      setArchivePlaceholder('Card image manifestation failed: card not found.')
+      return false
+    }
+
+    if (target.imageStatus === 'ready' && target.imageUrl) {
+      setArchivePlaceholder(`Image already sealed for ${target.name}.`)
+      return true
+    }
+
+    if (target.imageStatus === 'generating') {
+      setArchivePlaceholder(`Image manifestation already active for ${target.name}.`)
+      return false
+    }
+
+    if (!target.artPrompt) {
+      setArchivePlaceholder(`No art seed exists for ${target.name}.`)
+      return false
+    }
+
+    setArchivePlaceholder(`Manifesting image seal for ${target.name}.`)
+
+    setDeck((currentDeck) => {
+      if (!currentDeck) return currentDeck
+
+      return {
+        ...currentDeck,
+        cards: currentDeck.cards.map((card) =>
+          card.id === cardId
+            ? {
+                ...card,
+                imageStatus: 'generating',
+              }
+            : card,
+        ),
+      }
+    })
+
+    try {
+      const result = await generateCardImage({
+        deckId: deck.id,
+        cardId: target.id,
+        cardName: target.name,
+        sigil: target.sigil,
+        artPrompt: target.artPrompt,
+        visualStyle,
+        erosField,
+        metadata: target.metadata,
+      })
+
+      setDeck((currentDeck) => {
+        if (!currentDeck) return currentDeck
+
+        return {
+          ...currentDeck,
+          cards: currentDeck.cards.map((card) =>
+            card.id === cardId
+              ? {
+                  ...card,
+                  imageUrl: result.imageUrl,
+                  imageStatus: 'ready',
+                }
+              : card,
+          ),
+        }
+      })
+
+      setArchivePlaceholder(`Image sealed for ${target.name}.`)
+      return true
+    } catch (err) {
+      setDeck((currentDeck) => {
+        if (!currentDeck) return currentDeck
+
+        return {
+          ...currentDeck,
+          cards: currentDeck.cards.map((card) =>
+            card.id === cardId
+              ? {
+                  ...card,
+                  imageStatus: 'error',
+                }
+              : card,
+          ),
+        }
+      })
+
+      setArchivePlaceholder(
+        err instanceof Error
+          ? `Image manifestation failed: ${err.message}`
+          : 'Image manifestation failed.',
+      )
+
+      return false
+    }
+  }
+
   const saveCurrentRitual = () => {
     if (!deck) {
       setArchivePlaceholder('No active ritual exists to save.')
@@ -607,6 +713,7 @@ export function useGrimoireEngine(): GrimoireEngine {
     activateCard,
     clearCardSelection,
     clearRitual,
+    generateImageForCard,
 
     saveCurrentRitual,
     loadMostRecentArchive,

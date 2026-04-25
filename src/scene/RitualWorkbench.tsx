@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
-import { Text } from '@react-three/drei'
+import { Text, useTexture } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import {
@@ -61,6 +61,7 @@ type RitualWorkbenchProps = {
   onConsultOracle: () => Promise<void>
   onClearOracle: () => void
   onClearRitual: () => void
+  onGenerateCardImage: (cardId: number) => Promise<boolean>
   onCardSelect: (
     card: GrimoireCard,
     position: [number, number, number],
@@ -990,12 +991,29 @@ function SpreadSlot({
   )
 }
 
+function CardFaceArt({ imageUrl }: { imageUrl: string }) {
+  const texture = useTexture(imageUrl) as THREE.Texture
+
+  return (
+    <mesh position={[0, 0, 0.027]}>
+      <planeGeometry args={[0.28, 0.45]} />
+      <meshBasicMaterial
+        map={texture}
+        transparent
+        opacity={0.96}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  )
+}
+
 function WorkbenchCard({
   card,
   x,
   z,
   selected,
   onSelect,
+  onGenerateImage,
   onDragStart,
 }: {
   card: GrimoireCard
@@ -1003,6 +1021,7 @@ function WorkbenchCard({
   z: number
   selected: boolean
   onSelect: () => void
+  onGenerateImage: (cardId: number) => void
   onDragStart: (point: THREE.Vector3) => void
 }) {
   const [hovered, setHovered] = useState(false)
@@ -1034,6 +1053,14 @@ function WorkbenchCard({
       onClick={(event) => {
         event.stopPropagation()
         onSelect()
+
+        if (
+          card.artPrompt &&
+          card.imageStatus !== 'ready' &&
+          card.imageStatus !== 'generating'
+        ) {
+          onGenerateImage(card.id)
+        }
       }}
     >
       <mesh>
@@ -1051,6 +1078,8 @@ function WorkbenchCard({
         <planeGeometry args={[0.28, 0.45]} />
         <meshBasicMaterial color={selected ? '#301408' : '#0b0605'} />
       </mesh>
+
+      {card.imageUrl ? <CardFaceArt imageUrl={card.imageUrl} /> : null}
 
       <mesh position={[0, 0.12, 0.025]}>
         <ringGeometry args={[0.045, 0.062, 18]} />
@@ -1710,6 +1739,7 @@ export function RitualWorkbench({
   onConsultOracle,
   onClearOracle,
   onClearRitual,
+  onGenerateCardImage,
   onCardSelect,}: RitualWorkbenchProps) {
   const [cardOffsets, setCardOffsets] = useState<Record<number, Vec2>>({})
   const [dragState, setDragState] = useState<DragState | null>(null)
@@ -1875,6 +1905,9 @@ export function RitualWorkbench({
             z={z}
             selected={card.id === selectedCardId}
             onDragStart={(point) => startCardDrag(card.id, point)}
+            onGenerateImage={(cardId) => {
+              void onGenerateCardImage(cardId)
+            }}
             onSelect={() => onCardSelect(card, [x, 1.18, z - 1.0], 0)}
           />
         )
