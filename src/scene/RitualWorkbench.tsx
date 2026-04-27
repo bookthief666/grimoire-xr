@@ -163,12 +163,14 @@ function TableBar({
   color = '#ff9a00',
   opacity = 0.72,
   width = 0.018,
+  yOffset = 0.012,
 }: {
   a: Vec2
   b: Vec2
   color?: string
   opacity?: number
   width?: number
+  yOffset?: number
 }) {
   const dx = b[0] - a[0]
   const dz = b[1] - a[1]
@@ -177,7 +179,7 @@ function TableBar({
 
   return (
     <mesh
-      position={[(a[0] + b[0]) / 2, TABLE_Y + 0.012, (a[1] + b[1]) / 2]}
+      position={[(a[0] + b[0]) / 2, TABLE_Y + yOffset, (a[1] + b[1]) / 2]}
       rotation={[-Math.PI / 2, 0, angle]}
     >
       <planeGeometry args={[length, width]} />
@@ -793,7 +795,7 @@ function SpreadMandala({
 
   return (
     <group>
-      <mesh position={[0, TABLE_Y + 0.013, 0.02]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[0, TABLE_Y + 0.021, 0.02]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.96, 0.972, 96]} />
         <meshBasicMaterial
           ref={outerRef}
@@ -806,7 +808,7 @@ function SpreadMandala({
         />
       </mesh>
 
-      <mesh position={[0, TABLE_Y + 0.016, 0.02]} rotation={[-Math.PI / 2, 0, Math.PI / 7]}>
+      <mesh position={[0, TABLE_Y + 0.024, 0.02]} rotation={[-Math.PI / 2, 0, Math.PI / 7]}>
         <ringGeometry args={[0.55, 0.562, 80]} />
         <meshBasicMaterial
           ref={innerRef}
@@ -819,7 +821,7 @@ function SpreadMandala({
         />
       </mesh>
 
-      <mesh position={[0, TABLE_Y + 0.011, 0.02]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[0, TABLE_Y + 0.018, 0.02]} rotation={[-Math.PI / 2, 0, 0]}>
         <circleGeometry args={[0.88, 72]} />
         <meshBasicMaterial
           ref={lensRef}
@@ -835,7 +837,7 @@ function SpreadMandala({
       <TableBar a={[-0.82, 0.44]} b={[0.82, 0.44]} color="#8a35ff" opacity={0.22} width={0.01} />
       <TableBar a={[-0.82, -0.44]} b={[0, 0.62]} color="#ffcf7c" opacity={0.26} width={0.012} />
       <TableBar a={[0.82, -0.44]} b={[0, 0.62]} color="#ffcf7c" opacity={0.26} width={0.012} />
-      <TableBar a={[0, -0.72]} b={[0, 0.68]} color="#ff3d5a" opacity={0.2} width={0.01} />
+      <TableBar a={[0, -0.72]} b={[0, 0.68]} color="#ff3d5a" opacity={0.2} width={0.01} yOffset={0.026} />
 
       {[
         [-0.82, -0.44, '☽'],
@@ -845,7 +847,7 @@ function SpreadMandala({
         [0, 0.68, '✶'],
         [0, -0.72, '☿'],
       ].map(([x, z, glyph], index) => (
-        <group key={`${glyph}-${index}`} position={[Number(x), TABLE_Y + 0.036, Number(z)]}>
+        <group key={`${glyph}-${index}`} position={[Number(x), TABLE_Y + 0.046, Number(z)]}>
           <mesh rotation={[-Math.PI / 2, 0, 0]}>
             <ringGeometry args={[0.045, 0.058, 18]} />
             <meshBasicMaterial
@@ -1115,7 +1117,7 @@ function WorkbenchCard({
   const [hovered, setHovered] = useState(false)
   const pointerDownPointRef = useRef<THREE.Vector3 | null>(null)
   const hasMovedRef = useRef(false)
-  const y = TABLE_Y + (selected || hovered ? 0.12 : 0.055)
+  const y = TABLE_Y + (selected || hovered ? 0.13 : 0.07)
 
   return (
     <group
