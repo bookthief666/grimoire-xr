@@ -612,6 +612,110 @@ function TempleFloor() {
   )
 }
 
+
+function ChamberCardFaceArt({
+  imageUrl,
+  width,
+  height,
+  label = 'IMAGE',
+}: {
+  imageUrl: string
+  width: number
+  height: number
+  label?: string
+}) {
+  const [texture, setTexture] = useState<THREE.Texture | null>(null)
+  const [failed, setFailed] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    setTexture(null)
+    setFailed(false)
+
+    const loader = new THREE.TextureLoader()
+    loader.setCrossOrigin('anonymous')
+
+    loader.load(
+      imageUrl,
+      (loadedTexture) => {
+        if (cancelled) {
+          loadedTexture.dispose()
+          return
+        }
+
+        loadedTexture.colorSpace = THREE.SRGBColorSpace
+        loadedTexture.needsUpdate = true
+        setTexture(loadedTexture)
+      },
+      undefined,
+      () => {
+        if (!cancelled) setFailed(true)
+      },
+    )
+
+    return () => {
+      cancelled = true
+    }
+  }, [imageUrl])
+
+  if (failed) {
+    return (
+      <group>
+        <mesh position={[0, 0, 0.022]}>
+          <planeGeometry args={[width, height]} />
+          <meshBasicMaterial color="#160807" side={THREE.DoubleSide} />
+        </mesh>
+
+        <Text
+          position={[0, 0, 0.04]}
+          fontSize={Math.min(width, height) * 0.075}
+          color="#ff9a7a"
+          anchorX="center"
+          anchorY="middle"
+          maxWidth={width * 0.76}
+        >
+          IMAGE ERROR
+        </Text>
+      </group>
+    )
+  }
+
+  if (!texture) {
+    return (
+      <group>
+        <mesh position={[0, 0, 0.022]}>
+          <planeGeometry args={[width, height]} />
+          <meshBasicMaterial color="#120806" side={THREE.DoubleSide} />
+        </mesh>
+
+        <Text
+          position={[0, 0, 0.04]}
+          fontSize={Math.min(width, height) * 0.07}
+          color="#d9b5ff"
+          anchorX="center"
+          anchorY="middle"
+          maxWidth={width * 0.76}
+        >
+          SEALING {label}
+        </Text>
+      </group>
+    )
+  }
+
+  return (
+    <mesh position={[0, 0, 0.022]}>
+      <planeGeometry args={[width, height]} />
+      <meshBasicMaterial
+        map={texture}
+        transparent
+        opacity={0.98}
+        toneMapped={false}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  )
+}
+
 function Altar({
   manifest,
   ritualImpulseRef,
@@ -755,6 +859,15 @@ function Altar({
               <meshBasicMaterial color={PALETTE.cardFace} />
             </mesh>
 
+            {manifest.card.imageUrl ? (
+              <ChamberCardFaceArt
+                imageUrl={manifest.card.imageUrl}
+                width={0.42}
+                height={0.7}
+                label="ARCANUM"
+              />
+            ) : null}
+
             <mesh position={[0, 0.26, 0.019]}>
               <ringGeometry args={[0.07, 0.11, 20]} />
               <meshBasicMaterial color={PALETTE.gold} />
@@ -866,6 +979,15 @@ function CardArc({
               <planeGeometry args={[0.35, 0.59]} />
               <meshBasicMaterial color={isSelected ? PALETTE.cardFace : PALETTE.massDark} />
             </mesh>
+
+            {card.imageUrl ? (
+              <ChamberCardFaceArt
+                imageUrl={card.imageUrl}
+                width={0.33}
+                height={0.56}
+                label="SEAL"
+              />
+            ) : null}
 
             <mesh position={[0, 0.22, 0.015]}>
               <ringGeometry args={[0.045, 0.07, 16]} />
