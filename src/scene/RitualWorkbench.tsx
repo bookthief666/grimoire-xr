@@ -551,7 +551,7 @@ function FloatingForgeMenu({
   onOracleQuestionChange: (question: string) => void
 }) {
   return (
-    <group position={[0, 1.1, 0.05]} scale={1.18}>
+    <group position={[-1.04, 1.0, 0.1]} scale={0.86}>
       <mesh>
         <planeGeometry args={[1.92, 1.76]} />
         <meshStandardMaterial
