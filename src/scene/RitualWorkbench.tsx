@@ -411,21 +411,22 @@ function FloatingMenuButton({
       </mesh>
 
       <mesh>
-        <planeGeometry args={[width, 0.16]} />
+        <planeGeometry args={[width, 0.13]} />
         <meshBasicMaterial
           color={disabled ? '#100807' : '#241008'}
           transparent
-          opacity={disabled ? 0.42 : 0.9}
+          opacity={disabled ? 0.16 : hovered ? 0.44 : 0.24}
+          depthWrite={false}
           side={THREE.DoubleSide}
         />
       </mesh>
 
       <mesh position={[0, 0, 0.012]}>
-        <planeGeometry args={[width + 0.16, 0.28]} />
+        <planeGeometry args={[width + 0.12, 0.24]} />
         <meshBasicMaterial
           color="#ffb000"
           transparent
-          opacity={hovered && !disabled ? 0.36 : 0.1}
+          opacity={hovered && !disabled ? 0.28 : 0.045}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
