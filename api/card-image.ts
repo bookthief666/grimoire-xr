@@ -125,6 +125,151 @@ function buildCardSvg({
   return `https://dummyimage.com/768x1152/12030a/ffd18a.png&text=${encodeURIComponent(label)}`
 }
 
+
+type HordeAsyncResponse = {
+  id?: string
+  message?: string
+}
+
+type HordeCheckResponse = {
+  done?: boolean
+  faulted?: boolean
+  wait_time?: number
+  queue_position?: number
+}
+
+type HordeStatusResponse = {
+  done?: boolean
+  faulted?: boolean
+  generations?: Array<{
+    img?: string
+    seed?: string
+    censored?: boolean
+  }>
+}
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function buildAiPrompt({
+  cardName,
+  sigil,
+  artPrompt,
+  visualStyle,
+  erosField,
+  metadata,
+}: z.infer<typeof cardImageRequestSchema>) {
+  const meta = metadataText(metadata)
+
+  return [
+    `occult tarot card illustration titled "${cardName}"`,
+    artPrompt,
+    `central sigil: ${sigil}`,
+    meta ? `correspondences: ${meta}` : '',
+    `visual style: ${visualStyle ?? 'hierophantic esoteric digital painting'}`,
+    `mood: ${erosField ?? 'veiled ritual intensity'}`,
+    'sacred geometry, alchemical symbolism, luminous borders, cinematic lighting',
+    'detailed tarot composition, no modern UI, no readable text, no watermark',
+  ]
+    .filter(Boolean)
+    .join(', ')
+}
+
+async function generateWithAiHorde(
+  payload: z.infer<typeof cardImageRequestSchema>,
+): Promise<string | null> {
+  const apiKey = process.env.AI_HORDE_API_KEY || '0000000000'
+  const prompt = buildAiPrompt(payload)
+
+  const submitResponse = await fetch('https://aihorde.net/api/v2/generate/async', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: apiKey,
+      'Client-Agent': 'grimoire-xr:0.1:bookthief666',
+    },
+    body: JSON.stringify({
+      prompt,
+      params: {
+        width: 768,
+        height: 1152,
+        steps: 28,
+        cfg_scale: 7.5,
+        sampler_name: 'k_euler_a',
+        n: 1,
+      },
+      nsfw: false,
+      censor_nsfw: true,
+      trusted_workers: false,
+      slow_workers: true,
+      r2: true,
+      shared: false,
+      replacement_filter: true,
+    }),
+  })
+
+  if (!submitResponse.ok) {
+    return null
+  }
+
+  const submitJson = (await submitResponse.json()) as HordeAsyncResponse
+  const id = submitJson.id
+
+  if (!id) {
+    return null
+  }
+
+  const startedAt = Date.now()
+  const timeoutMs = 24000
+
+  while (Date.now() - startedAt < timeoutMs) {
+    await sleep(2500)
+
+    const checkResponse = await fetch(`https://aihorde.net/api/v2/generate/check/${id}`, {
+      headers: {
+        apikey: apiKey,
+        'Client-Agent': 'grimoire-xr:0.1:bookthief666',
+      },
+    })
+
+    if (!checkResponse.ok) continue
+
+    const checkJson = (await checkResponse.json()) as HordeCheckResponse
+
+    if (checkJson.faulted) {
+      return null
+    }
+
+    if (!checkJson.done) {
+      continue
+    }
+
+    const statusResponse = await fetch(`https://aihorde.net/api/v2/generate/status/${id}`, {
+      headers: {
+        apikey: apiKey,
+        'Client-Agent': 'grimoire-xr:0.1:bookthief666',
+      },
+    })
+
+    if (!statusResponse.ok) {
+      return null
+    }
+
+    const statusJson = (await statusResponse.json()) as HordeStatusResponse
+    const image = statusJson.generations?.[0]?.img
+
+    if (typeof image === 'string' && image.length > 8) {
+      return image
+    }
+
+    return null
+  }
+
+  return null
+}
+
+
 export default async function handler(
   request: NodeApiRequest,
   response: NodeApiResponse,
@@ -157,11 +302,12 @@ export default async function handler(
     })
   }
 
-  const imageUrl = buildCardSvg(parsed.data)
+  const aiImageUrl = await generateWithAiHorde(parsed.data)
+  const imageUrl = aiImageUrl ?? buildCardSvg(parsed.data)
 
   return sendJson(response, 200, {
     ok: true,
     imageUrl,
-    provider: 'procedural-svg',
+    provider: aiImageUrl ? 'ai-horde' : 'procedural-svg-fallback',
   })
 }
