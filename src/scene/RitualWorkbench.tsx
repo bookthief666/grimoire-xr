@@ -1117,9 +1117,28 @@ function WorkbenchCard({
   const [hovered, setHovered] = useState(false)
   const pointerDownPointRef = useRef<THREE.Vector3 | null>(null)
   const hasMovedRef = useRef(false)
+  const cardGlowMaterialRef = useRef<THREE.MeshBasicMaterial>(null)
+  const sigilRingMaterialRef = useRef<THREE.MeshBasicMaterial>(null)
   const y = TABLE_Y + (selected || hovered ? 0.13 : 0.07)
   const cardGlowOpacity = selected ? 0.34 : hovered ? 0.22 : 0.085
   const cardGlowScale = selected ? 1.18 : hovered ? 1.1 : 1
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime()
+    const pulse = 0.5 + Math.sin(t * 2.4 + card.id * 0.73) * 0.5
+
+    if (cardGlowMaterialRef.current) {
+      cardGlowMaterialRef.current.opacity = cardGlowOpacity + pulse * (selected ? 0.09 : hovered ? 0.045 : 0.015)
+    }
+
+    if (sigilRingMaterialRef.current) {
+      sigilRingMaterialRef.current.opacity = selected
+        ? 0.82 + pulse * 0.16
+        : hovered
+          ? 0.58 + pulse * 0.12
+          : 0.38 + pulse * 0.06
+    }
+  })
 
   return (
     <group
@@ -1200,6 +1219,7 @@ function WorkbenchCard({
       <mesh position={[0, 0, -0.018]} scale={cardGlowScale}>
         <planeGeometry args={[0.46, 0.68]} />
         <meshBasicMaterial
+          ref={cardGlowMaterialRef}
           color={selected ? '#ffcf7c' : '#8a35ff'}
           transparent
           opacity={cardGlowOpacity}
@@ -1242,6 +1262,7 @@ function WorkbenchCard({
       <mesh position={[0, 0.12, 0.025]}>
         <ringGeometry args={[0.045, 0.062, 18]} />
         <meshBasicMaterial
+          ref={sigilRingMaterialRef}
           color={selected ? '#ffcf7c' : hovered ? '#d99b58' : '#9a5a18'}
           transparent
           opacity={selected ? 0.95 : hovered ? 0.72 : 0.48}
