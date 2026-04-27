@@ -1511,11 +1511,12 @@ function FloatingSigilButton({
       </mesh>
 
       <mesh>
-        <circleGeometry args={[0.14, 32]} />
+        <circleGeometry args={[0.095, 32]} />
         <meshBasicMaterial
           color={disabled ? '#070403' : baseColor}
           transparent
-          opacity={disabled ? 0.42 : 0.86}
+          opacity={disabled ? 0.12 : active || hovered ? 0.34 : 0.16}
+          depthWrite={false}
           side={THREE.DoubleSide}
         />
       </mesh>
@@ -1561,7 +1562,7 @@ function FloatingSigilButton({
 
       <Text
         position={[0, 0.003, 0.04]}
-        fontSize={0.078}
+        fontSize={0.092}
         color={textColor}
         anchorX="center"
         anchorY="middle"
@@ -1780,7 +1781,7 @@ function FloatingSigilDock({
         <meshBasicMaterial
           color="#050202"
           transparent
-          opacity={sideDock ? 0.22 : 0.36}
+          opacity={sideDock ? 0.12 : 0.18}
           depthWrite={false}
           side={THREE.DoubleSide}
         />
