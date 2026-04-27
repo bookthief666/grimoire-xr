@@ -480,7 +480,7 @@ function PanelButton({
         event.stopPropagation()
         setHovered(false)
       }}
-      onClick={(event) => {
+      onPointerUp={(event) => {
         event.stopPropagation()
         if (!disabled) onClick()
       }}
@@ -807,7 +807,7 @@ function PanelShell({
   return (
     <group ref={groupRef}>
       <mesh
-        onClick={(event) => {
+        onPointerUp={(event) => {
           event.stopPropagation()
           if (!dragging) goNext()
         }}

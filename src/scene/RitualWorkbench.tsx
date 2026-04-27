@@ -398,9 +398,6 @@ function FloatingMenuButton({
         target.releasePointerCapture?.(event.pointerId)
         trigger()
       }}
-      onClick={(event) => {
-        event.stopPropagation()
-      }}
     >
       <mesh>
         <planeGeometry args={[width, 0.16]} />
@@ -1125,7 +1122,7 @@ function WorkbenchCard({
         target.setPointerCapture?.(event.pointerId)
         onDragStart(event.point.clone())
       }}
-      onClick={(event) => {
+      onPointerUp={(event) => {
         event.stopPropagation()
         onSelect()
 
@@ -1443,9 +1440,6 @@ function FloatingSigilButton({
 
         target.releasePointerCapture?.(event.pointerId)
         trigger()
-      }}
-      onClick={(event) => {
-        event.stopPropagation()
       }}
     >
       <mesh>

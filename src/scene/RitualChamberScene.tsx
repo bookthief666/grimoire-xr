@@ -842,7 +842,10 @@ function CardArc({
             key={card.id}
             position={card.position}
             rotation={[0, card.rotY, 0]}
-            onClick={() => onSelect(card, card.position, card.rotY)}
+            onPointerUp={(event) => {
+              event.stopPropagation()
+              onSelect(card, card.position, card.rotY)
+            }}
             onPointerOver={(e) => {
               e.stopPropagation()
               setHoveredId(card.id)

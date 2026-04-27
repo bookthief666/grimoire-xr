@@ -281,7 +281,7 @@ function TabletButton({
         event.stopPropagation()
         setHovered(false)
       }}
-      onClick={(event) => {
+      onPointerUp={(event) => {
         event.stopPropagation()
         if (!disabled) onClick()
       }}
