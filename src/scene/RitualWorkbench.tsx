@@ -1166,6 +1166,8 @@ function WorkbenchCard({
   </group>
 ) : null}
 
+      {card.imageUrl ? <CardFaceArt imageUrl={card.imageUrl} /> : null}
+
       <mesh position={[0, 0.12, 0.025]}>
         <ringGeometry args={[0.045, 0.062, 18]} />
         <meshBasicMaterial color={selected ? '#ffcf7c' : '#9a5a18'} />
