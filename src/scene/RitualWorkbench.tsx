@@ -1118,6 +1118,8 @@ function WorkbenchCard({
   const pointerDownPointRef = useRef<THREE.Vector3 | null>(null)
   const hasMovedRef = useRef(false)
   const y = TABLE_Y + (selected || hovered ? 0.13 : 0.07)
+  const cardGlowOpacity = selected ? 0.34 : hovered ? 0.22 : 0.085
+  const cardGlowScale = selected ? 1.18 : hovered ? 1.1 : 1
 
   return (
     <group
@@ -1195,12 +1197,24 @@ function WorkbenchCard({
         onDragEnd()
       }}
     >
+      <mesh position={[0, 0, -0.018]} scale={cardGlowScale}>
+        <planeGeometry args={[0.46, 0.68]} />
+        <meshBasicMaterial
+          color={selected ? '#ffcf7c' : '#8a35ff'}
+          transparent
+          opacity={cardGlowOpacity}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
       <mesh>
         <boxGeometry args={[0.34, 0.54, 0.025]} />
         <meshStandardMaterial
           color={selected ? '#2a1208' : '#160909'}
-          emissive={selected ? '#6a2a08' : '#210c06'}
-          emissiveIntensity={selected ? 0.72 : 0.36}
+          emissive={selected ? '#6a2a08' : hovered ? '#3a1608' : '#210c06'}
+          emissiveIntensity={selected ? 0.82 : hovered ? 0.52 : 0.36}
           roughness={0.45}
           metalness={0.35}
         />
@@ -1227,7 +1241,14 @@ function WorkbenchCard({
 
       <mesh position={[0, 0.12, 0.025]}>
         <ringGeometry args={[0.045, 0.062, 18]} />
-        <meshBasicMaterial color={selected ? '#ffcf7c' : '#9a5a18'} />
+        <meshBasicMaterial
+          color={selected ? '#ffcf7c' : hovered ? '#d99b58' : '#9a5a18'}
+          transparent
+          opacity={selected ? 0.95 : hovered ? 0.72 : 0.48}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
       </mesh>
 
       <Text
