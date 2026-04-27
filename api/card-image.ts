@@ -176,6 +176,64 @@ function buildAiPrompt({
     .join(', ')
 }
 
+
+function base64Mime(base64: string) {
+  if (base64.startsWith('iVBOR')) return 'image/png'
+  if (base64.startsWith('/9j/')) return 'image/jpeg'
+  if (base64.startsWith('UklGR')) return 'image/webp'
+  return 'image/webp'
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer) {
+  const bytes = new Uint8Array(buffer)
+  const chunkSize = 0x8000
+  let binary = ''
+
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize))
+  }
+
+  return btoa(binary)
+}
+
+async function normalizeImageForWebGl(image: string): Promise<string | null> {
+  const trimmed = image.trim()
+
+  if (!trimmed) return null
+
+  if (trimmed.startsWith('data:image/')) {
+    return trimmed
+  }
+
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    try {
+      const imageResponse = await fetch(trimmed)
+
+      if (!imageResponse.ok) {
+        return trimmed
+      }
+
+      const contentType =
+        imageResponse.headers.get('content-type')?.split(';')[0] || 'image/webp'
+
+      const buffer = await imageResponse.arrayBuffer()
+      const base64 = arrayBufferToBase64(buffer)
+
+      return `data:${contentType};base64,${base64}`
+    } catch {
+      return trimmed
+    }
+  }
+
+  const compactBase64 = trimmed.replace(/\s+/g, '')
+
+  if (compactBase64.length > 64) {
+    return `data:${base64Mime(compactBase64)};base64,${compactBase64}`
+  }
+
+  return null
+}
+
 async function generateWithAiHorde(
   payload: z.infer<typeof cardImageRequestSchema>,
 ): Promise<string | null> {
@@ -260,7 +318,7 @@ async function generateWithAiHorde(
     const image = statusJson.generations?.[0]?.img
 
     if (typeof image === 'string' && image.length > 8) {
-      return image
+      return await normalizeImageForWebGl(image)
     }
 
     return null
