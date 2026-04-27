@@ -485,6 +485,17 @@ function PanelButton({
         if (!disabled) onClick()
       }}
     >
+      <mesh position={[0, 0, -0.004]}>
+        <planeGeometry args={[width + 0.22, 0.3]} />
+        <meshBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.001}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
       <mesh>
         <planeGeometry args={[width, 0.16]} />
         <meshBasicMaterial

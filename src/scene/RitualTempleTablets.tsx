@@ -286,6 +286,17 @@ function TabletButton({
         if (!disabled) onClick()
       }}
     >
+      <mesh position={[0, 0, -0.006]}>
+        <circleGeometry args={[0.19, 30]} />
+        <meshBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.001}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
       <mesh>
         <circleGeometry args={[0.11, 30]} />
         <meshBasicMaterial

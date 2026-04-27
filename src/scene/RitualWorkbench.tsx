@@ -399,6 +399,17 @@ function FloatingMenuButton({
         trigger()
       }}
     >
+      <mesh position={[0, 0, -0.004]}>
+        <planeGeometry args={[width + 0.28, 0.34]} />
+        <meshBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.001}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
       <mesh>
         <planeGeometry args={[width, 0.16]} />
         <meshBasicMaterial
@@ -1442,6 +1453,17 @@ function FloatingSigilButton({
         trigger()
       }}
     >
+      <mesh position={[0, 0, -0.006]}>
+        <circleGeometry args={[0.24, 32]} />
+        <meshBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.001}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
       <mesh>
         <circleGeometry args={[0.14, 32]} />
         <meshBasicMaterial
