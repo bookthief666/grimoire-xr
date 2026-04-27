@@ -907,14 +907,14 @@ function SpreadSlot({
 
     if (fieldRef.current) {
       fieldRef.current.opacity = active
-        ? 0.28 + Math.sin(t * 1.6 + x * 2.0 + z) * 0.055
-        : 0.12 + Math.sin(t * 0.8 + x) * 0.02
+        ? 0.18 + Math.sin(t * 1.25 + x * 2.0 + z) * 0.035
+        : 0.045 + Math.sin(t * 0.6 + x) * 0.012
     }
 
     if (rimRef.current) {
       rimRef.current.opacity = active
-        ? 0.58 + Math.sin(t * 1.9 + z) * 0.12
-        : 0.24
+        ? 0.68 + Math.sin(t * 1.55 + z) * 0.1
+        : 0.16
     }
   })
 
@@ -922,11 +922,11 @@ function SpreadSlot({
 
   return (
     <group>
-      <mesh position={[x, TABLE_Y + 0.015, z]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[0.44, 0.66]} />
+      <mesh position={[x, TABLE_Y + 0.024, z]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[0.38, 0.58]} />
         <meshBasicMaterial
           ref={fieldRef}
-          color={active ? '#231008' : '#080504'}
+          color={active ? '#1a0b08' : '#050303'}
           transparent
           opacity={0.16}
           depthWrite={false}
@@ -934,7 +934,7 @@ function SpreadSlot({
         />
       </mesh>
 
-      <mesh position={[x, TABLE_Y + 0.018, z]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[x, TABLE_Y + 0.031, z]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.155, 0.166, 32]} />
         <meshBasicMaterial
           ref={rimRef}
@@ -947,7 +947,7 @@ function SpreadSlot({
         />
       </mesh>
 
-      <mesh position={[x, TABLE_Y + 0.019, z]} rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh position={[x, TABLE_Y + 0.033, z]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.235, 0.242, 4]} />
         <meshBasicMaterial
           color={active ? '#9a6bff' : '#4f2a60'}
@@ -960,7 +960,7 @@ function SpreadSlot({
       </mesh>
 
       {([[-1, 1], [1, 1], [-1, -1], [1, -1]] as [number, number][]).map(([sx, sz], index) => (
-        <group key={index} position={[x + sx * 0.19, TABLE_Y + 0.034, z + sz * 0.29]}>
+        <group key={index} position={[x + sx * 0.17, TABLE_Y + 0.048, z + sz * 0.255]}>
           <mesh rotation={[-Math.PI / 2, 0, 0]}>
             <planeGeometry args={[0.075, 0.009]} />
             <meshBasicMaterial
