@@ -1098,6 +1098,8 @@ function WorkbenchCard({
   onSelect,
   onGenerateImage,
   onDragStart,
+  onDragMove,
+  onDragEnd,
 }: {
   card: GrimoireCard
   x: number
@@ -1106,8 +1108,12 @@ function WorkbenchCard({
   onSelect: () => void
   onGenerateImage: (cardId: number) => void
   onDragStart: (point: THREE.Vector3) => void
+  onDragMove: (point: THREE.Vector3) => void
+  onDragEnd: () => void
 }) {
   const [hovered, setHovered] = useState(false)
+  const pointerDownPointRef = useRef<THREE.Vector3 | null>(null)
+  const hasMovedRef = useRef(false)
   const y = TABLE_Y + (selected || hovered ? 0.12 : 0.055)
 
   return (
@@ -1130,11 +1136,45 @@ function WorkbenchCard({
           setPointerCapture?: (pointerId: number) => void
         }
 
+        const startPoint = event.point.clone()
+        pointerDownPointRef.current = startPoint
+        hasMovedRef.current = false
+
         target.setPointerCapture?.(event.pointerId)
-        onDragStart(event.point.clone())
+        onDragStart(startPoint)
+      }}
+      onPointerMove={(event) => {
+        if (!pointerDownPointRef.current) return
+
+        event.stopPropagation()
+
+        const moved = pointerDownPointRef.current.distanceTo(event.point)
+
+        if (moved > 0.025) {
+          hasMovedRef.current = true
+          onDragMove(event.point.clone())
+        }
       }}
       onPointerUp={(event) => {
         event.stopPropagation()
+
+        const target = event.target as unknown as {
+          releasePointerCapture?: (pointerId: number) => void
+        }
+
+        target.releasePointerCapture?.(event.pointerId)
+
+        const moved = pointerDownPointRef.current
+          ? pointerDownPointRef.current.distanceTo(event.point)
+          : 0
+        const wasDrag = hasMovedRef.current || moved > 0.035
+
+        pointerDownPointRef.current = null
+        hasMovedRef.current = false
+        onDragEnd()
+
+        if (wasDrag) return
+
         onSelect()
 
         if (
@@ -1144,6 +1184,12 @@ function WorkbenchCard({
         ) {
           onGenerateImage(card.id)
         }
+      }}
+      onPointerCancel={(event) => {
+        event.stopPropagation()
+        pointerDownPointRef.current = null
+        hasMovedRef.current = false
+        onDragEnd()
       }}
     >
       <mesh>
@@ -2009,6 +2055,8 @@ export function RitualWorkbench({
             z={z}
             selected={card.id === selectedCardId}
             onDragStart={(point) => startCardDrag(card.id, point)}
+            onDragMove={updateCardDrag}
+            onDragEnd={endCardDrag}
             onGenerateImage={(cardId) => {
               void onGenerateCardImage(cardId)
             }}
