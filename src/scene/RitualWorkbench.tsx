@@ -1245,17 +1245,6 @@ function WorkbenchCard({
         <meshBasicMaterial color={selected ? '#301408' : '#0b0605'} />
       </mesh>
 
-{card.imageUrl ? (
-  <group position={[0, 0, 0.1]}>
-    <mesh>
-      <planeGeometry args={[0.32, 0.5]} />
-      <meshBasicMaterial
-        map={new THREE.TextureLoader().load(card.imageUrl)}
-        toneMapped={false}
-      />
-    </mesh>
-  </group>
-) : null}
 
       {card.imageUrl ? <CardFaceArt imageUrl={card.imageUrl} /> : null}
 
