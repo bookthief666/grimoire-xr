@@ -1697,9 +1697,10 @@ function FloatingSigilDock({
   onReset: () => void
 }) {
   const sideDock = menuMode === 'spread' || menuMode === 'forge' || menuMode === 'archive'
+  const spreadDockDrop = menuMode === 'spread' ? 0.46 : 0
 
   const dockPlanePosition: [number, number, number] = sideDock
-    ? [1.54, TABLE_Y + 0.2, 0.22]
+    ? [1.54, TABLE_Y + 0.2 - spreadDockDrop, 0.22]
     : [0, TABLE_Y + 0.42, 0.94]
 
   const dockPlaneSize: [number, number] = sideDock ? [0.42, 2.12] : [2.38, 0.34]
@@ -1714,7 +1715,7 @@ function FloatingSigilDock({
 
     return {
       x: 1.54,
-      y: TABLE_Y + 0.82 - sideIndex * 0.26,
+      y: TABLE_Y + 0.82 - spreadDockDrop - sideIndex * 0.26,
       z: 0.22,
     }
   }
