@@ -237,7 +237,7 @@ async function normalizeImageForWebGl(image: string): Promise<string | null> {
 async function generateWithAiHorde(
   payload: z.infer<typeof cardImageRequestSchema>,
 ): Promise<string | null> {
-  const apiKey = process.env.AI_HORDE_API_KEY || '0000000000'
+  const apiKey = (process.env.AI_HORDE_API_KEY || '0000000000').trim()
   const prompt = buildAiPrompt(payload)
 
   const submitResponse = await fetch('https://aihorde.net/api/v2/generate/async', {
@@ -268,6 +268,15 @@ async function generateWithAiHorde(
   })
 
   if (!submitResponse.ok) {
+    const errorBody = await submitResponse.text().catch(() => '')
+    console.warn('AI Horde submit failed', {
+      status: submitResponse.status,
+      statusText: submitResponse.statusText,
+      body: errorBody.slice(0, 1200),
+      usingAnonymousKey: apiKey === '0000000000',
+      keyLength: apiKey.length,
+    })
+
     return null
   }
 
