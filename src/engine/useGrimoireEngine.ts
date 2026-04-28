@@ -479,17 +479,37 @@ export function useGrimoireEngine(): GrimoireEngine {
   }
 
   const generateImageForCard = async (cardId: number) => {
+    console.info('[ENGINE] generateImageForCard called', {
+      cardId,
+      hasDeck: Boolean(deck),
+      deckId: deck?.id,
+      deckCardIds: deck?.cards.map((card) => card.id),
+    })
+
     if (!deck) {
+      console.warn('[ENGINE] No active deck exists for image manifestation.')
       setArchivePlaceholder('No active deck exists for image manifestation.')
       return false
     }
 
-    const target = deck.cards.find((card) => card.id === cardId)
+    const target = deck.cards.find((card) => String(card.id) === String(cardId))
 
     if (!target) {
+      console.error('[ENGINE] Card image manifestation failed: card not found.', {
+        cardId,
+        deckCardIds: deck.cards.map((card) => card.id),
+      })
       setArchivePlaceholder('Card image manifestation failed: card not found.')
       return false
     }
+
+    console.info('[ENGINE] Target card found for image manifestation', {
+      id: target.id,
+      name: target.name,
+      imageStatus: target.imageStatus,
+      hasArtPrompt: Boolean(target.artPrompt),
+      artPromptLength: target.artPrompt?.length ?? 0,
+    })
 
     if (target.imageStatus === 'ready' && isRenderableGeneratedImageUrl(target.imageUrl)) {
       setArchivePlaceholder(`Image already sealed for ${target.name}.`)
@@ -525,6 +545,12 @@ export function useGrimoireEngine(): GrimoireEngine {
     })
 
     try {
+      console.info('[ENGINE] Calling generateCardImage service', {
+        deckId: deck.id,
+        cardId: target.id,
+        cardName: target.name,
+      })
+
       const result = await generateCardImage({
         deckId: deck.id,
         cardId: target.id,
@@ -534,6 +560,11 @@ export function useGrimoireEngine(): GrimoireEngine {
         visualStyle,
         erosField,
         metadata: target.metadata,
+      })
+
+      console.info('[ENGINE] generateCardImage service resolved', {
+        cardId: target.id,
+        imageUrlPrefix: result.imageUrl?.slice(0, 32),
       })
 
       setDeck((currentDeck) => {
@@ -556,6 +587,8 @@ export function useGrimoireEngine(): GrimoireEngine {
       setArchivePlaceholder(`Image sealed for ${target.name}.`)
       return true
     } catch (err) {
+      console.error('[ENGINE] generateImageForCard failed', err)
+
       setDeck((currentDeck) => {
         if (!currentDeck) return currentDeck
 
