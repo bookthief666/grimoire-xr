@@ -47,10 +47,10 @@ export async function generateCardImage(
   }
 
   const startedAt = Date.now()
-  const timeoutMs = 240000
+  const timeoutMs = 900000
 
   while (Date.now() - startedAt < timeoutMs) {
-    await new Promise((resolve) => window.setTimeout(resolve, 3000))
+    await new Promise((resolve) => window.setTimeout(resolve, 5000))
 
     const statusResponse = await fetch(
       `/api/card-image-status?promptId=${encodeURIComponent(startPayload.promptId)}&t=${Date.now()}`,
