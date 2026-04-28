@@ -458,16 +458,6 @@ export function useGrimoireEngine(): GrimoireEngine {
 
   const activateCard = (cardId: number) => {
     setSelection({ focusedCardId: cardId, altarCardId: cardId })
-
-    const target = deck?.cards.find((card) => card.id === cardId)
-
-    if (
-      target?.artPrompt &&
-      target.imageStatus !== 'ready' &&
-      target.imageStatus !== 'generating'
-    ) {
-      void generateImageForCard(cardId)
-    }
   }
 
   const clearCardSelection = () => {
