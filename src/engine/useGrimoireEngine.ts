@@ -22,8 +22,6 @@ import {
   type Tradition,
 } from '../types/grimoire'
 
-const AUTO_IMAGE_STARTED_DECKS = new Set<string>()
-
 function isRenderableGeneratedImageUrl(value: string | undefined) {
   if (!value) return false
 
