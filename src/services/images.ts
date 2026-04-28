@@ -35,7 +35,7 @@ async function parseJsonResponse<T>(response: Response, fallbackMessage: string)
 export async function generateCardImage(
   request: CardImageRequest,
 ): Promise<CardImageSuccess> {
-  const response = await fetch('/api/card-image', {
+  const startResponse = await fetch('/api/card-image-start', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -43,19 +43,43 @@ export async function generateCardImage(
     body: JSON.stringify(request),
   })
 
-  const payload = await parseJsonResponse<CardImageResponse>(
-    response,
-    'Card image endpoint returned an unreadable response.',
-  )
+  const startPayload = await parseJsonResponse<
+    { ok: true; promptId: string; provider?: string } | { ok: false; error: string; details?: string }
+  >(startResponse, 'Card image start endpoint returned an unreadable response.')
 
-  if (!response.ok || !payload.ok) {
-    const message =
-      payload && !payload.ok && payload.error
-        ? payload.error
-        : 'Card image generation failed.'
-
-    throw new Error(message)
+  if (!startResponse.ok || !startPayload.ok) {
+    throw new Error(!startPayload.ok ? startPayload.error : 'Card image start failed.')
   }
 
-  return payload
+  const startedAt = Date.now()
+  const timeoutMs = 240000
+
+  while (Date.now() - startedAt < timeoutMs) {
+    await new Promise((resolve) => window.setTimeout(resolve, 3000))
+
+    const statusResponse = await fetch(
+      `/api/card-image-status?promptId=${encodeURIComponent(startPayload.promptId)}`,
+    )
+
+    const statusPayload = await parseJsonResponse<
+      | { ok: true; status: 'processing'; provider?: string }
+      | { ok: true; status: 'ready'; imageUrl: string; provider?: string }
+      | { ok: false; error: string }
+    >(statusResponse, 'Card image status endpoint returned an unreadable response.')
+
+    if (!statusResponse.ok || !statusPayload.ok) {
+      throw new Error(!statusPayload.ok ? statusPayload.error : 'Card image status failed.')
+    }
+
+    if (statusPayload.status === 'ready') {
+      return {
+        ok: true,
+        imageUrl: statusPayload.imageUrl,
+        provider: statusPayload.provider ?? 'comfyui',
+      }
+    }
+  }
+
+  throw new Error('ComfyUI image generation timed out.')
 }
+
