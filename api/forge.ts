@@ -89,20 +89,18 @@ function ensureOptionalUrl(value: unknown) {
   const trimmed = value.trim()
 
   if (!trimmed) return undefined
-  if (trimmed.includes('example.com')) return undefined
-  if (trimmed.includes('grimoirexr.com/images/')) return undefined
 
-  try {
-    const parsed = new URL(trimmed)
-
-    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
-      return undefined
-    }
-
+  // Do not trust Gemini-provided remote image URLs.
+  // Generated images should come only from the local render pipeline or future owned storage.
+  if (
+    trimmed.startsWith('data:image/') ||
+    trimmed.startsWith('blob:') ||
+    trimmed.startsWith('/api/')
+  ) {
     return trimmed
-  } catch {
-    return undefined
   }
+
+  return undefined
 }
 
 function ensureOptionalGematria(value: unknown) {

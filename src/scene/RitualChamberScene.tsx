@@ -35,8 +35,7 @@ function isUsableGeneratedCardImageUrl(value: string | undefined): value is stri
   return (
     value.startsWith('data:image/') ||
     value.startsWith('blob:') ||
-    value.startsWith('/api/') ||
-    value.startsWith('https://')
+    value.startsWith('/api/')
   )
 }
 
