@@ -1126,7 +1126,7 @@ function WorkbenchCard({
   z: number
   selected: boolean
   onSelect: () => void
-  onGenerateImage: (cardId: number) => void
+  onGenerateImage: (cardId: number) => Promise<boolean> | void
   onDragStart: (point: THREE.Vector3) => void
   onDragMove: (point: THREE.Vector3) => void
   onDragEnd: () => void
@@ -1226,8 +1226,24 @@ function WorkbenchCard({
             id: card.id,
             name: card.name,
             imageStatus: card.imageStatus,
+            hasOnGenerateImage: typeof onGenerateImage,
           })
-          onGenerateImage(card.id)
+
+          const maybePromise = onGenerateImage(card.id)
+
+          if (maybePromise && typeof maybePromise.then === 'function') {
+            void maybePromise
+              .then((ok) => {
+                console.info('[GRIMOIRE] onGenerateImage resolved', {
+                  id: card.id,
+                  name: card.name,
+                  ok,
+                })
+              })
+              .catch((error) => {
+                console.error('[GRIMOIRE] onGenerateImage rejected', error)
+              })
+          }
         }
       }}
       onPointerCancel={(event) => {
@@ -2114,7 +2130,8 @@ export function RitualWorkbench({
             onDragMove={updateCardDrag}
             onDragEnd={endCardDrag}
             onGenerateImage={(cardId) => {
-              void onGenerateCardImage(cardId)
+              console.info('[WORKBENCH] Forwarding image request to engine', { cardId })
+              return onGenerateCardImage(cardId)
             }}
             onSelect={() => onCardSelect(card, [x, 1.18, z - 1.0], 0)}
           />
