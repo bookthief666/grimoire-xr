@@ -1022,6 +1022,7 @@ function CardFaceArt({ imageUrl }: { imageUrl: string }) {
         }
 
         loadedTexture.colorSpace = THREE.SRGBColorSpace
+        loadedTexture.flipY = false
         loadedTexture.needsUpdate = true
         setTexture(loadedTexture)
       },
@@ -1033,6 +1034,10 @@ function CardFaceArt({ imageUrl }: { imageUrl: string }) {
 
     return () => {
       cancelled = true
+      setTexture((currentTexture) => {
+        currentTexture?.dispose()
+        return null
+      })
     }
   }, [imageUrl])
 
