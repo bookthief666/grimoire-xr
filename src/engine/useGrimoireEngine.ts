@@ -694,22 +694,8 @@ export function useGrimoireEngine(): GrimoireEngine {
     // Future hook: archive timeline entries, oracle events, haptics, or ritual analytics.
   }
 
-  useEffect(() => {
-    if (!deck || deck.cards.length === 0) return
-    if (AUTO_IMAGE_STARTED_DECKS.has(deck.id)) return
-
-    const target = deck.cards.find((card) => {
-      if (!card.artPrompt) return false
-      if (card.imageStatus === 'generating') return false
-      if (isRenderableGeneratedImageUrl(card.imageUrl)) return false
-      return true
-    })
-
-    if (!target) return
-
-    AUTO_IMAGE_STARTED_DECKS.add(deck.id)
-    void generateImageForCard(target.id)
-  }, [deck])
+  // Image generation is intentionally manual for now.
+  // Auto-triggering ComfyUI jobs caused local queue backlogs on Mac/MPS.
 
   return {
     subject,
