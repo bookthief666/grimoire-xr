@@ -1207,7 +1207,7 @@ function WorkbenchCard({
         const moved = pointerDownPointRef.current
           ? pointerDownPointRef.current.distanceTo(event.point)
           : 0
-        const wasDrag = hasMovedRef.current || moved > 0.035
+        const wasDrag = moved > 0.18
 
         pointerDownPointRef.current = null
         hasMovedRef.current = false
@@ -1222,6 +1222,11 @@ function WorkbenchCard({
           card.imageStatus !== 'ready' &&
           card.imageStatus !== 'generating'
         ) {
+          console.info('[GRIMOIRE] Requesting ComfyUI image for card', {
+            id: card.id,
+            name: card.name,
+            imageStatus: card.imageStatus,
+          })
           onGenerateImage(card.id)
         }
       }}
