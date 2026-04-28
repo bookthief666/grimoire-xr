@@ -27,7 +27,7 @@ import { TempleGrandArchitecture } from './TempleGrandArchitecture'
 import { InWorldRitualConsole } from './InWorldRitualConsole'
 import { RitualWorkbench } from './RitualWorkbench'
 
-function isUsableGeneratedCardImageUrl(value: string | undefined) {
+function isUsableGeneratedCardImageUrl(value: string | undefined): value is string {
   if (!value) return false
   if (value.includes('example.com')) return false
   if (value.includes('grimoirexr.com/images/')) return false
