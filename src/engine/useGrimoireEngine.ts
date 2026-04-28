@@ -22,6 +22,19 @@ import {
   type Tradition,
 } from '../types/grimoire'
 
+const AUTO_IMAGE_STARTED_DECKS = new Set<string>()
+
+function isRenderableGeneratedImageUrl(value: string | undefined) {
+  if (!value) return false
+
+  return (
+    value.startsWith('data:image/') ||
+    value.startsWith('blob:') ||
+    value.startsWith('/api/')
+  )
+}
+
+
 const ARCHIVE_VERSION = 1
 const ARCHIVE_KEY = 'grimoire-xr:last-ritual'
 
@@ -490,7 +503,7 @@ export function useGrimoireEngine(): GrimoireEngine {
       return false
     }
 
-    if (target.imageStatus === 'ready' && target.imageUrl) {
+    if (target.imageStatus === 'ready' && isRenderableGeneratedImageUrl(target.imageUrl)) {
       setArchivePlaceholder(`Image already sealed for ${target.name}.`)
       return true
     }
@@ -680,6 +693,23 @@ export function useGrimoireEngine(): GrimoireEngine {
   const acknowledgeAltarLanding = () => {
     // Future hook: archive timeline entries, oracle events, haptics, or ritual analytics.
   }
+
+  useEffect(() => {
+    if (!deck || deck.cards.length === 0) return
+    if (AUTO_IMAGE_STARTED_DECKS.has(deck.id)) return
+
+    const target = deck.cards.find((card) => {
+      if (!card.artPrompt) return false
+      if (card.imageStatus === 'generating') return false
+      if (isRenderableGeneratedImageUrl(card.imageUrl)) return false
+      return true
+    })
+
+    if (!target) return
+
+    AUTO_IMAGE_STARTED_DECKS.add(deck.id)
+    void generateImageForCard(target.id)
+  }, [deck])
 
   return {
     subject,
