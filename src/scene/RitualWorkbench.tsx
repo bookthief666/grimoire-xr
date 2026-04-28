@@ -1139,6 +1139,19 @@ function WorkbenchCard({
   const y = TABLE_Y + (selected || hovered ? 0.13 : 0.07)
   const cardGlowOpacity = selected ? 0.34 : hovered ? 0.22 : 0.085
   const cardGlowScale = selected ? 1.18 : hovered ? 1.1 : 1
+  const imageActionVisible = selected || hovered || card.imageStatus === 'generating'
+  const imageActionDisabled =
+    !card.artPrompt || card.imageStatus === 'generating' || card.imageStatus === 'ready'
+  const imageActionLabel =
+    card.imageStatus === 'generating'
+      ? 'RENDERING…'
+      : card.imageStatus === 'ready'
+        ? 'IMAGE SEALED'
+        : card.imageStatus === 'error'
+          ? 'RETRY IMAGE'
+          : card.artPrompt
+            ? 'MANIFEST'
+            : 'NO ART SEED'
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime()
@@ -1217,14 +1230,6 @@ function WorkbenchCard({
         if (wasDrag) return
 
         onSelect()
-
-        if (
-          card.artPrompt &&
-          card.imageStatus !== 'ready' &&
-          card.imageStatus !== 'generating'
-        ) {
-          onGenerateImage(card.id)
-        }
       }}
       onPointerCancel={(event) => {
         event.stopPropagation()
@@ -1299,6 +1304,63 @@ function WorkbenchCard({
       >
         {card.imageStatus === 'ready' ? 'IMAGE SEALED' : card.artPrompt ? 'ART SEED' : 'NO IMAGE'}
       </Text>
+
+      {imageActionVisible ? (
+        <group
+          position={[0, 0.265, 0.065]}
+          onPointerDown={(event) => {
+            event.stopPropagation()
+          }}
+          onPointerUp={(event) => {
+            event.stopPropagation()
+            if (!imageActionDisabled) onGenerateImage(card.id)
+          }}
+        >
+          <mesh>
+            <planeGeometry args={[0.26, 0.055]} />
+            <meshBasicMaterial
+              color={imageActionDisabled ? '#160909' : '#2a1208'}
+              transparent
+              opacity={imageActionDisabled ? 0.54 : 0.92}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+
+          <mesh position={[0, 0, 0.008]}>
+            <planeGeometry args={[0.31, 0.088]} />
+            <meshBasicMaterial
+              color={imageActionDisabled ? '#7b5536' : '#ffb000'}
+              transparent
+              opacity={imageActionDisabled ? 0.06 : 0.2}
+              depthWrite={false}
+              blending={THREE.AdditiveBlending}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+
+          <Text
+            position={[0, 0.001, 0.018]}
+            fontSize={0.017}
+            color={imageActionDisabled ? '#7b5536' : '#ffd18a'}
+            anchorX="center"
+            anchorY="middle"
+            maxWidth={0.24}
+          >
+            {imageActionLabel}
+          </Text>
+
+          <mesh position={[0, 0, 0.035]}>
+            <planeGeometry args={[0.34, 0.12]} />
+            <meshBasicMaterial
+              color="#ffffff"
+              transparent
+              opacity={0.001}
+              depthWrite={false}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+        </group>
+      ) : null}
     </group>
   )
 }
