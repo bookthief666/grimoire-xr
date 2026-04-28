@@ -17,12 +17,7 @@ type CardImageSuccess = {
   provider?: string
 }
 
-type CardImageFailure = {
-  ok: false
-  error: string
-}
 
-type CardImageResponse = CardImageSuccess | CardImageFailure
 
 async function parseJsonResponse<T>(response: Response, fallbackMessage: string): Promise<T> {
   try {
