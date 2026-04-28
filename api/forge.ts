@@ -84,10 +84,22 @@ function ensureOptionalString(value: unknown) {
 }
 
 function ensureOptionalUrl(value: unknown) {
-  if (typeof value !== 'string' || !value.trim()) return undefined
+  if (typeof value !== 'string') return undefined
+
+  const trimmed = value.trim()
+
+  if (!trimmed) return undefined
+  if (trimmed.includes('example.com')) return undefined
+  if (trimmed.includes('grimoirexr.com/images/')) return undefined
 
   try {
-    return new URL(value.trim()).toString()
+    const parsed = new URL(trimmed)
+
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+      return undefined
+    }
+
+    return trimmed
   } catch {
     return undefined
   }

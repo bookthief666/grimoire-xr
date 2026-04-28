@@ -1002,6 +1002,19 @@ function SpreadSlot({
   )
 }
 
+function isUsableGeneratedCardImageUrl(value: string | undefined) {
+  if (!value) return false
+  if (value.includes('example.com')) return false
+  if (value.includes('grimoirexr.com/images/')) return false
+
+  return (
+    value.startsWith('data:image/') ||
+    value.startsWith('blob:') ||
+    value.startsWith('/api/') ||
+    value.startsWith('https://')
+  )
+}
+
 function CardFaceArt({ imageUrl }: { imageUrl: string }) {
   const [texture, setTexture] = useState<THREE.Texture | null>(null)
   const [failed, setFailed] = useState(false)
@@ -1251,7 +1264,7 @@ function WorkbenchCard({
       </mesh>
 
 
-      {card.imageUrl ? <CardFaceArt imageUrl={card.imageUrl} /> : null}
+      {isUsableGeneratedCardImageUrl(card.imageUrl) ? <CardFaceArt imageUrl={card.imageUrl} /> : null}
 
       <mesh position={[0, 0.12, 0.025]}>
         <ringGeometry args={[0.045, 0.062, 18]} />

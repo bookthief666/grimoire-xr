@@ -27,6 +27,21 @@ import { TempleGrandArchitecture } from './TempleGrandArchitecture'
 import { InWorldRitualConsole } from './InWorldRitualConsole'
 import { RitualWorkbench } from './RitualWorkbench'
 
+function isUsableGeneratedCardImageUrl(value: string | undefined) {
+  if (!value) return false
+  if (value.includes('example.com')) return false
+  if (value.includes('grimoirexr.com/images/')) return false
+
+  return (
+    value.startsWith('data:image/') ||
+    value.startsWith('blob:') ||
+    value.startsWith('/api/') ||
+    value.startsWith('https://')
+  )
+}
+
+
+
 type ManifestState = {
   card: GrimoireCard
   spawnPosition: [number, number, number]
@@ -859,7 +874,7 @@ function Altar({
               <meshBasicMaterial color={PALETTE.cardFace} />
             </mesh>
 
-            {manifest.card.imageUrl ? (
+            {isUsableGeneratedCardImageUrl(manifest.card.imageUrl) ? (
               <ChamberCardFaceArt
                 imageUrl={manifest.card.imageUrl}
                 width={0.42}
@@ -980,7 +995,7 @@ function CardArc({
               <meshBasicMaterial color={isSelected ? PALETTE.cardFace : PALETTE.massDark} />
             </mesh>
 
-            {card.imageUrl ? (
+            {isUsableGeneratedCardImageUrl(card.imageUrl) ? (
               <ChamberCardFaceArt
                 imageUrl={card.imageUrl}
                 width={0.33}
