@@ -53,7 +53,7 @@ export async function generateCardImage(
     await new Promise((resolve) => window.setTimeout(resolve, 3000))
 
     const statusResponse = await fetch(
-      `/api/card-image-status?promptId=${encodeURIComponent(startPayload.promptId)}`,
+      `/api/card-image-status?promptId=${encodeURIComponent(startPayload.promptId)}&t=${Date.now()}`,
     )
 
     const statusPayload = await parseJsonResponse<

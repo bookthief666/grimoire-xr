@@ -4,6 +4,7 @@ type NodeApiRequest = {
 }
 
 type NodeApiResponse = {
+  setHeader?: (name: string, value: string) => void
   status: (statusCode: number) => NodeApiResponse
   json: (body: unknown) => void
 }
@@ -35,6 +36,8 @@ async function imageToDataUrl(url: string, headers: Record<string, string>) {
 }
 
 export default async function handler(req: NodeApiRequest, res: NodeApiResponse) {
+  res.setHeader?.('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+
   const promptIdRaw = req.query?.promptId ?? req.query?.id
   const promptId = Array.isArray(promptIdRaw) ? promptIdRaw[0] : promptIdRaw
 

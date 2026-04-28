@@ -7,6 +7,7 @@ type NodeApiRequest = {
 }
 
 type NodeApiResponse = {
+  setHeader?: (name: string, value: string) => void
   status: (statusCode: number) => NodeApiResponse
   json: (body: unknown) => void
 }
@@ -112,6 +113,8 @@ function injectWorkflow(workflow: Record<string, any>, body: Record<string, unkn
 }
 
 export default async function handler(req: NodeApiRequest, res: NodeApiResponse) {
+  res.setHeader?.('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+
   if (req.method !== 'POST') {
     return res.status(405).json({ ok: false, error: 'Method not allowed.' })
   }
