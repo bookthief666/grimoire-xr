@@ -1,13 +1,20 @@
 import { useEffect, useMemo, useState } from 'react'
 import { consultOracle, generateDeck } from '../services/content'
 import { generateCardImage } from '../services/images'
+import { DEFAULT_TAROT_SYSTEM } from '../constants/tarotSystems'
+import { DEFAULT_EROS_LEVEL } from '../constants/erosLevels'
+import { DEFAULT_ART_STYLE } from '../constants/artStyles'
 import {
+  tarotSystemSchema,
+  erosLevelSchema,
+  artStyleSchema,
   grimoireDeckSchema,
   techLevelSchema,
   visualStyleSchema,
   erosFieldSchema,
   toneSchema,
   traditionSchema,
+  type TarotSystem,
   type ForgePhase,
   type GrimoireCard,
   type GrimoireDeck,
@@ -16,6 +23,8 @@ import {
   type RitualSelection,
   type SubjectDossier,
   type TechLevel,
+  type ErosLevel,
+  type ArtStyle,
   type VisualStyle,
   type ErosField,
   type Tone,
@@ -39,10 +48,13 @@ const ARCHIVE_KEY = 'grimoire-xr:last-ritual'
 type GrimoireEngineState = {
   subject: string
   tradition: Tradition
+  tarotSystem: TarotSystem
   tone: Tone
   techLevel: TechLevel
   visualStyle: VisualStyle
+  artStyle: ArtStyle
   erosField: ErosField
+  erosLevel: ErosLevel
   intent: string
 
   forgePhase: ForgePhase
@@ -70,10 +82,13 @@ export type GrimoireEngine = GrimoireEngineState & {
 
   setSubject: (subject: string) => void
   setTradition: (tradition: Tradition) => void
+  setTarotSystem: (tarotSystem: TarotSystem) => void
   setTone: (tone: Tone) => void
   setTechLevel: (techLevel: TechLevel) => void
   setVisualStyle: (visualStyle: VisualStyle) => void
+  setArtStyle: (artStyle: ArtStyle) => void
   setErosField: (erosField: ErosField) => void
+  setErosLevel: (erosLevel: ErosLevel) => void
   setIntent: (intent: string) => void
 
   beginRitual: () => Promise<void>
@@ -154,10 +169,13 @@ function normalizeRitualConfig(raw: unknown, deck: GrimoireDeck): RitualConfig {
       : deck.subject
 
   const traditionResult = traditionSchema.safeParse(source.tradition)
+  const tarotSystemResult = tarotSystemSchema.safeParse(source.tarotSystem)
   const toneResult = toneSchema.safeParse(source.tone)
   const techLevelResult = techLevelSchema.safeParse(source.techLevel)
   const visualStyleResult = visualStyleSchema.safeParse(source.visualStyle)
+  const artStyleResult = artStyleSchema.safeParse(source.artStyle)
   const erosFieldResult = erosFieldSchema.safeParse(source.erosField)
+  const erosLevelResult = erosLevelSchema.safeParse(source.erosLevel)
 
   const intent =
     typeof source.intent === 'string' && source.intent.trim().length >= 4
@@ -167,10 +185,13 @@ function normalizeRitualConfig(raw: unknown, deck: GrimoireDeck): RitualConfig {
   return {
     subject,
     tradition: traditionResult.success ? traditionResult.data : 'thelemic',
+    tarotSystem: tarotSystemResult.success ? tarotSystemResult.data : DEFAULT_TAROT_SYSTEM,
     tone: toneResult.success ? toneResult.data : 'oracular',
     techLevel: techLevelResult.success ? techLevelResult.data : 'adept',
     visualStyle: visualStyleResult.success ? visualStyleResult.data : 'Hierophantic',
+    artStyle: artStyleResult.success ? artStyleResult.data : DEFAULT_ART_STYLE,
     erosField: erosFieldResult.success ? erosFieldResult.data : 'Veiled',
+    erosLevel: erosLevelResult.success ? erosLevelResult.data : DEFAULT_EROS_LEVEL,
     intent,
   }
 }
@@ -290,10 +311,13 @@ function createArchivePayload({
 export function useGrimoireEngine(): GrimoireEngine {
   const [subject, setSubjectState] = useState('')
   const [tradition, setTraditionState] = useState<Tradition>('thelemic')
+  const [tarotSystem, setTarotSystemState] = useState<TarotSystem>(DEFAULT_TAROT_SYSTEM)
   const [tone, setToneState] = useState<Tone>('oracular')
   const [techLevel, setTechLevelState] = useState<TechLevel>('adept')
   const [visualStyle, setVisualStyleState] = useState<VisualStyle>('Hierophantic')
+  const [artStyle, setArtStyleState] = useState<ArtStyle>(DEFAULT_ART_STYLE)
   const [erosField, setErosFieldState] = useState<ErosField>('Veiled')
+  const [erosLevel, setErosLevelState] = useState<ErosLevel>(DEFAULT_EROS_LEVEL)
   const [intent, setIntentState] = useState('')
 
   const [forgePhase, setForgePhase] = useState<ForgePhase>('idle')
@@ -330,22 +354,28 @@ export function useGrimoireEngine(): GrimoireEngine {
     () => ({
       subject: subject.trim() || 'Untitled Working',
       tradition,
+      tarotSystem,
       tone,
       techLevel,
       visualStyle,
+      artStyle,
       erosField,
+      erosLevel,
       intent: intent.trim() || undefined,
     }),
-    [subject, tradition, tone, techLevel, visualStyle, erosField, intent],
+    [subject, tradition, tarotSystem, tone, techLevel, visualStyle, artStyle, erosField, erosLevel, intent],
   )
 
   const applyArchive = (archive: PersistedRitualArchive) => {
     setSubjectState(archive.ritualConfig.subject)
     setTraditionState(archive.ritualConfig.tradition)
+    setTarotSystemState(archive.ritualConfig.tarotSystem ?? DEFAULT_TAROT_SYSTEM)
     setToneState(archive.ritualConfig.tone)
     setTechLevelState(archive.ritualConfig.techLevel)
     setVisualStyleState(archive.ritualConfig.visualStyle ?? 'Hierophantic')
+    setArtStyleState(archive.ritualConfig.artStyle ?? DEFAULT_ART_STYLE)
     setErosFieldState(archive.ritualConfig.erosField ?? 'Veiled')
+    setErosLevelState(archive.ritualConfig.erosLevel ?? DEFAULT_EROS_LEVEL)
     setIntentState(archive.ritualConfig.intent ?? '')
 
     setDeck(archive.deck)
@@ -409,6 +439,11 @@ export function useGrimoireEngine(): GrimoireEngine {
     if (error) setError(null)
   }
 
+  const setTarotSystem = (nextTarotSystem: TarotSystem) => {
+    setTarotSystemState(nextTarotSystem)
+    if (error) setError(null)
+  }
+
   const setTone = (nextTone: Tone) => {
     setToneState(nextTone)
     if (error) setError(null)
@@ -424,8 +459,18 @@ export function useGrimoireEngine(): GrimoireEngine {
     if (error) setError(null)
   }
 
+  const setArtStyle = (nextArtStyle: ArtStyle) => {
+    setArtStyleState(nextArtStyle)
+    if (error) setError(null)
+  }
+
   const setErosField = (nextErosField: ErosField) => {
     setErosFieldState(nextErosField)
+    if (error) setError(null)
+  }
+
+  const setErosLevel = (nextErosLevel: ErosLevel) => {
+    setErosLevelState(nextErosLevel)
     if (error) setError(null)
   }
 
@@ -451,10 +496,13 @@ export function useGrimoireEngine(): GrimoireEngine {
     const ritualConfig: RitualConfig = {
       subject: trimmedSubject,
       tradition,
+      tarotSystem,
       tone,
       techLevel,
       visualStyle,
+      artStyle,
       erosField,
+      erosLevel,
       intent: intent.trim() || undefined,
     }
 
@@ -755,10 +803,13 @@ export function useGrimoireEngine(): GrimoireEngine {
   return {
     subject,
     tradition,
+    tarotSystem,
     tone,
     techLevel,
     visualStyle,
+    artStyle,
     erosField,
+    erosLevel,
     intent,
 
     forgePhase,
@@ -784,10 +835,13 @@ export function useGrimoireEngine(): GrimoireEngine {
 
     setSubject,
     setTradition,
+    setTarotSystem,
     setTone,
     setTechLevel,
     setVisualStyle,
+    setArtStyle,
     setErosField,
+    setErosLevel,
     setIntent,
 
     beginRitual,
