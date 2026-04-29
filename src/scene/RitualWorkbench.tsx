@@ -2234,7 +2234,7 @@ export function RitualWorkbench({
 
       <AltarAstrolabeRings
         active={hasDeck || menuMode !== 'closed' || loading || oracleLoading || hasOracleReading}
-        erosLevel={erosLevel}
+        erosField={erosField}
       />
       <TableHexagram active={hasDeck || loading || oracleLoading || hasOracleReading} />
 
