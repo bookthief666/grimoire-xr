@@ -1114,6 +1114,10 @@ export default function App() {
           <pointLight position={[0, 2.5, -1.5]} intensity={15} color="#ffcc88" distance={10} />
 
           <RitualChamberScene
+            onGenerateCardImage={(cardId) => {
+              console.info('[APP] Forwarding image request to useGrimoireEngine', { cardId })
+              return grimoire.generateImageForCard(cardId)
+            }}
             cards={engine.cards}
             selectedCardId={engine.selection.focusedCardId}
             altarCard={engine.altarCard}
