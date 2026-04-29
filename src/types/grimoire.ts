@@ -1,7 +1,7 @@
 import { z } from 'zod'
-import { TAROT_SYSTEM_IDS } from '../constants/tarotSystems'
-import { EROS_LEVEL_IDS } from '../constants/erosLevels'
-import { ART_STYLE_IDS } from '../constants/artStyles'
+import { TAROT_SYSTEM_IDS } from '../constants/tarotSystems.js'
+import { EROS_LEVEL_IDS } from '../constants/erosLevels.js'
+import { ART_STYLE_IDS } from '../constants/artStyles.js'
 
 export const tarotSystemSchema = z.enum(TAROT_SYSTEM_IDS)
 
