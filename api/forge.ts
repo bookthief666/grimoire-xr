@@ -2,12 +2,18 @@
 import { GoogleGenAI } from '@google/genai'
 import * as z from 'zod'
 import { TECH_LEVELS } from '../src/constants/ritualOptions.js'
+import { DEFAULT_TAROT_SYSTEM, getTarotSystem } from '../src/constants/tarotSystems.js'
+import { DEFAULT_EROS_LEVEL, getErosLevel } from '../src/constants/erosLevels.js'
+import { DEFAULT_ART_STYLE, getArtStyle } from '../src/constants/artStyles.js'
 import {
   grimoireDeckSchema,
   ritualConfigSchema,
   type TechLevel,
   type Tone,
   type Tradition,
+  type TarotSystem,
+  type ErosLevel,
+  type ArtStyle,
 } from '../src/types/grimoire.js'
 
 export const maxDuration = 60
@@ -164,22 +170,37 @@ function buildFallbackArtPrompt({
   subject,
   cardName,
   sigil,
+  tarotSystem,
+  erosLevel,
+  artStyle,
   visualStyle,
   erosField,
 }: {
   subject: string
   cardName: string
   sigil: string
+  tarotSystem?: TarotSystem
+  erosLevel?: ErosLevel
+  artStyle?: ArtStyle
   visualStyle?: string
   erosField?: string
 }) {
+  const tarotSystemProfile = getTarotSystem(tarotSystem ?? DEFAULT_TAROT_SYSTEM)
+  const erosLevelProfile = getErosLevel(erosLevel ?? DEFAULT_EROS_LEVEL)
+  const artStyleProfile = getArtStyle(artStyle ?? DEFAULT_ART_STYLE)
+
   return [
     `Vertical occult tarot-card illustration for "${cardName}" in a custom deck about "${subject}".`,
     `Central sigil: ${sigil}.`,
-    `Visual style: ${visualStyle ?? 'Hierophantic'}.`,
-    `Eros field: ${erosField ?? 'Veiled'}; symbolic, devotional, veiled sensuality only; no explicit nudity.`,
+    `Tarot system: ${tarotSystemProfile.label}. ${tarotSystemProfile.description}`,
+    `Art style: ${artStyleProfile.label}. ${artStyleProfile.prompt}.`,
+    `Eros level: ${erosLevelProfile.shortLabel}. ${erosLevelProfile.imagePrompt}.`,
+    `Legacy visual atmosphere hint: ${visualStyle ?? 'Hierophantic'}.`,
+    `Legacy eros field hint: ${erosField ?? 'Veiled'}.`,
+    'Symbolic, devotional, psychologically serious; no explicit nudity or pornographic framing.',
     'Obsidian and burnished gold altar atmosphere, Hermetic/Thelemic symbolism, luminous planetary geometry, elegant ritual composition.',
     'Beautiful painterly card art, sharp sacred geometry, rich symbolic detail, no text labels, no watermark.',
+    `Avoid: ${artStyleProfile.negative}.`,
   ].join(' ')
 }
 
@@ -213,7 +234,24 @@ function normalizeMetadata(raw: unknown, subject: string) {
   return metadata
 }
 
-function normalizeCard(raw: unknown, index: number, subject: string, visualStyle?: string, erosField?: string) {
+function normalizeCard(
+  raw: unknown,
+  index: number,
+  subject: string,
+  {
+    tarotSystem,
+    erosLevel,
+    artStyle,
+    visualStyle,
+    erosField,
+  }: {
+    tarotSystem?: TarotSystem
+    erosLevel?: ErosLevel
+    artStyle?: ArtStyle
+    visualStyle?: string
+    erosField?: string
+  },
+) {
   const source = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
 
   const id = typeof source.id === 'number' && Number.isInteger(source.id) ? source.id : index + 1
@@ -234,7 +272,16 @@ function normalizeCard(raw: unknown, index: number, subject: string, visualStyle
     ),
     artPrompt: ensureString(
       source.artPrompt,
-      buildFallbackArtPrompt({ subject, cardName: name, sigil, visualStyle, erosField }),
+      buildFallbackArtPrompt({
+        subject,
+        cardName: name,
+        sigil,
+        tarotSystem,
+        erosLevel,
+        artStyle,
+        visualStyle,
+        erosField,
+      }),
     ),
     imageUrl: ensureOptionalUrl(source.imageUrl),
     imageStatus:
@@ -267,13 +314,37 @@ function normalizeDossier(raw: unknown, subject: string) {
   }
 }
 
-function coerceDeckPayload(raw: unknown, subject: string, visualStyle?: string, erosField?: string) {
+function coerceDeckPayload(
+  raw: unknown,
+  subject: string,
+  {
+    tarotSystem,
+    erosLevel,
+    artStyle,
+    visualStyle,
+    erosField,
+  }: {
+    tarotSystem?: TarotSystem
+    erosLevel?: ErosLevel
+    artStyle?: ArtStyle
+    visualStyle?: string
+    erosField?: string
+  },
+) {
   const source = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {}
   const dossier = normalizeDossier(maybeParseJsonString(source.dossier), subject)
   const rawCards = maybeParseJsonString(source.cards)
 
   const cards = Array.isArray(rawCards)
-    ? rawCards.map((card, index) => normalizeCard(maybeParseJsonString(card), index, subject, visualStyle, erosField))
+    ? rawCards.map((card, index) =>
+        normalizeCard(maybeParseJsonString(card), index, subject, {
+          tarotSystem,
+          erosLevel,
+          artStyle,
+          visualStyle,
+          erosField,
+        }),
+      )
     : []
 
   return {
@@ -352,6 +423,9 @@ function buildPrompt({
   tradition,
   tone,
   techLevel,
+  tarotSystem,
+  erosLevel,
+  artStyle,
   visualStyle,
   erosField,
   intent,
@@ -360,10 +434,17 @@ function buildPrompt({
   tradition: Tradition
   tone: Tone
   techLevel: TechLevel
+  tarotSystem?: TarotSystem
+  erosLevel?: ErosLevel
+  artStyle?: ArtStyle
   visualStyle?: string
   erosField?: string
   intent?: string
 }) {
+  const tarotSystemProfile = getTarotSystem(tarotSystem ?? DEFAULT_TAROT_SYSTEM)
+  const erosLevelProfile = getErosLevel(erosLevel ?? DEFAULT_EROS_LEVEL)
+  const artStyleProfile = getArtStyle(artStyle ?? DEFAULT_ART_STYLE)
+
   return [
     'Return exactly one JSON object.',
     'Do not return markdown.',
@@ -390,10 +471,14 @@ function buildPrompt({
     '- Operative magical: what the card asks the user to do, restrain, invoke, banish, contemplate, test, vow, or enact.',
     '',
     'CRITICAL INSTRUCTIONS:',
-    `You MUST visibly obey Tradition=${tradition}, Tone=${tone}, and TechLevel=${techLevel}.`,
+    `You MUST visibly obey Tradition=${tradition}, Tone=${tone}, TechLevel=${techLevel}, TarotSystem=${tarotSystemProfile.label}, ErosLevel=${erosLevelProfile.shortLabel}, and ArtStyle=${artStyleProfile.label}.`,
     traditionDirective(tradition),
     toneDirective(tone),
     techLevelDirective(techLevel),
+    tarotSystemProfile.instruction,
+    erosLevelProfile.instruction,
+    `Use this concrete art-style discipline for all card artPrompt fields: ${artStyleProfile.label}. ${artStyleProfile.prompt}`,
+    `Avoid these visual failure modes in artPrompt fields: ${artStyleProfile.negative}.`,
     'The subject must be treated as a symbolic complex, not merely a theme.',
     'Each card must be meaningfully different from the others.',
     'Each card must include a concrete ritualFunction.',
@@ -411,8 +496,9 @@ function buildPrompt({
     '- Every card must include artPrompt.',
     '- artPrompt must be a direct image-generation prompt for a vertical tarot/oracle card.',
     '- artPrompt must include: central image, composition, palette, symbols, correspondences, ritual atmosphere, and visual style.',
-    '- artPrompt must honor visualStyle and erosField.',
-    '- Eros field must remain symbolic and non-explicit: veiled sensuality, devotional tension, sacred polarity, no explicit nudity.',
+    '- artPrompt must honor tarotSystem, erosLevel, and artStyle first; legacy visualStyle and erosField are secondary atmosphere hints.',
+    '- Eros level must govern intensity. Keep all eros symbolic, initiatory, and non-pornographic; no explicit nudity.',
+    '- Legacy erosField may color atmosphere, but erosLevel is the canonical intensity control.',
     '- Do not reference copyrighted living artists, franchises, or style names that would create an IP problem.',
     '- Set imageStatus to "pending".',
     '',
@@ -482,8 +568,15 @@ function buildPrompt({
     `Tradition: ${tradition}`,
     `Tone: ${tone}`,
     `Tech level: ${techLevel}`,
-    `Visual style: ${visualStyle ?? 'Hierophantic'}`,
-    `Eros field: ${erosField ?? 'Veiled'}`,
+    `Tarot system: ${tarotSystemProfile.label}`,
+    `Tarot system instruction: ${tarotSystemProfile.instruction}`,
+    `Eros level: ${erosLevelProfile.shortLabel}`,
+    `Eros instruction: ${erosLevelProfile.instruction}`,
+    `Art style: ${artStyleProfile.label}`,
+    `Art style rendering language: ${artStyleProfile.prompt}`,
+    `Art style negative guidance: ${artStyleProfile.negative}`,
+    `Legacy visual style hint: ${visualStyle ?? 'Hierophantic'}`,
+    `Legacy eros field hint: ${erosField ?? 'Veiled'}`,
     intent ? `Ritual intent: ${intent}` : 'Ritual intent: none supplied',
   ]
     .filter(Boolean)
@@ -495,6 +588,9 @@ async function forgeOnce(
   tradition: Tradition,
   tone: Tone,
   techLevel: TechLevel,
+  tarotSystem: TarotSystem | undefined,
+  erosLevel: ErosLevel | undefined,
+  artStyle: ArtStyle | undefined,
   visualStyle: string | undefined,
   erosField: string | undefined,
   intent: string | undefined,
@@ -523,6 +619,12 @@ async function forgeOnce(
       tradition,
       tone,
       techLevel,
+      tarotSystem,
+      erosLevel,
+      artStyle,
+      tarotSystem,
+      erosLevel,
+      artStyle,
       visualStyle,
       erosField,
       intent,
@@ -552,7 +654,13 @@ async function forgeOnce(
     throw new Error('Gemini returned invalid JSON.')
   }
 
-  const normalized = coerceDeckPayload(parsed, subject, visualStyle, erosField)
+  const normalized = coerceDeckPayload(parsed, subject, {
+    tarotSystem,
+    erosLevel,
+    artStyle,
+    visualStyle,
+    erosField,
+  })
   logForge('Payload normalized', startTime)
 
   const finalDeck = grimoireDeckSchema.parse(normalized)
@@ -668,7 +776,7 @@ export default async function handler(
     })
   }
 
-  const { subject, tradition, tone, techLevel, visualStyle, erosField, intent } = parsedConfig.data
+  const { subject, tradition, tone, techLevel, tarotSystem, erosLevel, artStyle, visualStyle, erosField, intent } = parsedConfig.data
 
   try {
     const deck = await forgeOnce(
@@ -676,6 +784,9 @@ export default async function handler(
       tradition,
       tone,
       techLevel,
+      tarotSystem,
+      erosLevel,
+      artStyle,
       visualStyle,
       erosField,
       intent,
