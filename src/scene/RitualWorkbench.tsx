@@ -7,6 +7,7 @@ import {
   TONE_OPTIONS,
 } from '../constants/ritualOptions'
 import { TAROT_SYSTEM_OPTIONS } from '../constants/tarotSystems'
+import { EROS_LEVEL_OPTIONS } from '../constants/erosLevels'
 import type {
   ForgePhase,
   GrimoireCard,
@@ -16,6 +17,7 @@ import type {
   TarotSystem,
   VisualStyle,
   ErosField,
+  ErosLevel,
 } from '../types/grimoire'
 
 type Vec2 = [number, number]
@@ -38,6 +40,7 @@ type RitualWorkbenchProps = {
   techLevel: TechLevel
   visualStyle: VisualStyle
   erosField: ErosField
+  erosLevel: ErosLevel
   intent: string
   forgePhase: ForgePhase
   loading: boolean
@@ -58,6 +61,7 @@ type RitualWorkbenchProps = {
   onTechLevelChange: (techLevel: TechLevel) => void
   onVisualStyleChange: (visualStyle: VisualStyle) => void
   onErosFieldChange: (erosField: ErosField) => void
+  onErosLevelChange: (erosLevel: ErosLevel) => void
   onIntentChange: (intent: string) => void
   onOracleQuestionChange: (question: string) => void
   onBeginRitual: () => Promise<void>
@@ -99,12 +103,6 @@ const VISUAL_STYLE_OPTIONS: VisualStyle[] = [
   'Goetic',
   'Alchemical',
   'Xenotheurgic',
-]
-
-const EROS_FIELD_OPTIONS: ErosField[] = [
-  'Veiled',
-  'Charged',
-  'Ecstatic',
 ]
 
 const TABLE_Y = 0.08
@@ -661,13 +659,13 @@ function FloatingForgeMenu({
   techLevel,
   activeIntent,
   visualStyle,
-  erosField,
+  erosLevel,
   onSubjectChange,
   onTarotSystemChange,
   onToneChange,
   onTechLevelChange,
   onVisualStyleChange,
-  onErosFieldChange,
+  onErosLevelChange,
   onIntentChange,
   onOracleQuestionChange,
   loading,
@@ -679,7 +677,7 @@ function FloatingForgeMenu({
   techLevel: TechLevel
   activeIntent: string
   visualStyle: VisualStyle
-  erosField: ErosField
+  erosLevel: ErosLevel
   loading: boolean
   canForge: boolean
   onBeginRitual: () => void
@@ -689,7 +687,7 @@ function FloatingForgeMenu({
   onTechLevelChange: (techLevel: TechLevel) => void
   onIntentChange: (intent: string) => void
   onVisualStyleChange: (style: VisualStyle) => void
-  onErosFieldChange: (field: ErosField) => void
+  onErosLevelChange: (level: ErosLevel) => void
   onOracleQuestionChange: (question: string) => void
 }) {
   return (
@@ -856,14 +854,14 @@ function FloatingForgeMenu({
       />
 
       <FloatingDial
-        label="EROS FIELD"
-        value={erosField}
+        label="EROS LEVEL"
+        value={optionLabel(EROS_LEVEL_OPTIONS, erosLevel)}
         y={-0.41}
         onPrevious={() =>
-          onErosFieldChange(cycleString(EROS_FIELD_OPTIONS, erosField, -1))
+          onErosLevelChange(cycleOption(EROS_LEVEL_OPTIONS, erosLevel, -1))
         }
         onNext={() =>
-          onErosFieldChange(cycleString(EROS_FIELD_OPTIONS, erosField, 1))
+          onErosLevelChange(cycleOption(EROS_LEVEL_OPTIONS, erosLevel, 1))
         }
       />
 
@@ -2075,6 +2073,7 @@ export function RitualWorkbench({
   techLevel,
   visualStyle,
   erosField,
+  erosLevel,
   intent,
   forgePhase,
   loading,
@@ -2093,7 +2092,7 @@ export function RitualWorkbench({
   onToneChange,
   onTechLevelChange,
   onVisualStyleChange,
-  onErosFieldChange,
+  onErosLevelChange,
   onIntentChange,
   onOracleQuestionChange,
   onBeginRitual,
@@ -2235,7 +2234,7 @@ export function RitualWorkbench({
 
       <AltarAstrolabeRings
         active={hasDeck || menuMode !== 'closed' || loading || oracleLoading || hasOracleReading}
-        erosField={erosField}
+        erosLevel={erosLevel}
       />
       <TableHexagram active={hasDeck || loading || oracleLoading || hasOracleReading} />
 
@@ -2319,7 +2318,7 @@ export function RitualWorkbench({
           techLevel={techLevel}
           activeIntent={activeIntent}
           visualStyle={visualStyle}
-          erosField={erosField}
+          erosLevel={erosLevel}
           loading={loading}
           canForge={canForge}
           onBeginRitual={() => void onBeginRitual()}
@@ -2328,7 +2327,7 @@ export function RitualWorkbench({
           onToneChange={onToneChange}
           onTechLevelChange={onTechLevelChange}
           onVisualStyleChange={onVisualStyleChange}
-          onErosFieldChange={onErosFieldChange}
+          onErosLevelChange={onErosLevelChange}
           onIntentChange={onIntentChange}
           onOracleQuestionChange={onOracleQuestionChange}
         />

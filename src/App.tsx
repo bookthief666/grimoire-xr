@@ -1114,6 +1114,8 @@ export default function App() {
           <pointLight position={[0, 2.5, -1.5]} intensity={15} color="#ffcc88" distance={10} />
 
           <RitualChamberScene
+            erosLevel={engine.erosLevel}
+            onErosLevelChange={engine.setErosLevel}
             tarotSystem={engine.tarotSystem}
             onTarotSystemChange={engine.setTarotSystem}
             onGenerateCardImage={(cardId) => {
