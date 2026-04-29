@@ -1116,7 +1116,7 @@ export default function App() {
           <RitualChamberScene
             onGenerateCardImage={(cardId) => {
               console.info('[APP] Forwarding image request to useGrimoireEngine', { cardId })
-              return grimoire.generateImageForCard(cardId)
+              return engine.generateImageForCard(cardId)
             }}
             cards={engine.cards}
             selectedCardId={engine.selection.focusedCardId}
