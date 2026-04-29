@@ -2316,8 +2316,7 @@ export function RitualWorkbench({
       {menuMode === 'forge' ? (
         <FloatingForgeMenu
           activeSubject={activeSubject}
-          tradition={tradition}
-        tarotSystem={tarotSystem}
+          tarotSystem={tarotSystem}
           tone={tone}
           techLevel={techLevel}
           activeIntent={activeIntent}
@@ -2327,8 +2326,7 @@ export function RitualWorkbench({
           canForge={canForge}
           onBeginRitual={() => void onBeginRitual()}
           onSubjectChange={onSubjectChange}
-          onTraditionChange={onTraditionChange}
-        onTarotSystemChange={onTarotSystemChange}
+          onTarotSystemChange={onTarotSystemChange}
           onToneChange={onToneChange}
           onTechLevelChange={onTechLevelChange}
           onVisualStyleChange={onVisualStyleChange}
