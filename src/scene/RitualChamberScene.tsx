@@ -1111,6 +1111,30 @@ export function RitualChamberScene({
   onAltarLanding: () => void
 }) {
   const [manifest, setManifest] = useState<ManifestState | null>(null)
+
+  useEffect(() => {
+    if (!manifest) return
+
+    const latestCard = cards.find((card) => card.id === manifest.card.id)
+    if (!latestCard) return
+
+    if (
+      latestCard.imageUrl === manifest.card.imageUrl &&
+      latestCard.imageStatus === manifest.card.imageStatus &&
+      latestCard.name === manifest.card.name
+    ) {
+      return
+    }
+
+    setManifest((current) => {
+      if (!current || current.card.id !== latestCard.id) return current
+      return {
+        ...current,
+        card: latestCard,
+      }
+    })
+  }, [cards, manifest])
+
   const activationCounterRef = useRef(0)
   const ritualImpulseRef = useRef(0)
 
