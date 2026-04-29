@@ -215,9 +215,17 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       promptId: json.prompt_id,
     })
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown ComfyUI start failure.'
+    const errorCause =
+      error && typeof error === 'object' && 'cause' in error
+        ? String((error as { cause?: unknown }).cause)
+        : undefined
+
     return res.status(500).json({
       ok: false,
-      error: error instanceof Error ? error.message : 'Unknown ComfyUI start failure.',
+      error: errorMessage,
+      details: errorCause,
+      comfyuiBaseUrl: baseUrl,
     })
   }
 }
