@@ -17,6 +17,7 @@ import type {
   TechLevel,
   Tone,
   Tradition,
+  TarotSystem,
   VisualStyle,
   ErosField,
 } from '../types/grimoire'
@@ -1035,6 +1036,7 @@ export function RitualChamberScene({
   showInWorldPanels = true,
   subject,
   tradition,
+  tarotSystem,
   tone,
   techLevel,
   visualStyle,
@@ -1054,6 +1056,7 @@ export function RitualChamberScene({
   onClearArchive = () => {},
   onSubjectChange,
   onTraditionChange,
+  onTarotSystemChange,
   onToneChange,
   onTechLevelChange,
   onVisualStyleChange,
@@ -1077,6 +1080,7 @@ export function RitualChamberScene({
   showInWorldPanels?: boolean
   subject: string
   tradition: Tradition
+  tarotSystem: TarotSystem
   tone: Tone
   techLevel: TechLevel
   visualStyle: VisualStyle
@@ -1096,6 +1100,7 @@ export function RitualChamberScene({
   onClearArchive?: () => void
   onSubjectChange: (subject: string) => void
   onTraditionChange: (tradition: Tradition) => void
+  onTarotSystemChange: (tarotSystem: TarotSystem) => void
   onToneChange: (tone: Tone) => void
   onTechLevelChange: (techLevel: TechLevel) => void
   onVisualStyleChange: (visualStyle: VisualStyle) => void
@@ -1222,6 +1227,7 @@ export function RitualChamberScene({
         selectedCardId={selectedCardId}
         subject={subject}
         tradition={tradition}
+        tarotSystem={tarotSystem}
         tone={tone}
         techLevel={techLevel}
         visualStyle={visualStyle}
@@ -1241,6 +1247,7 @@ export function RitualChamberScene({
         onClearArchive={onClearArchive}
         onSubjectChange={onSubjectChange}
         onTraditionChange={onTraditionChange}
+        onTarotSystemChange={onTarotSystemChange}
         onToneChange={onToneChange}
         onTechLevelChange={onTechLevelChange}
         onVisualStyleChange={onVisualStyleChange}

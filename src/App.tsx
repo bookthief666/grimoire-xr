@@ -1114,6 +1114,8 @@ export default function App() {
           <pointLight position={[0, 2.5, -1.5]} intensity={15} color="#ffcc88" distance={10} />
 
           <RitualChamberScene
+            tarotSystem={engine.tarotSystem}
+            onTarotSystemChange={engine.setTarotSystem}
             onGenerateCardImage={(cardId) => {
               console.info('[APP] Forwarding image request to useGrimoireEngine', { cardId })
               return engine.generateImageForCard(cardId)

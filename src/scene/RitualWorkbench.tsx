@@ -7,12 +7,14 @@ import {
   TONE_OPTIONS,
   TRADITION_OPTIONS,
 } from '../constants/ritualOptions'
+import { TAROT_SYSTEM_OPTIONS } from '../constants/tarotSystems'
 import type {
   ForgePhase,
   GrimoireCard,
   TechLevel,
   Tone,
   Tradition,
+  TarotSystem,
   VisualStyle,
   ErosField,
 } from '../types/grimoire'
@@ -32,6 +34,7 @@ type RitualWorkbenchProps = {
   selectedCardId: number | null
   subject: string
   tradition: Tradition
+  tarotSystem: TarotSystem
   tone: Tone
   techLevel: TechLevel
   visualStyle: VisualStyle
@@ -51,6 +54,7 @@ type RitualWorkbenchProps = {
   onClearArchive: () => void
   onSubjectChange: (subject: string) => void
   onTraditionChange: (tradition: Tradition) => void
+  onTarotSystemChange: (tarotSystem: TarotSystem) => void
   onToneChange: (tone: Tone) => void
   onTechLevelChange: (techLevel: TechLevel) => void
   onVisualStyleChange: (visualStyle: VisualStyle) => void
@@ -654,6 +658,7 @@ function FloatingDial({
 function FloatingForgeMenu({
   activeSubject,
   tradition,
+  tarotSystem,
   tone,
   techLevel,
   activeIntent,
@@ -661,6 +666,7 @@ function FloatingForgeMenu({
   erosField,
   onSubjectChange,
   onTraditionChange,
+  onTarotSystemChange,
   onToneChange,
   onTechLevelChange,
   onVisualStyleChange,
@@ -672,6 +678,7 @@ function FloatingForgeMenu({
   onBeginRitual,}: {
   activeSubject: string
   tradition: Tradition
+  tarotSystem: TarotSystem
   tone: Tone
   techLevel: TechLevel
   activeIntent: string
@@ -682,6 +689,7 @@ function FloatingForgeMenu({
   onBeginRitual: () => void
   onSubjectChange: (subject: string) => void
   onTraditionChange: (tradition: Tradition) => void
+  onTarotSystemChange: (tarotSystem: TarotSystem) => void
   onToneChange: (tone: Tone) => void
   onTechLevelChange: (techLevel: TechLevel) => void
   onIntentChange: (intent: string) => void
@@ -809,14 +817,14 @@ function FloatingForgeMenu({
       />
 
       <FloatingDial
-        label="TRADITION"
-        value={optionLabel(TRADITION_OPTIONS, tradition)}
+        label="TAROT SYSTEM"
+        value={optionLabel(TAROT_SYSTEM_OPTIONS, tarotSystem)}
         y={0.23}
         onPrevious={() =>
-          onTraditionChange(cycleOption(TRADITION_OPTIONS, tradition, -1))
+          onTarotSystemChange(cycleOption(TAROT_SYSTEM_OPTIONS, tarotSystem, -1))
         }
         onNext={() =>
-          onTraditionChange(cycleOption(TRADITION_OPTIONS, tradition, 1))
+          onTarotSystemChange(cycleOption(TAROT_SYSTEM_OPTIONS, tarotSystem, 1))
         }
       />
 
@@ -2312,6 +2320,7 @@ export function RitualWorkbench({
         <FloatingForgeMenu
           activeSubject={activeSubject}
           tradition={tradition}
+        tarotSystem={tarotSystem}
           tone={tone}
           techLevel={techLevel}
           activeIntent={activeIntent}
@@ -2322,6 +2331,7 @@ export function RitualWorkbench({
           onBeginRitual={() => void onBeginRitual()}
           onSubjectChange={onSubjectChange}
           onTraditionChange={onTraditionChange}
+        onTarotSystemChange={onTarotSystemChange}
           onToneChange={onToneChange}
           onTechLevelChange={onTechLevelChange}
           onVisualStyleChange={onVisualStyleChange}
