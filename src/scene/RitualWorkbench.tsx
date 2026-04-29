@@ -20,7 +20,6 @@ import type {
   Tone,
   Tradition,
   TarotSystem,
-  VisualStyle,
   ArtStyle,
   ErosField,
   ErosLevel,
@@ -44,7 +43,6 @@ type RitualWorkbenchProps = {
   tarotSystem: TarotSystem
   tone: Tone
   techLevel: TechLevel
-  visualStyle: VisualStyle
   artStyleFamily: ArtStyleFamily
   artStyle: ArtStyle
   erosField: ErosField
@@ -67,7 +65,6 @@ type RitualWorkbenchProps = {
   onTarotSystemChange: (tarotSystem: TarotSystem) => void
   onToneChange: (tone: Tone) => void
   onTechLevelChange: (techLevel: TechLevel) => void
-  onVisualStyleChange: (visualStyle: VisualStyle) => void
   onArtStyleFamilyChange: (family: ArtStyleFamily) => void
   onArtStyleChange: (style: ArtStyle) => void
   onErosFieldChange: (erosField: ErosField) => void

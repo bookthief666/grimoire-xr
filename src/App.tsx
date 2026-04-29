@@ -1137,7 +1137,6 @@ export default function App() {
               tradition={engine.tradition}
               tone={engine.tone}
               techLevel={engine.techLevel}
-              visualStyle={engine.visualStyle}
               erosField={engine.erosField}
               intent={engine.intent}
               forgePhase={engine.forgePhase}
@@ -1150,7 +1149,6 @@ export default function App() {
               onTraditionChange={engine.setTradition}
               onToneChange={engine.setTone}
               onTechLevelChange={engine.setTechLevel}
-              onVisualStyleChange={engine.setVisualStyle}
               onErosFieldChange={engine.setErosField}
               onIntentChange={engine.setIntent}
               onOracleQuestionChange={engine.setOracleQuestion}

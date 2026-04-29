@@ -18,7 +18,6 @@ import type {
   Tone,
   Tradition,
   TarotSystem,
-  VisualStyle,
   ArtStyle,
   ErosField,
   ErosLevel,
@@ -1042,7 +1041,6 @@ export function RitualChamberScene({
   tarotSystem,
   tone,
   techLevel,
-  visualStyle,
   artStyleFamily,
   artStyle,
   erosField,
@@ -1065,7 +1063,6 @@ export function RitualChamberScene({
   onTarotSystemChange,
   onToneChange,
   onTechLevelChange,
-  onVisualStyleChange,
   onArtStyleFamilyChange,
   onArtStyleChange,
   onErosFieldChange,
@@ -1092,7 +1089,6 @@ export function RitualChamberScene({
   tarotSystem: TarotSystem
   tone: Tone
   techLevel: TechLevel
-  visualStyle: VisualStyle
   artStyleFamily: ArtStyleFamily
   artStyle: ArtStyle
   erosField: ErosField
@@ -1115,7 +1111,6 @@ export function RitualChamberScene({
   onTarotSystemChange: (tarotSystem: TarotSystem) => void
   onToneChange: (tone: Tone) => void
   onTechLevelChange: (techLevel: TechLevel) => void
-  onVisualStyleChange: (visualStyle: VisualStyle) => void
   onArtStyleFamilyChange: (family: ArtStyleFamily) => void
   onArtStyleChange: (style: ArtStyle) => void
   onErosFieldChange: (erosField: ErosField) => void
@@ -1245,7 +1240,6 @@ export function RitualChamberScene({
         tarotSystem={tarotSystem}
         tone={tone}
         techLevel={techLevel}
-        visualStyle={visualStyle}
         artStyleFamily={artStyleFamily}
         artStyle={artStyle}
         erosField={erosField}
@@ -1268,7 +1262,6 @@ export function RitualChamberScene({
         onTarotSystemChange={onTarotSystemChange}
         onToneChange={onToneChange}
         onTechLevelChange={onTechLevelChange}
-        onVisualStyleChange={onVisualStyleChange}
         onArtStyleFamilyChange={onArtStyleFamilyChange}
         onArtStyleChange={onArtStyleChange}
         onErosFieldChange={onErosFieldChange}
