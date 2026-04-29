@@ -1,3 +1,4 @@
+/// <reference types="node" />
 type NodeApiRequest = {
   method?: string
   query?: Record<string, string | string[] | undefined>

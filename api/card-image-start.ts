@@ -1,5 +1,6 @@
-import fs from 'fs'
-import path from 'path'
+/// <reference types="node" />
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 
 type NodeApiRequest = {
   method?: string
@@ -123,9 +124,9 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
   const body = (req.body || {}) as Record<string, unknown>
 
   try {
-    const workflowPath = path.join(process.cwd(), 'api/comfy/workflow_api.json')
+    const workflowPath = join(process.cwd(), 'api/comfy/workflow_api.json')
     const workflow = injectWorkflow(
-      JSON.parse(fs.readFileSync(workflowPath, 'utf8')),
+      JSON.parse(readFileSync(workflowPath, 'utf8')),
       body,
     )
 

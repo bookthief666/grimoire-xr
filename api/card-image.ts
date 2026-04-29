@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import * as z from 'zod'
 
 export const maxDuration = 30
