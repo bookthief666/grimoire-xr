@@ -1,4 +1,7 @@
 import { z } from 'zod'
+import { TAROT_SYSTEM_IDS } from '../constants/tarotSystems'
+
+export const tarotSystemSchema = z.enum(TAROT_SYSTEM_IDS)
 
 export const traditionSchema = z.enum([
   'thelemic',
@@ -49,6 +52,7 @@ export const imageStatusSchema = z.enum([
 export const ritualConfigSchema = z.object({
   subject: z.string().min(2),
   tradition: traditionSchema,
+  tarotSystem: tarotSystemSchema.optional(),
   tone: toneSchema,
   techLevel: techLevelSchema,
   visualStyle: visualStyleSchema.optional(),
@@ -133,6 +137,7 @@ export const ritualSelectionSchema = z.object({
   altarCardId: z.number().int().positive().nullable(),
 })
 
+export type TarotSystem = z.infer<typeof tarotSystemSchema>
 export type Tradition = z.infer<typeof traditionSchema>
 export type Tone = z.infer<typeof toneSchema>
 export type TechLevel = z.infer<typeof techLevelSchema>
