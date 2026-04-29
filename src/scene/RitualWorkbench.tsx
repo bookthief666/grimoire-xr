@@ -5,7 +5,6 @@ import * as THREE from 'three'
 import {
   TECH_LEVEL_OPTIONS,
   TONE_OPTIONS,
-  TRADITION_OPTIONS,
 } from '../constants/ritualOptions'
 import { TAROT_SYSTEM_OPTIONS } from '../constants/tarotSystems'
 import type {
@@ -657,7 +656,6 @@ function FloatingDial({
 
 function FloatingForgeMenu({
   activeSubject,
-  tradition,
   tarotSystem,
   tone,
   techLevel,
@@ -665,7 +663,6 @@ function FloatingForgeMenu({
   visualStyle,
   erosField,
   onSubjectChange,
-  onTraditionChange,
   onTarotSystemChange,
   onToneChange,
   onTechLevelChange,
@@ -677,7 +674,6 @@ function FloatingForgeMenu({
   canForge,
   onBeginRitual,}: {
   activeSubject: string
-  tradition: Tradition
   tarotSystem: TarotSystem
   tone: Tone
   techLevel: TechLevel
@@ -688,7 +684,6 @@ function FloatingForgeMenu({
   canForge: boolean
   onBeginRitual: () => void
   onSubjectChange: (subject: string) => void
-  onTraditionChange: (tradition: Tradition) => void
   onTarotSystemChange: (tarotSystem: TarotSystem) => void
   onToneChange: (tone: Tone) => void
   onTechLevelChange: (techLevel: TechLevel) => void
@@ -2076,6 +2071,7 @@ export function RitualWorkbench({
   selectedCardId,
   subject,
   tradition,
+  tarotSystem,
   tone,
   techLevel,
   visualStyle,
@@ -2095,6 +2091,7 @@ export function RitualWorkbench({
   onClearArchive,
   onSubjectChange,
   onTraditionChange,
+  onTarotSystemChange,
   onToneChange,
   onTechLevelChange,
   onVisualStyleChange,
