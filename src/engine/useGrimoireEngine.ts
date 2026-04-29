@@ -181,7 +181,7 @@ function parseArchivePayload(raw: unknown): PersistedRitualArchive | null {
   const deckResult = grimoireDeckSchema.safeParse(raw.deck)
   if (!deckResult.success) return null
 
-  const deck = deckResult.data
+  const deck = stripArchiveImagePayloads(deckResult.data)
   const ritualConfig = normalizeRitualConfig(raw.ritualConfig ?? raw, deck)
 
   const savedAt =
@@ -217,7 +217,12 @@ function writeArchive(payload: PersistedRitualArchive): boolean {
   if (!isBrowser()) return false
 
   try {
-    window.localStorage.setItem(ARCHIVE_KEY, JSON.stringify(payload))
+    const safePayload = {
+      ...payload,
+      deck: stripArchiveImagePayloads(payload.deck),
+    }
+
+    window.localStorage.setItem(ARCHIVE_KEY, JSON.stringify(safePayload))
     return true
   } catch {
     return false
@@ -234,6 +239,33 @@ function deleteArchive() {
   }
 }
 
+
+function stripArchiveImagePayloads(deck: GrimoireDeck): GrimoireDeck {
+  return {
+    ...deck,
+    cards: deck.cards.map((card) => {
+      const imageUrl = card.imageUrl
+
+      if (
+        !imageUrl ||
+        (!imageUrl.startsWith('data:image/') && !imageUrl.startsWith('blob:'))
+      ) {
+        return card
+      }
+
+      const nextCard = { ...card }
+
+      delete nextCard.imageUrl
+
+      if (nextCard.imageStatus === 'ready') {
+        nextCard.imageStatus = 'pending'
+      }
+
+      return nextCard
+    }),
+  }
+}
+
 function createArchivePayload({
   ritualConfig,
   deck,
@@ -243,13 +275,15 @@ function createArchivePayload({
   deck: GrimoireDeck
   selection: RitualSelection
 }): PersistedRitualArchive {
+  const archiveDeck = stripArchiveImagePayloads(deck)
+
   return {
     version: ARCHIVE_VERSION,
     savedAt: new Date().toISOString(),
     ritualConfig,
-    deck,
-    dossier: deck.dossier,
-    selection: normalizeSelection(selection, deck),
+    deck: archiveDeck,
+    dossier: archiveDeck.dossier,
+    selection: normalizeSelection(selection, archiveDeck),
   }
 }
 
