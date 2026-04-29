@@ -19,6 +19,7 @@ import type {
   Tradition,
   TarotSystem,
   VisualStyle,
+  ArtStyle,
   ErosField,
   ErosLevel,
 } from '../types/grimoire'
@@ -28,6 +29,7 @@ import { TempleXenotheurgy } from './TempleXenotheurgy'
 import { TempleGrandArchitecture } from './TempleGrandArchitecture'
 import { InWorldRitualConsole } from './InWorldRitualConsole'
 import { RitualWorkbench } from './RitualWorkbench'
+import type { ArtStyleFamily } from '../constants/artStyles'
 
 function isUsableGeneratedCardImageUrl(value: string | undefined): value is string {
   if (!value) return false
@@ -1041,6 +1043,8 @@ export function RitualChamberScene({
   tone,
   techLevel,
   visualStyle,
+  artStyleFamily,
+  artStyle,
   erosField,
   erosLevel,
   intent,
@@ -1062,6 +1066,8 @@ export function RitualChamberScene({
   onToneChange,
   onTechLevelChange,
   onVisualStyleChange,
+  onArtStyleFamilyChange,
+  onArtStyleChange,
   onErosFieldChange,
   onErosLevelChange,
   onIntentChange,
@@ -1087,6 +1093,8 @@ export function RitualChamberScene({
   tone: Tone
   techLevel: TechLevel
   visualStyle: VisualStyle
+  artStyleFamily: ArtStyleFamily
+  artStyle: ArtStyle
   erosField: ErosField
   erosLevel: ErosLevel
   intent: string
@@ -1108,6 +1116,8 @@ export function RitualChamberScene({
   onToneChange: (tone: Tone) => void
   onTechLevelChange: (techLevel: TechLevel) => void
   onVisualStyleChange: (visualStyle: VisualStyle) => void
+  onArtStyleFamilyChange: (family: ArtStyleFamily) => void
+  onArtStyleChange: (style: ArtStyle) => void
   onErosFieldChange: (erosField: ErosField) => void
   onErosLevelChange: (erosLevel: ErosLevel) => void
   onIntentChange: (intent: string) => void
@@ -1236,6 +1246,8 @@ export function RitualChamberScene({
         tone={tone}
         techLevel={techLevel}
         visualStyle={visualStyle}
+        artStyleFamily={artStyleFamily}
+        artStyle={artStyle}
         erosField={erosField}
         erosLevel={erosLevel}
         intent={intent}
@@ -1257,6 +1269,8 @@ export function RitualChamberScene({
         onToneChange={onToneChange}
         onTechLevelChange={onTechLevelChange}
         onVisualStyleChange={onVisualStyleChange}
+        onArtStyleFamilyChange={onArtStyleFamilyChange}
+        onArtStyleChange={onArtStyleChange}
         onErosFieldChange={onErosFieldChange}
         onErosLevelChange={onErosLevelChange}
         onIntentChange={onIntentChange}

@@ -3,7 +3,13 @@ import { consultOracle, generateDeck } from '../services/content'
 import { generateCardImage } from '../services/images'
 import { DEFAULT_TAROT_SYSTEM } from '../constants/tarotSystems'
 import { DEFAULT_EROS_LEVEL } from '../constants/erosLevels'
-import { DEFAULT_ART_STYLE } from '../constants/artStyles'
+import {
+  DEFAULT_ART_STYLE,
+  DEFAULT_ART_STYLE_FAMILY,
+  getArtStyle,
+  getStylesByFamily,
+  type ArtStyleFamily,
+} from '../constants/artStyles'
 import {
   tarotSystemSchema,
   erosLevelSchema,
@@ -52,6 +58,7 @@ type GrimoireEngineState = {
   tone: Tone
   techLevel: TechLevel
   visualStyle: VisualStyle
+  artStyleFamily: ArtStyleFamily
   artStyle: ArtStyle
   erosField: ErosField
   erosLevel: ErosLevel
@@ -86,6 +93,7 @@ export type GrimoireEngine = GrimoireEngineState & {
   setTone: (tone: Tone) => void
   setTechLevel: (techLevel: TechLevel) => void
   setVisualStyle: (visualStyle: VisualStyle) => void
+  setArtStyleFamily: (family: ArtStyleFamily) => void
   setArtStyle: (artStyle: ArtStyle) => void
   setErosField: (erosField: ErosField) => void
   setErosLevel: (erosLevel: ErosLevel) => void
@@ -315,6 +323,7 @@ export function useGrimoireEngine(): GrimoireEngine {
   const [tone, setToneState] = useState<Tone>('oracular')
   const [techLevel, setTechLevelState] = useState<TechLevel>('adept')
   const [visualStyle, setVisualStyleState] = useState<VisualStyle>('Hierophantic')
+  const [artStyleFamily, setArtStyleFamilyState] = useState<ArtStyleFamily>(DEFAULT_ART_STYLE_FAMILY)
   const [artStyle, setArtStyleState] = useState<ArtStyle>(DEFAULT_ART_STYLE)
   const [erosField, setErosFieldState] = useState<ErosField>('Veiled')
   const [erosLevel, setErosLevelState] = useState<ErosLevel>(DEFAULT_EROS_LEVEL)
@@ -373,7 +382,10 @@ export function useGrimoireEngine(): GrimoireEngine {
     setToneState(archive.ritualConfig.tone)
     setTechLevelState(archive.ritualConfig.techLevel)
     setVisualStyleState(archive.ritualConfig.visualStyle ?? 'Hierophantic')
-    setArtStyleState(archive.ritualConfig.artStyle ?? DEFAULT_ART_STYLE)
+
+    const archivedArtStyle = archive.ritualConfig.artStyle ?? DEFAULT_ART_STYLE
+    setArtStyleFamilyState(getArtStyle(archivedArtStyle).family)
+    setArtStyleState(archivedArtStyle)
     setErosFieldState(archive.ritualConfig.erosField ?? 'Veiled')
     setErosLevelState(archive.ritualConfig.erosLevel ?? DEFAULT_EROS_LEVEL)
     setIntentState(archive.ritualConfig.intent ?? '')
@@ -459,8 +471,18 @@ export function useGrimoireEngine(): GrimoireEngine {
     if (error) setError(null)
   }
 
+  const setArtStyleFamily = (nextFamily: ArtStyleFamily) => {
+    setArtStyleFamilyState(nextFamily)
+    const firstStyle = getStylesByFamily(nextFamily)[0]
+    if (firstStyle) {
+      setArtStyleState(firstStyle.id)
+    }
+    if (error) setError(null)
+  }
+
   const setArtStyle = (nextArtStyle: ArtStyle) => {
     setArtStyleState(nextArtStyle)
+    setArtStyleFamilyState(getArtStyle(nextArtStyle).family)
     if (error) setError(null)
   }
 
@@ -807,6 +829,7 @@ export function useGrimoireEngine(): GrimoireEngine {
     tone,
     techLevel,
     visualStyle,
+    artStyleFamily,
     artStyle,
     erosField,
     erosLevel,
@@ -839,6 +862,7 @@ export function useGrimoireEngine(): GrimoireEngine {
     setTone,
     setTechLevel,
     setVisualStyle,
+    setArtStyleFamily,
     setArtStyle,
     setErosField,
     setErosLevel,

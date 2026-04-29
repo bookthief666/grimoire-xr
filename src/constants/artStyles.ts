@@ -505,6 +505,40 @@ export type ArtStyleId = (typeof ART_STYLE_IDS)[number]
 
 export const DEFAULT_ART_STYLE: ArtStyleId = 'thoth_tarot'
 
+export const ART_STYLE_FAMILIES = Array.from(
+  new Set(ART_STYLES.map((style) => style.family)),
+) as [
+  (typeof ART_STYLES)[number]['family'],
+  ...(typeof ART_STYLES)[number]['family'][],
+]
+
+export type ArtStyleFamily = (typeof ART_STYLE_FAMILIES)[number]
+
+export const DEFAULT_ART_STYLE_FAMILY = (
+  ART_STYLES.find((style) => style.id === DEFAULT_ART_STYLE)?.family ??
+  ART_STYLES[0].family
+) as ArtStyleFamily
+
+function formatArtStyleFamilyLabel(family: ArtStyleFamily) {
+  return family
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
+}
+
+export const ART_STYLE_FAMILY_OPTIONS = ART_STYLE_FAMILIES.map((family) => ({
+  value: family,
+  label: formatArtStyleFamilyLabel(family),
+})) as ReadonlyArray<{
+  value: ArtStyleFamily
+  label: string
+}>
+
+export function getStylesByFamily(family: ArtStyleFamily) {
+  const styles = ART_STYLES.filter((style) => style.family === family)
+  return styles.length > 0 ? styles : ART_STYLES
+}
+
 export const ART_STYLE_OPTIONS = ART_STYLES.map((style) => ({
   value: style.id,
   label: style.label,

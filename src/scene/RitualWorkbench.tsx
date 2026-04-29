@@ -8,6 +8,11 @@ import {
 } from '../constants/ritualOptions'
 import { TAROT_SYSTEM_OPTIONS } from '../constants/tarotSystems'
 import { EROS_LEVEL_OPTIONS } from '../constants/erosLevels'
+import {
+  ART_STYLE_FAMILY_OPTIONS,
+  getStylesByFamily,
+  type ArtStyleFamily,
+} from '../constants/artStyles'
 import type {
   ForgePhase,
   GrimoireCard,
@@ -16,6 +21,7 @@ import type {
   Tradition,
   TarotSystem,
   VisualStyle,
+  ArtStyle,
   ErosField,
   ErosLevel,
 } from '../types/grimoire'
@@ -39,6 +45,8 @@ type RitualWorkbenchProps = {
   tone: Tone
   techLevel: TechLevel
   visualStyle: VisualStyle
+  artStyleFamily: ArtStyleFamily
+  artStyle: ArtStyle
   erosField: ErosField
   erosLevel: ErosLevel
   intent: string
@@ -60,6 +68,8 @@ type RitualWorkbenchProps = {
   onToneChange: (tone: Tone) => void
   onTechLevelChange: (techLevel: TechLevel) => void
   onVisualStyleChange: (visualStyle: VisualStyle) => void
+  onArtStyleFamilyChange: (family: ArtStyleFamily) => void
+  onArtStyleChange: (style: ArtStyle) => void
   onErosFieldChange: (erosField: ErosField) => void
   onErosLevelChange: (erosLevel: ErosLevel) => void
   onIntentChange: (intent: string) => void
@@ -94,15 +104,6 @@ const INTENT_OPTIONS = [
   'What should be disciplined?',
   'What is the ordeal teaching?',
   'What is the initiatory opportunity?',
-]
-
-const VISUAL_STYLE_OPTIONS: VisualStyle[] = [
-  'Hierophantic',
-  'Astral',
-  'Venusian',
-  'Goetic',
-  'Alchemical',
-  'Xenotheurgic',
 ]
 
 const TABLE_Y = 0.08
@@ -658,13 +659,15 @@ function FloatingForgeMenu({
   tone,
   techLevel,
   activeIntent,
-  visualStyle,
+  artStyleFamily,
+  artStyle,
   erosLevel,
   onSubjectChange,
   onTarotSystemChange,
   onToneChange,
   onTechLevelChange,
-  onVisualStyleChange,
+  onArtStyleFamilyChange,
+  onArtStyleChange,
   onErosLevelChange,
   onIntentChange,
   onOracleQuestionChange,
@@ -676,7 +679,8 @@ function FloatingForgeMenu({
   tone: Tone
   techLevel: TechLevel
   activeIntent: string
-  visualStyle: VisualStyle
+  artStyleFamily: ArtStyleFamily
+  artStyle: ArtStyle
   erosLevel: ErosLevel
   loading: boolean
   canForge: boolean
@@ -686,10 +690,16 @@ function FloatingForgeMenu({
   onToneChange: (tone: Tone) => void
   onTechLevelChange: (techLevel: TechLevel) => void
   onIntentChange: (intent: string) => void
-  onVisualStyleChange: (style: VisualStyle) => void
+  onArtStyleFamilyChange: (family: ArtStyleFamily) => void
+  onArtStyleChange: (style: ArtStyle) => void
   onErosLevelChange: (level: ErosLevel) => void
   onOracleQuestionChange: (question: string) => void
 }) {
+  const activeArtStyleOptions = getStylesByFamily(artStyleFamily).map((style) => ({
+    value: style.id,
+    label: style.label,
+  }))
+
   return (
     <group position={[-1.04, 1.0, 0.1]} scale={0.86}>
       <mesh>
@@ -842,21 +852,33 @@ function FloatingForgeMenu({
       />
 
       <FloatingDial
-        label="ART STYLE"
-        value={visualStyle}
+        label="STYLE FAMILY"
+        value={optionLabel(ART_STYLE_FAMILY_OPTIONS, artStyleFamily)}
         y={-0.25}
         onPrevious={() =>
-          onVisualStyleChange(cycleString(VISUAL_STYLE_OPTIONS, visualStyle, -1))
+          onArtStyleFamilyChange(cycleOption(ART_STYLE_FAMILY_OPTIONS, artStyleFamily, -1))
         }
         onNext={() =>
-          onVisualStyleChange(cycleString(VISUAL_STYLE_OPTIONS, visualStyle, 1))
+          onArtStyleFamilyChange(cycleOption(ART_STYLE_FAMILY_OPTIONS, artStyleFamily, 1))
+        }
+      />
+
+      <FloatingDial
+        label="ART STYLE"
+        value={optionLabel(activeArtStyleOptions, artStyle)}
+        y={-0.41}
+        onPrevious={() =>
+          onArtStyleChange(cycleOption(activeArtStyleOptions, artStyle, -1))
+        }
+        onNext={() =>
+          onArtStyleChange(cycleOption(activeArtStyleOptions, artStyle, 1))
         }
       />
 
       <FloatingDial
         label="EROS LEVEL"
         value={optionLabel(EROS_LEVEL_OPTIONS, erosLevel)}
-        y={-0.41}
+        y={-0.57}
         onPrevious={() =>
           onErosLevelChange(cycleOption(EROS_LEVEL_OPTIONS, erosLevel, -1))
         }
@@ -868,7 +890,7 @@ function FloatingForgeMenu({
       <FloatingDial
         label="INTENT"
         value={activeIntent}
-        y={-0.57}
+        y={-0.73}
         onPrevious={() => {
           const next = cycleString(INTENT_OPTIONS, activeIntent, -1)
           onIntentChange(next)
@@ -884,7 +906,7 @@ function FloatingForgeMenu({
       <FloatingMenuButton
         label={loading ? 'FORGING DECK…' : 'IGNITE DECK FORGE'}
         x={0.18}
-        y={-0.74}
+        y={-0.9}
         width={0.98}
         disabled={!canForge}
         onClick={onBeginRitual}
@@ -2071,7 +2093,8 @@ export function RitualWorkbench({
   tarotSystem,
   tone,
   techLevel,
-  visualStyle,
+  artStyleFamily,
+  artStyle,
   erosField,
   erosLevel,
   intent,
@@ -2091,7 +2114,8 @@ export function RitualWorkbench({
   onTarotSystemChange,
   onToneChange,
   onTechLevelChange,
-  onVisualStyleChange,
+  onArtStyleFamilyChange,
+  onArtStyleChange,
   onErosLevelChange,
   onIntentChange,
   onOracleQuestionChange,
@@ -2317,7 +2341,8 @@ export function RitualWorkbench({
           tone={tone}
           techLevel={techLevel}
           activeIntent={activeIntent}
-          visualStyle={visualStyle}
+          artStyleFamily={artStyleFamily}
+          artStyle={artStyle}
           erosLevel={erosLevel}
           loading={loading}
           canForge={canForge}
@@ -2326,7 +2351,8 @@ export function RitualWorkbench({
           onTarotSystemChange={onTarotSystemChange}
           onToneChange={onToneChange}
           onTechLevelChange={onTechLevelChange}
-          onVisualStyleChange={onVisualStyleChange}
+          onArtStyleFamilyChange={onArtStyleFamilyChange}
+          onArtStyleChange={onArtStyleChange}
           onErosLevelChange={onErosLevelChange}
           onIntentChange={onIntentChange}
           onOracleQuestionChange={onOracleQuestionChange}
