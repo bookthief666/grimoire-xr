@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { TAROT_SYSTEM_IDS } from '../constants/tarotSystems'
 import { EROS_LEVEL_IDS } from '../constants/erosLevels'
+import { ART_STYLE_IDS } from '../constants/artStyles'
 
 export const tarotSystemSchema = z.enum(TAROT_SYSTEM_IDS)
 
@@ -27,6 +28,8 @@ export const techLevelSchema = z.enum([
   'adept',
   'magus',
 ])
+
+export const artStyleSchema = z.enum(ART_STYLE_IDS)
 
 export const visualStyleSchema = z.enum([
   'Hierophantic',
@@ -59,6 +62,7 @@ export const ritualConfigSchema = z.object({
   tone: toneSchema,
   techLevel: techLevelSchema,
   visualStyle: visualStyleSchema.optional(),
+  artStyle: artStyleSchema.optional(),
   erosField: erosFieldSchema.optional(),
   erosLevel: erosLevelSchema.optional(),
   intent: z.string().min(4).max(400).optional(),
@@ -146,6 +150,7 @@ export type Tradition = z.infer<typeof traditionSchema>
 export type Tone = z.infer<typeof toneSchema>
 export type TechLevel = z.infer<typeof techLevelSchema>
 export type VisualStyle = z.infer<typeof visualStyleSchema>
+export type ArtStyle = z.infer<typeof artStyleSchema>
 export type ErosLevel = z.infer<typeof erosLevelSchema>
 export type ErosField = z.infer<typeof erosFieldSchema>
 export type ImageStatus = z.infer<typeof imageStatusSchema>
