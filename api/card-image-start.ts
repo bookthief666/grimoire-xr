@@ -1,6 +1,24 @@
 /// <reference types="node" />
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import {
+  DEFAULT_TAROT_SYSTEM,
+  TAROT_SYSTEM_IDS,
+  getTarotSystem,
+  type TarotSystemId,
+} from '../src/constants/tarotSystems.js'
+import {
+  DEFAULT_EROS_LEVEL,
+  EROS_LEVEL_IDS,
+  getErosLevel,
+  type ErosLevelId,
+} from '../src/constants/erosLevels.js'
+import {
+  DEFAULT_ART_STYLE,
+  ART_STYLE_IDS,
+  getArtStyle,
+  type ArtStyleId,
+} from '../src/constants/artStyles.js'
 
 type NodeApiRequest = {
   method?: string
@@ -17,7 +35,28 @@ function readString(value: unknown, fallback = '') {
   return typeof value === 'string' && value.trim() ? value.trim() : fallback
 }
 
+function readEnum<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
+  const text = readString(value)
+  return allowed.includes(text as T) ? (text as T) : fallback
+}
+
+function readTarotSystem(body: Record<string, unknown>): TarotSystemId {
+  return readEnum(body.tarotSystem, TAROT_SYSTEM_IDS, DEFAULT_TAROT_SYSTEM)
+}
+
+function readErosLevel(body: Record<string, unknown>): ErosLevelId {
+  return readEnum(body.erosLevel, EROS_LEVEL_IDS, DEFAULT_EROS_LEVEL)
+}
+
+function readArtStyle(body: Record<string, unknown>): ArtStyleId {
+  return readEnum(body.artStyle, ART_STYLE_IDS, DEFAULT_ART_STYLE)
+}
+
 function buildPositivePrompt(body: Record<string, unknown>) {
+  const tarotSystemProfile = getTarotSystem(readTarotSystem(body))
+  const erosLevelProfile = getErosLevel(readErosLevel(body))
+  const artStyleProfile = getArtStyle(readArtStyle(body))
+
   return [
     'masterpiece, best quality, highly detailed dark occult tarot illustration',
     'vertical tarot-card-safe composition, central symbolic figure or ritual tableau',
@@ -26,22 +65,38 @@ function buildPositivePrompt(body: Record<string, unknown>) {
     readString(body.cardName),
     readString(body.sigil) ? `sigil motif: ${readString(body.sigil)}` : '',
     readString(body.artPrompt),
-    readString(body.visualStyle) ? `visual style: ${readString(body.visualStyle)}` : '',
-    readString(body.erosField) ? `mood: ${readString(body.erosField)}` : '',
+    `tarot system visual grammar: ${tarotSystemProfile.label}; ${tarotSystemProfile.description}`,
+    `tarot system instruction: ${tarotSystemProfile.instruction}`,
+    `art style discipline: ${artStyleProfile.label}; ${artStyleProfile.prompt}`,
+    `eros intensity: ${erosLevelProfile.shortLabel}; ${erosLevelProfile.imagePrompt}`,
+    readString(body.visualStyle) ? `legacy visual atmosphere hint: ${readString(body.visualStyle)}` : '',
+    readString(body.erosField) ? `legacy eros field hint: ${readString(body.erosField)}` : '',
+    'symbolic, devotional, psychologically serious, initiatory, non-pornographic',
   ].filter(Boolean).join(', ')
 }
 
-function buildNegativePrompt() {
+function buildNegativePrompt(body: Record<string, unknown>) {
+  const artStyleProfile = getArtStyle(readArtStyle(body))
+
   return [
     'text, letters, words, watermark, signature, logo',
     'blurry, low quality, low resolution, bad anatomy, extra fingers, extra limbs',
     'cropped, duplicate, ugly, distorted, malformed face, broken hands',
-  ].join(', ')
+    'explicit nudity, pornographic framing, genital focus, sexual act',
+    artStyleProfile.negative,
+  ].filter(Boolean).join(', ')
 }
 
 function chooseCheckpoint(body: Record<string, unknown>) {
   const erosField = readString(body.erosField)
-  const eros = erosField === 'Charged' || erosField === 'Ecstatic'
+  const erosLevel = readErosLevel(body)
+
+  const eros =
+    erosField === 'Charged' ||
+    erosField === 'Ecstatic' ||
+    erosLevel === 'charged' ||
+    erosLevel === 'ecstatic' ||
+    erosLevel === 'transgressive'
 
   return (
     eros
@@ -68,7 +123,7 @@ function comfyHeaders() {
 
 function injectWorkflow(workflow: Record<string, any>, body: Record<string, unknown>) {
   const positivePrompt = buildPositivePrompt(body)
-  const negativePrompt = buildNegativePrompt()
+  const negativePrompt = buildNegativePrompt(body)
   const checkpoint = chooseCheckpoint(body)
 
   const kSamplerEntry = Object.entries(workflow).find(([, node]) => node.class_type === 'KSampler')
