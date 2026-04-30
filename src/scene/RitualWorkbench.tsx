@@ -856,12 +856,12 @@ function ForgeConfigReadout({
     ['INTENT', intentLabel],
   ] as const
 
-  const glyphRail = ['☿', '♀', '☉', '♂', '♃', '♄', '☽']
+  const glyphRail = ['☿', '♀', '☉', '♄', '☽']
 
   return (
-    <group position={[1.08, 1.0, 0.1]} scale={0.76}>
+    <group position={[1.08, 1.0, 0.1]} scale={0.81}>
       <mesh>
-        <planeGeometry args={[1.62, 1.34]} />
+        <planeGeometry args={[1.72, 1.48]} />
         <meshStandardMaterial
           color="#070405"
           emissive="#1a0906"
@@ -875,7 +875,7 @@ function ForgeConfigReadout({
       </mesh>
 
       <mesh position={[0, 0, 0.012]}>
-        <planeGeometry args={[1.76, 1.48]} />
+        <planeGeometry args={[1.86, 1.62]} />
         <meshBasicMaterial
           color="#ff7a1a"
           transparent
@@ -886,8 +886,8 @@ function ForgeConfigReadout({
         />
       </mesh>
 
-      <mesh position={[0, 0.56, 0.04]}>
-        <planeGeometry args={[1.3, 0.012]} />
+      <mesh position={[0, 0.61, 0.04]}>
+        <planeGeometry args={[1.42, 0.012]} />
         <meshBasicMaterial
           color="#ff9a00"
           transparent
@@ -898,8 +898,8 @@ function ForgeConfigReadout({
         />
       </mesh>
 
-      <mesh position={[0, -0.57, 0.04]}>
-        <planeGeometry args={[1.3, 0.01]} />
+      <mesh position={[0, -0.63, 0.04]}>
+        <planeGeometry args={[1.42, 0.01]} />
         <meshBasicMaterial
           color="#b8860b"
           transparent
@@ -910,17 +910,17 @@ function ForgeConfigReadout({
         />
       </mesh>
 
-      <ForgeGlyph glyph="☿" x={-0.69} y={0.53} />
-      <ForgeGlyph glyph="☉" x={0.69} y={0.53} />
-      <ForgeGlyph glyph="♄" x={-0.69} y={-0.53} />
-      <ForgeGlyph glyph="☽" x={0.69} y={-0.53} />
+      <ForgeGlyph glyph="☿" x={-0.74} y={0.59} />
+      <ForgeGlyph glyph="☉" x={0.74} y={0.59} />
+      <ForgeGlyph glyph="♄" x={-0.74} y={-0.61} />
+      <ForgeGlyph glyph="☽" x={0.74} y={-0.61} />
 
       {glyphRail.map((glyph, index) => (
         <Text
           key={`${glyph}-${index}`}
-          position={[-0.48 + index * 0.16, 0.43, 0.07]}
-          fontSize={0.03}
-          color={energized ? '#f7be72' : '#9a6a50'}
+          position={[-0.34 + index * 0.17, 0.46, 0.07]}
+          fontSize={0.027}
+          color={energized ? '#d99a5b' : '#7a5542'}
           anchorX="center"
           anchorY="middle"
         >
@@ -929,7 +929,7 @@ function ForgeConfigReadout({
       ))}
 
       <Text
-        position={[0, 0.50, 0.07]}
+        position={[0, 0.545, 0.07]}
         fontSize={0.044}
         color="#ffd18a"
         anchorX="center"
@@ -940,7 +940,7 @@ function ForgeConfigReadout({
       </Text>
 
       <Text
-        position={[0, 0.365, 0.07]}
+        position={[0, 0.40, 0.07]}
         fontSize={0.026}
         color={canForge ? '#ffcf7c' : '#9a6558'}
         anchorX="center"
@@ -951,12 +951,12 @@ function ForgeConfigReadout({
       </Text>
 
       {rows.map(([label, value], index) => {
-        const y = 0.26 - index * 0.105
+        const y = 0.295 - index * 0.104
 
         return (
           <group key={label}>
             <mesh position={[0, y - 0.034, 0.03]}>
-              <planeGeometry args={[1.18, 0.0025]} />
+              <planeGeometry args={[1.28, 0.0025]} />
               <meshBasicMaterial
                 color="#ff8a00"
                 transparent
@@ -968,7 +968,7 @@ function ForgeConfigReadout({
             </mesh>
 
             <Text
-              position={[-0.58, y, 0.07]}
+              position={[-0.62, y, 0.07]}
               fontSize={0.025}
               color="#8f6742"
               anchorX="left"
@@ -979,7 +979,7 @@ function ForgeConfigReadout({
             </Text>
 
             <Text
-              position={[-0.16, y, 0.07]}
+              position={[-0.18, y, 0.07]}
               fontSize={0.028}
               color="#f2d4a2"
               anchorX="left"
@@ -1064,7 +1064,7 @@ function FloatingForgeMenu({
         <meshBasicMaterial
           color="#ff9a00"
           transparent
-          opacity={0.095}
+          opacity={0.075}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
@@ -1084,7 +1084,7 @@ function FloatingForgeMenu({
               <meshBasicMaterial
                 color="#ff9a00"
                 transparent
-                opacity={0.68}
+                opacity={0.52}
                 depthWrite={false}
                 blending={THREE.AdditiveBlending}
                 side={THREE.DoubleSide}
@@ -1095,7 +1095,7 @@ function FloatingForgeMenu({
               <meshBasicMaterial
                 color="#ff9a00"
                 transparent
-                opacity={0.68}
+                opacity={0.52}
                 depthWrite={false}
                 blending={THREE.AdditiveBlending}
                 side={THREE.DoubleSide}
@@ -2522,6 +2522,43 @@ export function RitualWorkbench({
 
   return (
     <group position={[0, 0.82, -0.84]} scale={WORKBENCH_SCALE}>
+
+      <group position={[0, 1.0, 0.055]}>
+        <mesh position={[0, 0.62, 0]}>
+          <planeGeometry args={[3.82, 0.008]} />
+          <meshBasicMaterial
+            color="#ff9a00"
+            transparent
+            opacity={0.11}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+
+        <mesh position={[0, -0.62, 0]}>
+          <planeGeometry args={[3.82, 0.006]} />
+          <meshBasicMaterial
+            color="#b8860b"
+            transparent
+            opacity={0.07}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+
+        <Text
+          position={[0, 0.655, 0.035]}
+          fontSize={0.026}
+          color="#8f6742"
+          anchorX="center"
+          anchorY="middle"
+          maxWidth={1.8}
+        >
+          ☿  FORGE VECTOR  ☉  CONFIGURATION CURRENT  ♀
+        </Text>
+      </group>
 
       <ImagePipelineStatus
         cards={cards}
