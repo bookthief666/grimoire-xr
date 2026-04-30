@@ -596,6 +596,18 @@ function FloatingMenuButton({
 }
 
 
+function dialGlyph(label: string) {
+  if (label === 'TAROT SYSTEM') return '☉'
+  if (label === 'TONE') return '☽'
+  if (label === 'LEVEL') return '♄'
+  if (label === 'STYLE FAMILY') return '☿'
+  if (label === 'ART STYLE') return '✶'
+  if (label === 'EROS LEVEL') return '♀'
+  if (label === 'INTENT') return '🜂'
+  if (label === 'SUBJECT') return '🜃'
+  return '✦'
+}
+
 function FloatingDial({
   label,
   value,
@@ -609,34 +621,119 @@ function FloatingDial({
   onPrevious: () => void
   onNext: () => void
 }) {
+  const glyph = dialGlyph(label)
+
   return (
     <group position={[0, y, 0.04]}>
-      <Text
-        position={[-0.72, 0, 0.055]}
-        fontSize={0.034}
-        color="#9f744b"
-        anchorX="left"
-        anchorY="middle"
-        maxWidth={0.38}
-      >
-        {label}
-      </Text>
-
-      <FloatingMenuButton label="‹" x={-0.28} y={0} width={0.16} onClick={onPrevious} />
-
-      <mesh position={[0.18, 0, 0.045]}>
-        <planeGeometry args={[0.72, 0.15]} />
+      <mesh position={[0.18, 0, 0.033]}>
+        <planeGeometry args={[1.62, 0.128]} />
         <meshBasicMaterial
-          color="#090505"
+          color="#120706"
           transparent
-          opacity={0.9}
+          opacity={0.44}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0.18, 0.061, 0.038]}>
+        <planeGeometry args={[1.56, 0.004]} />
+        <meshBasicMaterial
+          color="#ff8a00"
+          transparent
+          opacity={0.24}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0.18, -0.061, 0.038]}>
+        <planeGeometry args={[1.56, 0.003]} />
+        <meshBasicMaterial
+          color="#b8860b"
+          transparent
+          opacity={0.14}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
         />
       </mesh>
 
       <Text
-        position={[0.18, 0.002, 0.075]}
-        fontSize={0.034}
+        position={[-0.76, 0, 0.074]}
+        fontSize={0.052}
+        color="#f7be72"
+        anchorX="center"
+        anchorY="middle"
+      >
+        {glyph}
+      </Text>
+
+      <Text
+        position={[-0.67, 0, 0.062]}
+        fontSize={0.027}
+        color="#9f744b"
+        anchorX="left"
+        anchorY="middle"
+        maxWidth={0.36}
+      >
+        {label}
+      </Text>
+
+      <Text
+        position={[-0.28, 0.002, 0.078]}
+        fontSize={0.058}
+        color="#ffcf7c"
+        anchorX="center"
+        anchorY="middle"
+        onClick={(event) => {
+          event.stopPropagation()
+          onPrevious()
+        }}
+      >
+        ◂
+      </Text>
+
+      <mesh position={[-0.28, 0, 0.092]} onClick={(event) => {
+        event.stopPropagation()
+        onPrevious()
+      }}>
+        <planeGeometry args={[0.18, 0.16]} />
+        <meshBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.001}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0.18, 0, 0.045]}>
+        <planeGeometry args={[0.73, 0.116]} />
+        <meshBasicMaterial
+          color="#070404"
+          transparent
+          opacity={0.86}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0.18, 0, 0.052]}>
+        <planeGeometry args={[0.67, 0.056]} />
+        <meshBasicMaterial
+          color="#ff6a00"
+          transparent
+          opacity={0.055}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <Text
+        position={[0.18, 0.002, 0.078]}
+        fontSize={0.033}
         color="#f2d4a2"
         anchorX="center"
         anchorY="middle"
@@ -645,7 +742,33 @@ function FloatingDial({
         {shortText(value, 30)}
       </Text>
 
-      <FloatingMenuButton label="›" x={0.65} y={0} width={0.16} onClick={onNext} />
+      <Text
+        position={[0.65, 0.002, 0.078]}
+        fontSize={0.058}
+        color="#ffcf7c"
+        anchorX="center"
+        anchorY="middle"
+        onClick={(event) => {
+          event.stopPropagation()
+          onNext()
+        }}
+      >
+        ▸
+      </Text>
+
+      <mesh position={[0.65, 0, 0.092]} onClick={(event) => {
+        event.stopPropagation()
+        onNext()
+      }}>
+        <planeGeometry args={[0.18, 0.16]} />
+        <meshBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.001}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
     </group>
   )
 }
