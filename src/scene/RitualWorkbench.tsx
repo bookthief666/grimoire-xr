@@ -1052,7 +1052,8 @@ function FloatingForgeMenu({
   onOracleQuestionChange,
   loading,
   canForge,
-  onBeginRitual,}: {
+  onBeginRitual,
+}: {
   activeSubject: string
   tarotSystem: TarotSystem
   tone: Tone
@@ -2503,7 +2504,8 @@ export function RitualWorkbench({
   onClearOracle,
   onClearRitual,
   onGenerateCardImage,
-  onCardSelect,}: RitualWorkbenchProps) {
+  onCardSelect,
+}: RitualWorkbenchProps) {
   const [cardOffsets, setCardOffsets] = useState<Record<number, Vec2>>({})
   const [dragState, setDragState] = useState<DragState | null>(null)
   const [menuMode, setMenuMode] = useState<WorkbenchMode>('closed')
