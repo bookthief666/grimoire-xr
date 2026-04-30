@@ -650,6 +650,229 @@ function FloatingDial({
   )
 }
 
+
+function ForgeGlyph({
+  glyph,
+  x,
+  y,
+}: {
+  glyph: string
+  x: number
+  y: number
+}) {
+  return (
+    <group position={[x, y, 0.08]}>
+      <Text
+        position={[0, 0, 0]}
+        fontSize={0.09}
+        color="#ff6a00"
+        anchorX="center"
+        anchorY="middle"
+        fillOpacity={0.18}
+      >
+        {glyph}
+      </Text>
+      <Text
+        position={[0, 0, 0.003]}
+        fontSize={0.058}
+        color="#ffd7a3"
+        anchorX="center"
+        anchorY="middle"
+      >
+        {glyph}
+      </Text>
+    </group>
+  )
+}
+
+function ForgeConfigReadout({
+  activeSubject,
+  tarotSystem,
+  tone,
+  techLevel,
+  activeIntent,
+  artStyleFamily,
+  artStyle,
+  erosLevel,
+  forgePhase,
+  loading,
+  canForge,
+}: {
+  activeSubject: string
+  tarotSystem: TarotSystem
+  tone: Tone
+  techLevel: TechLevel
+  activeIntent: string
+  artStyleFamily: ArtStyleFamily
+  artStyle: ArtStyle
+  erosLevel: ErosLevel
+  forgePhase: ForgePhase
+  loading: boolean
+  canForge: boolean
+}) {
+  const activeArtStyleOptions = getStylesByFamily(artStyleFamily).map((style) => ({
+    value: style.id,
+    label: style.label,
+  }))
+
+  const subjectLabel = activeSubject.trim() || '—'
+  const intentLabel = activeIntent.trim() || '—'
+  const energized = loading || forgePhase === 'forging' || forgePhase === 'ready'
+  const status = loading ? 'FORGING' : canForge ? 'READY' : 'SUBJECT REQUIRED'
+  const phaseLabel = forgePhase.toUpperCase()
+  const panelOpacity = energized ? 0.92 : 0.72
+
+  const rows = [
+    ['SUBJECT', subjectLabel],
+    ['TAROT', optionLabel(TAROT_SYSTEM_OPTIONS, tarotSystem)],
+    ['TONE', optionLabel(TONE_OPTIONS, tone)],
+    ['LEVEL', optionLabel(TECH_LEVEL_OPTIONS, techLevel)],
+    ['FAMILY', optionLabel(ART_STYLE_FAMILY_OPTIONS, artStyleFamily)],
+    ['STYLE', optionLabel(activeArtStyleOptions, artStyle)],
+    ['EROS', optionLabel(EROS_LEVEL_OPTIONS, erosLevel)],
+    ['INTENT', intentLabel],
+  ] as const
+
+  const glyphRail = ['☿', '♀', '☉', '♂', '♃', '♄', '☽']
+
+  return (
+    <group position={[1.08, 1.0, 0.1]} scale={0.76}>
+      <mesh>
+        <planeGeometry args={[1.62, 1.34]} />
+        <meshStandardMaterial
+          color="#070405"
+          emissive="#1a0906"
+          emissiveIntensity={0.38}
+          transparent
+          opacity={panelOpacity}
+          roughness={0.29}
+          metalness={0.68}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, 0, 0.012]}>
+        <planeGeometry args={[1.76, 1.48]} />
+        <meshBasicMaterial
+          color="#ff7a1a"
+          transparent
+          opacity={energized ? 0.08 : 0.04}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, 0.56, 0.04]}>
+        <planeGeometry args={[1.3, 0.012]} />
+        <meshBasicMaterial
+          color="#ff9a00"
+          transparent
+          opacity={0.38}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, -0.57, 0.04]}>
+        <planeGeometry args={[1.3, 0.01]} />
+        <meshBasicMaterial
+          color="#b8860b"
+          transparent
+          opacity={0.22}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <ForgeGlyph glyph="☿" x={-0.69} y={0.53} />
+      <ForgeGlyph glyph="☉" x={0.69} y={0.53} />
+      <ForgeGlyph glyph="♄" x={-0.69} y={-0.53} />
+      <ForgeGlyph glyph="☽" x={0.69} y={-0.53} />
+
+      {glyphRail.map((glyph, index) => (
+        <Text
+          key={`${glyph}-${index}`}
+          position={[-0.48 + index * 0.16, 0.43, 0.07]}
+          fontSize={0.03}
+          color={energized ? '#f7be72' : '#9a6a50'}
+          anchorX="center"
+          anchorY="middle"
+        >
+          {glyph}
+        </Text>
+      ))}
+
+      <Text
+        position={[0, 0.50, 0.07]}
+        fontSize={0.044}
+        color="#ffd18a"
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={1.28}
+      >
+        ACTIVE FORGE CONFIG
+      </Text>
+
+      <Text
+        position={[0, 0.365, 0.07]}
+        fontSize={0.026}
+        color={canForge ? '#ffcf7c' : '#9a6558'}
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={1.22}
+      >
+        {phaseLabel} · {status}
+      </Text>
+
+      {rows.map(([label, value], index) => {
+        const y = 0.26 - index * 0.105
+
+        return (
+          <group key={label}>
+            <mesh position={[0, y - 0.034, 0.03]}>
+              <planeGeometry args={[1.18, 0.0025]} />
+              <meshBasicMaterial
+                color="#ff8a00"
+                transparent
+                opacity={0.12}
+                depthWrite={false}
+                blending={THREE.AdditiveBlending}
+                side={THREE.DoubleSide}
+              />
+            </mesh>
+
+            <Text
+              position={[-0.58, y, 0.07]}
+              fontSize={0.025}
+              color="#8f6742"
+              anchorX="left"
+              anchorY="middle"
+              maxWidth={0.34}
+            >
+              {label}
+            </Text>
+
+            <Text
+              position={[-0.16, y, 0.07]}
+              fontSize={0.028}
+              color="#f2d4a2"
+              anchorX="left"
+              anchorY="middle"
+              maxWidth={0.82}
+            >
+              {shortText(value, 30)}
+            </Text>
+          </group>
+        )
+      })}
+    </group>
+  )
+}
+
+
 function FloatingForgeMenu({
   activeSubject,
   tarotSystem,
@@ -2260,6 +2483,20 @@ export function RitualWorkbench({
       <TableHexagram active={hasDeck || loading || oracleLoading || hasOracleReading} />
 
       <DeckTray count={cards.length} active={hasDeck} />
+
+      <ForgeConfigReadout
+        activeSubject={activeSubject}
+        tarotSystem={tarotSystem}
+        tone={tone}
+        techLevel={techLevel}
+        activeIntent={activeIntent}
+        artStyleFamily={artStyleFamily}
+        artStyle={artStyle}
+        erosLevel={erosLevel}
+        forgePhase={forgePhase}
+        loading={loading || oracleLoading}
+        canForge={canForge}
+      />
 
       <SpreadMandala
         active={menuMode === 'spread' || hasDeck}
