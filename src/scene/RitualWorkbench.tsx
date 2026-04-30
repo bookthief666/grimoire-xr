@@ -28,6 +28,7 @@ import type {
 type Vec2 = [number, number]
 
 type WorkbenchMode = 'closed' | 'forge' | 'spread' | 'archive'
+type ForgeEnergy = 'idle' | 'tuning' | 'working' | 'manifest' | 'oracle'
 
 type DragState = {
   cardId: number
@@ -332,8 +333,10 @@ function TableBar({
 
 function TableHexagram({
   active,
+  energy = 'idle',
 }: {
   active: boolean
+  energy?: ForgeEnergy
 }) {
   const ringRef = useRef<THREE.MeshBasicMaterial>(null)
 
@@ -346,8 +349,22 @@ function TableHexagram({
 
   useFrame(({ clock }) => {
     if (!ringRef.current) return
-    const pulse = 0.32 + Math.sin(clock.getElapsedTime() * 1.2) * 0.14
-    ringRef.current.opacity = active ? 0.52 + pulse : 0.28 + pulse * 0.45
+
+    const speed =
+      energy === 'working' ? 2.2 :
+      energy === 'manifest' ? 1.45 :
+      energy === 'oracle' ? 1.75 :
+      1.2
+
+    const base =
+      energy === 'working' ? 0.62 :
+      energy === 'manifest' ? 0.56 :
+      energy === 'tuning' ? 0.48 :
+      energy === 'oracle' ? 0.52 :
+      0.28
+
+    const pulse = 0.24 + Math.sin(clock.getElapsedTime() * speed) * 0.12
+    ringRef.current.opacity = active ? base + pulse : 0.22 + pulse * 0.34
   })
 
   return (
@@ -356,7 +373,13 @@ function TableHexagram({
         <ringGeometry args={[0.68, 0.71, 72]} />
         <meshBasicMaterial
           ref={ringRef}
-          color={active ? '#ffcf7c' : '#9a5a18'}
+          color={
+            energy === 'working' ? '#ffffff' :
+            energy === 'manifest' ? '#ffcf7c' :
+            energy === 'oracle' ? '#b98cff' :
+            active ? '#ffcf7c' :
+            '#9a5a18'
+          }
           transparent
           opacity={0.48}
           depthWrite={false}
@@ -379,34 +402,47 @@ function TableHexagram({
 function AltarAstrolabeRings({
   active,
   erosField,
+  energy = 'idle',
 }: {
   active: boolean
   erosField: ErosField
+  energy?: ForgeEnergy
 }) {
   const outerRef = useRef<THREE.MeshBasicMaterial>(null)
   const middleRef = useRef<THREE.MeshBasicMaterial>(null)
   const innerRef = useRef<THREE.MeshBasicMaterial>(null)
 
   const erosAccent =
-    erosField === 'Ecstatic'
-      ? '#9a35ff'
-      : erosField === 'Charged'
-        ? '#ff3d5a'
-        : '#d6a642'
+    energy === 'oracle'
+      ? '#b98cff'
+      : energy === 'working'
+        ? '#ffffff'
+        : erosField === 'Ecstatic'
+          ? '#9a35ff'
+          : erosField === 'Charged'
+            ? '#ff3d5a'
+            : '#d6a642'
+
+  const energyBoost =
+    energy === 'working' ? 1.85 :
+    energy === 'manifest' ? 1.45 :
+    energy === 'tuning' ? 1.22 :
+    energy === 'oracle' ? 1.35 :
+    1
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime()
 
     if (outerRef.current) {
-      outerRef.current.opacity = active ? 0.18 + Math.sin(t * 0.55) * 0.05 : 0.1
+      outerRef.current.opacity = active ? (0.16 + Math.sin(t * 0.55) * 0.05) * energyBoost : 0.1
     }
 
     if (middleRef.current) {
-      middleRef.current.opacity = active ? 0.28 + Math.sin(t * 0.82 + 1.1) * 0.07 : 0.14
+      middleRef.current.opacity = active ? (0.24 + Math.sin(t * 0.82 + 1.1) * 0.07) * energyBoost : 0.14
     }
 
     if (innerRef.current) {
-      innerRef.current.opacity = active ? 0.34 + Math.sin(t * 1.1 + 0.4) * 0.08 : 0.18
+      innerRef.current.opacity = active ? (0.28 + Math.sin(t * 1.1 + 0.4) * 0.08) * energyBoost : 0.18
     }
   })
 
@@ -2520,6 +2556,39 @@ export function RitualWorkbench({
   const canConsult =
     hasDeck && !loading && !oracleLoading && oracleQuestion.trim().length >= 3
 
+  const forgeEnergy: ForgeEnergy =
+    loading || oracleLoading
+      ? 'working'
+      : hasDeck
+        ? 'manifest'
+        : hasOracleReading
+          ? 'oracle'
+          : menuMode === 'forge'
+            ? 'tuning'
+            : 'idle'
+
+  const railColor =
+    forgeEnergy === 'working'
+      ? '#ffffff'
+      : forgeEnergy === 'manifest'
+        ? '#ffcf7c'
+        : forgeEnergy === 'oracle'
+          ? '#b98cff'
+          : forgeEnergy === 'tuning'
+            ? '#ff9a00'
+            : '#8f6742'
+
+  const railOpacity =
+    forgeEnergy === 'working'
+      ? 0.24
+      : forgeEnergy === 'manifest'
+        ? 0.18
+        : forgeEnergy === 'tuning'
+          ? 0.15
+          : forgeEnergy === 'oracle'
+            ? 0.16
+            : 0.08
+
   return (
     <group position={[0, 0.82, -0.84]} scale={WORKBENCH_SCALE}>
 
@@ -2527,9 +2596,9 @@ export function RitualWorkbench({
         <mesh position={[0, 0.62, 0]}>
           <planeGeometry args={[3.82, 0.008]} />
           <meshBasicMaterial
-            color="#ff9a00"
+            color={railColor}
             transparent
-            opacity={0.11}
+            opacity={railOpacity}
             depthWrite={false}
             blending={THREE.AdditiveBlending}
             side={THREE.DoubleSide}
@@ -2539,9 +2608,9 @@ export function RitualWorkbench({
         <mesh position={[0, -0.62, 0]}>
           <planeGeometry args={[3.82, 0.006]} />
           <meshBasicMaterial
-            color="#b8860b"
+            color={railColor}
             transparent
-            opacity={0.07}
+            opacity={railOpacity * 0.62}
             depthWrite={false}
             blending={THREE.AdditiveBlending}
             side={THREE.DoubleSide}
@@ -2579,9 +2648,9 @@ export function RitualWorkbench({
       <mesh position={[0, TABLE_Y + 0.006, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[3.18, 1.72]} />
         <meshBasicMaterial
-          color="#ff8a00"
+          color={railColor}
           transparent
-          opacity={0.075}
+          opacity={forgeEnergy === 'working' ? 0.13 : forgeEnergy === 'manifest' ? 0.105 : forgeEnergy === 'tuning' ? 0.09 : 0.065}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
@@ -2639,8 +2708,12 @@ export function RitualWorkbench({
       <AltarAstrolabeRings
         active={hasDeck || menuMode !== 'closed' || loading || oracleLoading || hasOracleReading}
         erosField={erosField}
+        energy={forgeEnergy}
       />
-      <TableHexagram active={hasDeck || loading || oracleLoading || hasOracleReading} />
+      <TableHexagram
+        active={hasDeck || loading || oracleLoading || hasOracleReading}
+        energy={forgeEnergy}
+      />
 
       <DeckTray count={cards.length} active={hasDeck} />
 
