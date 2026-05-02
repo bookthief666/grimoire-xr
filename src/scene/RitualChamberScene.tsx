@@ -28,6 +28,7 @@ import { TempleXenotheurgy } from './TempleXenotheurgy'
 import { TempleGrandArchitecture } from './TempleGrandArchitecture'
 import { InWorldRitualConsole } from './InWorldRitualConsole'
 import { RitualWorkbench } from './RitualWorkbench'
+import { UnicursalHexagramGlyph } from './ThelemicSigils'
 import type { ArtStyleFamily } from '../constants/artStyles'
 
 function isUsableGeneratedCardImageUrl(value: string | undefined): value is string {
@@ -126,22 +127,15 @@ function FloorBar({
 }
 
 function HexagramSeal() {
-  const points = useMemo<[number, number][]>(() => {
-    return Array.from({ length: 6 }, (_, i) => {
-      const angle = -Math.PI / 2 + (i * Math.PI) / 3
-      return [Math.cos(angle) * 1.04, Math.sin(angle) * 1.04]
-    })
-  }, [])
-
   return (
-    <group>
-      <FloorBar a={points[0]} b={points[2]} color={PALETTE.glyph} opacity={0.92} width={0.04} />
-      <FloorBar a={points[2]} b={points[4]} color={PALETTE.glyph} opacity={0.92} width={0.04} />
-      <FloorBar a={points[4]} b={points[0]} color={PALETTE.glyph} opacity={0.92} width={0.04} />
-
-      <FloorBar a={points[1]} b={points[3]} color={PALETTE.glyph} opacity={0.92} width={0.04} />
-      <FloorBar a={points[3]} b={points[5]} color={PALETTE.glyph} opacity={0.92} width={0.04} />
-      <FloorBar a={points[5]} b={points[1]} color={PALETTE.glyph} opacity={0.92} width={0.04} />
+    <group position={[0, 0.018, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <UnicursalHexagramGlyph
+        radius={1.06}
+        color={PALETTE.glyph}
+        opacity={0.92}
+        lineWidth={2.8}
+        withRose
+      />
     </group>
   )
 }
