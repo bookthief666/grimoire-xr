@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { UnicursalHexagramGlyph } from './ThelemicSigils'
 import {
   TECH_LEVEL_OPTIONS,
   TONE_OPTIONS,
@@ -340,12 +341,12 @@ function TableHexagram({
 }) {
   const ringRef = useRef<THREE.MeshBasicMaterial>(null)
 
-  const points = useMemo<Vec2[]>(() => {
-    return Array.from({ length: 6 }, (_, i) => {
-      const angle = -Math.PI / 2 + (i * Math.PI) / 3
-      return [Math.cos(angle) * 0.62, Math.sin(angle) * 0.62]
-    })
-  }, [])
+  const glyphColor =
+    energy === 'working' ? '#ffffff' :
+    energy === 'manifest' ? '#ffcf7c' :
+    energy === 'oracle' ? '#b98cff' :
+    active ? '#ffcf7c' :
+    '#9a5a18'
 
   useFrame(({ clock }) => {
     if (!ringRef.current) return
@@ -373,13 +374,7 @@ function TableHexagram({
         <ringGeometry args={[0.68, 0.71, 72]} />
         <meshBasicMaterial
           ref={ringRef}
-          color={
-            energy === 'working' ? '#ffffff' :
-            energy === 'manifest' ? '#ffcf7c' :
-            energy === 'oracle' ? '#b98cff' :
-            active ? '#ffcf7c' :
-            '#9a5a18'
-          }
+          color={glyphColor}
           transparent
           opacity={0.48}
           depthWrite={false}
@@ -388,12 +383,27 @@ function TableHexagram({
         />
       </mesh>
 
-      <TableBar a={points[0]} b={points[2]} color="#ffb000" />
-      <TableBar a={points[2]} b={points[4]} color="#ffb000" />
-      <TableBar a={points[4]} b={points[0]} color="#ffb000" />
-      <TableBar a={points[1]} b={points[3]} color="#ff5a1f" opacity={0.64} />
-      <TableBar a={points[3]} b={points[5]} color="#ff5a1f" opacity={0.64} />
-      <TableBar a={points[5]} b={points[1]} color="#ff5a1f" opacity={0.64} />
+      <mesh position={[0, TABLE_Y + 0.019, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <circleGeometry args={[0.24, 48]} />
+        <meshBasicMaterial
+          color={glyphColor}
+          transparent
+          opacity={active ? 0.09 : 0.04}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <group position={[0, TABLE_Y + 0.026, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <UnicursalHexagramGlyph
+          radius={0.62}
+          color={glyphColor}
+          opacity={active ? 0.94 : 0.52}
+          lineWidth={2.35}
+          withRose
+        />
+      </group>
     </group>
   )
 }

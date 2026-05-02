@@ -410,7 +410,7 @@ function FloatingSigils({
         { label: '93', symbol: '☽', color: '#ffcf7c' },
       ]
     : [
-        { label: 'THELEMA', symbol: '✶', color: '#ffcf7c' },
+        { label: 'THELEMA', symbol: '93', color: '#ffcf7c' },
         { label: 'AGAPE', symbol: '☽', color: '#ff5a1f' },
         { label: 'WILL', symbol: '⌬', color: '#ffcf7c' },
         { label: '93', symbol: '☉', color: '#d6a642' },
