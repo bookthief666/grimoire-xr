@@ -2,7 +2,7 @@ import { useMemo, useRef, type MutableRefObject } from 'react'
 import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { UnicursalHexagramGlyph } from './ThelemicSigils'
+import { BabalonStarGlyph } from './ThelemicSigils'
 
 type Props = {
   ritualImpulseRef: MutableRefObject<number>
@@ -148,7 +148,7 @@ function ThelemicStarGate({ ritualImpulseRef, loading = false, oracleLoading = f
       <HoloRing position={[0, 0, 0.035]} radius={0.62} tube={0.006} color="#f8f3df" opacity={0.16} />
 
       <group position={[0, 0, 0.07]}>
-        <UnicursalHexagramGlyph
+        <BabalonStarGlyph
           radius={1.08}
           color="#f8f3df"
           opacity={0.72}
@@ -158,7 +158,7 @@ function ThelemicStarGate({ ritualImpulseRef, loading = false, oracleLoading = f
       </group>
 
       <group position={[0, 0, 0.055]}>
-        <UnicursalHexagramGlyph
+        <BabalonStarGlyph
           radius={1.14}
           color="#d8e8ff"
           opacity={0.22}

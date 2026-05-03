@@ -28,7 +28,7 @@ import { TempleXenotheurgy } from './TempleXenotheurgy'
 import { TempleGrandArchitecture } from './TempleGrandArchitecture'
 import { InWorldRitualConsole } from './InWorldRitualConsole'
 import { RitualWorkbench } from './RitualWorkbench'
-import { UnicursalHexagramGlyph } from './ThelemicSigils'
+import { BabalonStarGlyph } from './ThelemicSigils'
 import type { ArtStyleFamily } from '../constants/artStyles'
 
 function isUsableGeneratedCardImageUrl(value: string | undefined): value is string {
@@ -129,7 +129,7 @@ function FloorBar({
 function HexagramSeal() {
   return (
     <group position={[0, 0.018, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      <UnicursalHexagramGlyph
+      <BabalonStarGlyph
         radius={1.06}
         color={PALETTE.glyph}
         opacity={0.92}
