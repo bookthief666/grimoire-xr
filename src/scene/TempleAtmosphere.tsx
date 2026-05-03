@@ -318,7 +318,7 @@ function DistantAATrace({
         anchorX="center"
         anchorY="middle"
         fontSize={0.06}
-        color="#b8860b"
+        color="#d8e8ff"
         fillOpacity={0.22}
         maxWidth={1.8}
       >
@@ -514,7 +514,7 @@ function ReactiveLights({
       <pointLight
         ref={rearLightRef}
         position={[0, 4.6, -14.0]}
-        color="#ff5a1f"
+        color="#b98cff"
         intensity={1.8}
         distance={14}
       />
