@@ -2,6 +2,7 @@ import { useMemo, useRef, type MutableRefObject } from 'react'
 import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { UnicursalHexagramGlyph } from './ThelemicSigils'
 
 type Props = {
   ritualImpulseRef: MutableRefObject<number>
@@ -360,65 +361,56 @@ function HolographicThelemicAxis({
     }
   })
 
-  const unicursal = useMemo<Vec2[]>(
-    () => [
-      [0, 1.25],
-      [0.64, -0.12],
-      [-0.98, 0.5],
-      [0.98, 0.5],
-      [-0.64, -0.12],
-      [0, 1.25],
-      [0.0, -1.05],
-      [0.64, -0.12],
-      [-0.64, -0.12],
-      [0.0, -1.05],
-    ],
-    [],
-  )
-
   return (
     <group ref={rootRef} position={[0, 3.42, -23.8]} scale={3.1} raycast={noRaycast}>
       <mesh position={[0, 0, -0.04]} raycast={noRaycast}>
         <planeGeometry args={[3.25, 3.8]} />
         <meshBasicMaterial
-          color="#040202"
+          color="#020306"
           transparent
-          opacity={0.05}
+          opacity={0.06}
           depthWrite={false}
           side={THREE.DoubleSide}
         />
       </mesh>
 
-      <Ring position={[0, 0, 0]} rotation={[0, 0, 0]} radius={1.42} tube={0.006} color="#b8860b" opacity={active ? 0.18 : 0.09} />
-      <Ring position={[0, 0, 0.01]} rotation={[0, 0, Math.PI / 6]} radius={0.92} tube={0.004} color="#ffffff" opacity={active ? 0.12 : 0.055} />
+      <Ring
+        position={[0, 0, 0]}
+        rotation={[0, 0, 0]}
+        radius={1.42}
+        tube={0.006}
+        color="#d8e8ff"
+        opacity={active ? 0.18 : 0.09}
+      />
 
-      {unicursal.slice(0, -1).map((point, index) => {
-        const next = unicursal[index + 1]
-        const dx = next[0] - point[0]
-        const dy = next[1] - point[1]
-        const length = Math.hypot(dx, dy)
-        const angle = Math.atan2(dy, dx)
-        return (
-          <mesh
-            key={index}
-            position={[(point[0] + next[0]) / 2, (point[1] + next[1]) / 2, 0.04]}
-            rotation={[0, 0, angle]}
-            raycast={noRaycast}
-          >
-            <planeGeometry args={[length, 0.014]} />
-            <meshBasicMaterial
-              color={index % 2 === 0 ? '#ffcf7c' : '#ff3d1f'}
-              transparent
-              opacity={active ? 0.18 : 0.09}
-              depthWrite={false}
-              blending={THREE.AdditiveBlending}
-              side={THREE.DoubleSide}
-            />
-          </mesh>
-        )
-      })}
+      <Ring
+        position={[0, 0, 0.01]}
+        rotation={[0, 0, Math.PI / 6]}
+        radius={0.92}
+        tube={0.004}
+        color="#ffffff"
+        opacity={active ? 0.14 : 0.065}
+      />
 
-      <Text visible={false} position={[0, -1.72, 0.08]} fontSize={0.08} color="#b8860b" anchorX="center" anchorY="middle" raycast={noRaycast}>
+      <group position={[0, 0, 0.05]}>
+        <UnicursalHexagramGlyph
+          radius={1.08}
+          color="#f8f3df"
+          opacity={active ? 0.3 : 0.16}
+          lineWidth={2.15}
+          withRose
+        />
+      </group>
+
+      <Text
+        visible={false}
+        position={[0, -1.72, 0.08]}
+        fontSize={0.08}
+        color="#d8e8ff"
+        anchorX="center"
+        anchorY="middle"
+        raycast={noRaycast}
+      >
         93 // ABRAHADABRA // 418
       </Text>
     </group>
