@@ -77,8 +77,8 @@ function Beam({
 function FloorLine({
   a,
   b,
-  color = '#b8860b',
-  opacity = 0.32,
+  color = '#d8e8ff',
+  opacity = 0.26,
   width = 0.018,
 }: {
   a: Vec2
@@ -132,8 +132,8 @@ function DaliesqueVoidFloor() {
       <mesh position={[0, -0.032, -14]} rotation={[-Math.PI / 2, 0, 0]} raycast={noRaycast} receiveShadow>
         <planeGeometry args={[500, 500]} />
         <meshStandardMaterial
-          color="#020101"
-          emissive="#080202"
+          color="#010102"
+          emissive="#03070b"
           emissiveIntensity={0.06}
           roughness={0.18}
           metalness={0.62}
@@ -145,8 +145,8 @@ function DaliesqueVoidFloor() {
           key={`${a.join(':')}-${b.join(':')}`}
           a={a}
           b={b}
-          color={index < 6 ? '#b8860b' : '#ff5a1f'}
-          opacity={index < 6 ? 0.22 : 0.1}
+          color={index < 6 ? '#d8e8ff' : '#f8f3df'}
+          opacity={index < 6 ? 0.18 : 0.075}
           width={index < 6 ? 0.018 : 0.012}
         />
       ))}
@@ -167,9 +167,9 @@ function TwistedPillar({
   const coreRef = useRef<THREE.MeshBasicMaterial>(null)
   const ringRefs = useRef<(THREE.MeshBasicMaterial | null)[]>([])
   const x = side === 'photon' ? -4.8 : 4.8
-  const baseColor = side === 'photon' ? '#fff4cc' : '#08030d'
-  const seamColor = side === 'photon' ? '#ffd18a' : '#6b1a8d'
-  const rimColor = side === 'photon' ? '#ffffff' : '#ff5a1f'
+  const baseColor = side === 'photon' ? '#f8f3df' : '#03040a'
+  const seamColor = side === 'photon' ? '#d8e8ff' : '#4258ff'
+  const rimColor = side === 'photon' ? '#ffffff' : '#b98cff'
 
   useFrame(({ clock }, delta) => {
     const t = clock.getElapsedTime()
@@ -198,8 +198,8 @@ function TwistedPillar({
         <cylinderGeometry args={[0.42, 0.72, 8.8, 10, 1, false]} />
         <meshStandardMaterial
           color={baseColor}
-          emissive={side === 'photon' ? '#5f3200' : '#020006'}
-          emissiveIntensity={side === 'photon' ? 0.42 : 0.16}
+          emissive={side === 'photon' ? '#d8e8ff' : '#020014'}
+          emissiveIntensity={side === 'photon' ? 0.32 : 0.2}
           roughness={side === 'photon' ? 0.22 : 0.34}
           metalness={side === 'photon' ? 0.72 : 0.86}
           transparent
@@ -211,7 +211,7 @@ function TwistedPillar({
         <cylinderGeometry args={[0.18, 0.28, 9.8, 8, 1, false]} />
         <meshBasicMaterial
           ref={coreRef}
-          color={side === 'photon' ? '#ffffff' : '#180024'}
+          color={side === 'photon' ? '#ffffff' : '#07001a'}
           transparent
           opacity={side === 'photon' ? 0.22 : 0.58}
           depthWrite={false}
@@ -255,7 +255,7 @@ function TwistedPillar({
           position={[side === 'photon' ? -0.76 : 0.76, 3.3 - index * 1.12, 0.18]}
           rotation={[0, side === 'photon' ? 0.18 : -0.18, 0]}
           fontSize={0.16}
-          color={side === 'photon' ? '#fff4cc' : '#ff7a3d'}
+          color={side === 'photon' ? '#f8f3df' : '#b98cff'}
           anchorX="center"
           anchorY="middle"
           fillOpacity={side === 'photon' ? 0.42 : 0.32}
@@ -319,7 +319,7 @@ function FloatingObeliskField({ ritualImpulseRef }: Props) {
             {index % 3 === 0 ? <octahedronGeometry args={[1, 0]} /> : <boxGeometry args={[1, 1, 1]} />}
             <meshStandardMaterial
               color={stone.c}
-              emissive="#140501"
+              emissive="#03070b"
               emissiveIntensity={0.16}
               roughness={0.24}
               metalness={0.78}
@@ -328,7 +328,7 @@ function FloatingObeliskField({ ritualImpulseRef }: Props) {
           <mesh position={[0, 0.51, 0.01]} raycast={noRaycast}>
             <boxGeometry args={[0.045, 1.04, 0.045]} />
             <meshBasicMaterial
-              color={index % 2 === 0 ? '#ff5a1f' : '#b8860b'}
+              color={index % 2 === 0 ? '#d8e8ff' : '#f8f3df'}
               transparent
               opacity={0.38}
               depthWrite={false}
@@ -443,14 +443,14 @@ function HardLightAstrolabe({
 
   return (
     <group ref={rootRef} position={[0, 6.4, -5.4]} scale={2.75} raycast={noRaycast}>
-      <Ring position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]} radius={0.92} tube={0.01} color="#ffcf7c" opacity={0.28} />
+      <Ring position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]} radius={0.92} tube={0.01} color="#f8f3df" opacity={0.24} />
       <Ring position={[0, 0, 0]} rotation={[0.95, 0, 0.45]} radius={0.7} tube={0.008} color="#ffffff" opacity={0.16} />
-      <Ring position={[0, 0, 0]} rotation={[0, Math.PI / 2, -0.22]} radius={0.55} tube={0.006} color="#ff5a1f" opacity={0.14} />
+      <Ring position={[0, 0, 0]} rotation={[0, Math.PI / 2, -0.22]} radius={0.55} tube={0.006} color="#b98cff" opacity={0.12} />
       <mesh raycast={noRaycast}>
         <sphereGeometry args={[0.095, 16, 10]} />
         <meshBasicMaterial
           ref={coreRef}
-          color={oracleBoost ? '#ffd18a' : '#ffffff'}
+          color={oracleBoost ? '#f8f3df' : '#d8e8ff'}
           transparent
           opacity={0.22}
           depthWrite={false}
@@ -469,8 +469,8 @@ function ChamberRaySystem({
   hasOracleReading = false,
 }: Props) {
   const active = loading || oracleLoading || hasDeck || hasActiveCard || hasOracleReading
-  const oracleColor = oracleLoading || hasOracleReading ? '#ffcf7c' : '#b8860b'
-  const forgeColor = loading ? '#ffffff' : '#ff6a00'
+  const oracleColor = oracleLoading || hasOracleReading ? '#f8f3df' : '#d8e8ff'
+  const forgeColor = loading ? '#ffffff' : '#d8e8ff'
 
   return (
     <group raycast={noRaycast}>
