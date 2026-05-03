@@ -188,7 +188,7 @@ function ImagePipelineStatus({
       <mesh position={[0, 0, -0.002]}>
         <planeGeometry args={[1.66, 0.96]} />
         <meshBasicMaterial
-          color="#ff9a00"
+          color="#d8e8ff"
           transparent
           opacity={0.07}
           depthWrite={false}
@@ -440,9 +440,9 @@ function TableHexagram({
 
   const glyphColor =
     energy === 'working' ? '#ffffff' :
-    energy === 'manifest' ? '#ffcf7c' :
+    energy === 'manifest' ? '#f8f3df' :
     energy === 'oracle' ? '#b98cff' :
-    active ? '#ffcf7c' :
+    active ? '#f8f3df' :
     '#9a5a18'
 
   useFrame(({ clock }) => {
@@ -528,7 +528,7 @@ function AltarAstrolabeRings({
           ? '#9a35ff'
           : erosField === 'Charged'
             ? '#ff3d5a'
-            : '#d6a642'
+            : '#d8e8ff'
 
   const energyBoost =
     energy === 'working' ? 1.85 :
@@ -559,7 +559,7 @@ function AltarAstrolabeRings({
         <ringGeometry args={[0.9, 0.905, 96]} />
         <meshBasicMaterial
           ref={outerRef}
-          color="#d6a642"
+          color="#d8e8ff"
           transparent
           opacity={0.16}
           depthWrite={false}
@@ -585,7 +585,7 @@ function AltarAstrolabeRings({
         <ringGeometry args={[0.26, 0.268, 64]} />
         <meshBasicMaterial
           ref={innerRef}
-          color="#ffcf7c"
+          color="#f8f3df"
           transparent
           opacity={0.26}
           depthWrite={false}
@@ -604,7 +604,7 @@ function AltarAstrolabeRings({
             key={i}
             a={[Math.cos(angle) * r1, Math.sin(angle) * r1]}
             b={[Math.cos(angle) * r2, Math.sin(angle) * r2]}
-            color={i % 3 === 0 ? erosAccent : '#b8860b'}
+            color={i % 3 === 0 ? erosAccent : '#60748a'}
             opacity={active ? 0.38 : 0.2}
             width={i % 3 === 0 ? 0.014 : 0.008}
           />
@@ -794,7 +794,7 @@ function FloatingDial({
       <mesh position={[0.18, -0.061, 0.038]}>
         <planeGeometry args={[1.56, 0.003]} />
         <meshBasicMaterial
-          color="#b8860b"
+          color="#60748a"
           transparent
           opacity={0.14}
           depthWrite={false}
@@ -865,7 +865,7 @@ function FloatingDial({
       <mesh position={[0.18, 0, 0.052]}>
         <planeGeometry args={[0.67, 0.056]} />
         <meshBasicMaterial
-          color="#ff6a00"
+          color="#d8e8ff"
           transparent
           opacity={0.055}
           depthWrite={false}
@@ -931,7 +931,7 @@ function ForgeGlyph({
       <Text
         position={[0, 0, 0]}
         fontSize={0.09}
-        color="#ff6a00"
+        color="#d8e8ff"
         anchorX="center"
         anchorY="middle"
         fillOpacity={0.18}
@@ -1032,7 +1032,7 @@ function ForgeConfigReadout({
       <mesh position={[0, 0.61, 0.04]}>
         <planeGeometry args={[1.42, 0.012]} />
         <meshBasicMaterial
-          color="#ff9a00"
+          color="#d8e8ff"
           transparent
           opacity={0.38}
           depthWrite={false}
@@ -1044,7 +1044,7 @@ function ForgeConfigReadout({
       <mesh position={[0, -0.63, 0.04]}>
         <planeGeometry args={[1.42, 0.01]} />
         <meshBasicMaterial
-          color="#b8860b"
+          color="#60748a"
           transparent
           opacity={0.22}
           depthWrite={false}
@@ -1085,7 +1085,7 @@ function ForgeConfigReadout({
       <Text
         position={[0, 0.40, 0.07]}
         fontSize={0.026}
-        color={canForge ? '#ffcf7c' : '#9a6558'}
+        color={canForge ? '#f8f3df' : '#7a8793'}
         anchorX="center"
         anchorY="middle"
         maxWidth={1.22}
@@ -1206,7 +1206,7 @@ function FloatingForgeMenu({
       <mesh position={[0, 0, 0.012]}>
         <planeGeometry args={[2.06, 1.92]} />
         <meshBasicMaterial
-          color="#ff9a00"
+          color="#d8e8ff"
           transparent
           opacity={0.075}
           depthWrite={false}
@@ -1226,7 +1226,7 @@ function FloatingForgeMenu({
             <mesh position={[sx * armLen * 0.5, 0, 0]}>
               <planeGeometry args={[armLen, armW]} />
               <meshBasicMaterial
-                color="#ff9a00"
+                color="#d8e8ff"
                 transparent
                 opacity={0.52}
                 depthWrite={false}
@@ -1237,7 +1237,7 @@ function FloatingForgeMenu({
             <mesh position={[0, sy * armLen * 0.5, 0]}>
               <planeGeometry args={[armW, armLen]} />
               <meshBasicMaterial
-                color="#ff9a00"
+                color="#d8e8ff"
                 transparent
                 opacity={0.52}
                 depthWrite={false}
@@ -1274,7 +1274,7 @@ function FloatingForgeMenu({
       <mesh position={[0, 0.615, 0.065]}>
         <planeGeometry args={[1.62, 0.012]} />
         <meshBasicMaterial
-          color="#ff9a00"
+          color="#d8e8ff"
           transparent
           opacity={0.38}
           depthWrite={false}
@@ -1481,8 +1481,8 @@ function SpreadMandala({
 
       <TableBar a={[-0.82, -0.44]} b={[0.82, -0.44]} color="#8a35ff" opacity={0.22} width={0.01} />
       <TableBar a={[-0.82, 0.44]} b={[0.82, 0.44]} color="#8a35ff" opacity={0.22} width={0.01} />
-      <TableBar a={[-0.82, -0.44]} b={[0, 0.62]} color="#ffcf7c" opacity={0.26} width={0.012} />
-      <TableBar a={[0.82, -0.44]} b={[0, 0.62]} color="#ffcf7c" opacity={0.26} width={0.012} />
+      <TableBar a={[-0.82, -0.44]} b={[0, 0.62]} color="#d8e8ff" opacity={0.16} width={0.01} />
+      <TableBar a={[0.82, -0.44]} b={[0, 0.62]} color="#d8e8ff" opacity={0.16} width={0.01} />
       <TableBar a={[0, -0.72]} b={[0, 0.68]} color="#ff3d5a" opacity={0.2} width={0.01} yOffset={0.026} />
 
       {[
@@ -1584,7 +1584,7 @@ function SpreadSlot({
         <ringGeometry args={[0.155, 0.166, 32]} />
         <meshBasicMaterial
           ref={rimRef}
-          color={active ? '#ffcf7c' : '#8a4b18'}
+          color={active ? '#f8f3df' : '#52677b'}
           transparent
           opacity={0.36}
           depthWrite={false}
@@ -1903,7 +1903,7 @@ function WorkbenchCard({
         <planeGeometry args={[0.46, 0.68]} />
         <meshBasicMaterial
           ref={cardGlowMaterialRef}
-          color={selected ? '#ffcf7c' : '#8a35ff'}
+          color={selected ? '#f8f3df' : '#4258ff'}
           transparent
           opacity={cardGlowOpacity}
           depthWrite={false}
@@ -1915,8 +1915,8 @@ function WorkbenchCard({
       <mesh>
         <boxGeometry args={[0.34, 0.54, 0.025]} />
         <meshStandardMaterial
-          color={selected ? '#2a1208' : '#160909'}
-          emissive={selected ? '#6a2a08' : hovered ? '#3a1608' : '#210c06'}
+          color={selected ? '#101820' : '#090b10'}
+          emissive={selected ? '#d8e8ff' : hovered ? '#101820' : '#070b10'}
           emissiveIntensity={selected ? 0.82 : hovered ? 0.52 : 0.36}
           roughness={0.45}
           metalness={0.35}
@@ -1925,7 +1925,7 @@ function WorkbenchCard({
 
       <mesh position={[0, 0, 0.018]}>
         <planeGeometry args={[0.28, 0.45]} />
-        <meshBasicMaterial color={selected ? '#301408' : '#0b0605'} />
+        <meshBasicMaterial color={selected ? '#101820' : '#05070b'} />
       </mesh>
 
 
@@ -1935,7 +1935,7 @@ function WorkbenchCard({
         <ringGeometry args={[0.045, 0.062, 18]} />
         <meshBasicMaterial
           ref={sigilRingMaterialRef}
-          color={selected ? '#ffcf7c' : hovered ? '#d99b58' : '#9a5a18'}
+          color={selected ? '#f8f3df' : hovered ? '#d8e8ff' : '#60748a'}
           transparent
           opacity={selected ? 0.95 : hovered ? 0.72 : 0.48}
           depthWrite={false}
@@ -2039,7 +2039,7 @@ function DeckTray({
             key={i}
             a={[-1.2 + Math.cos(angle) * inner, -0.04 + Math.sin(angle) * inner]}
             b={[-1.2 + Math.cos(angle) * outer, -0.04 + Math.sin(angle) * outer]}
-            color={i % 3 === 0 ? '#ffcf7c' : '#8a35ff'}
+            color={i % 3 === 0 ? '#f8f3df' : '#4258ff'}
             opacity={active ? 0.38 : 0.14}
             width={i % 3 === 0 ? 0.012 : 0.007}
           />
@@ -2081,7 +2081,7 @@ function DeckTray({
         <mesh position={[-1.2, TABLE_Y + 0.15, -0.04]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[0.055, 0.078, 20]} />
           <meshBasicMaterial
-            color={active ? '#ffcf7c' : '#7b5536'}
+            color={active ? '#f8f3df' : '#60748a'}
             transparent
             opacity={active ? 0.86 : 0.34}
             depthWrite={false}
@@ -2340,7 +2340,7 @@ function FloatingArchiveMenu({
       <mesh position={[0, 0, 0.012]}>
         <planeGeometry args={[1.62, 1.15]} />
         <meshBasicMaterial
-          color={hasSavedRitual ? '#8a35ff' : '#b8860b'}
+          color={hasSavedRitual ? '#b98cff' : '#60748a'}
           transparent
           opacity={hasSavedRitual ? 0.12 : 0.075}
           depthWrite={false}
@@ -2671,12 +2671,12 @@ export function RitualWorkbench({
     forgeEnergy === 'working'
       ? '#ffffff'
       : forgeEnergy === 'manifest'
-        ? '#ffcf7c'
+        ? '#f8f3df'
         : forgeEnergy === 'oracle'
           ? '#b98cff'
           : forgeEnergy === 'tuning'
-            ? '#ff9a00'
-            : '#8f6742'
+            ? '#d8e8ff'
+            : '#60748a'
 
   const railOpacity =
     forgeEnergy === 'working'
@@ -2760,9 +2760,9 @@ export function RitualWorkbench({
       <mesh position={[0, TABLE_Y + 0.014, 0.878]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[3.22, 0.016]} />
         <meshBasicMaterial
-          color="#b8860b"
+          color={railColor}
           transparent
-          opacity={0.58}
+          opacity={0.28}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
@@ -2772,9 +2772,9 @@ export function RitualWorkbench({
       <mesh position={[0, TABLE_Y + 0.014, -0.878]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[3.22, 0.016]} />
         <meshBasicMaterial
-          color="#b8860b"
+          color={railColor}
           transparent
-          opacity={0.38}
+          opacity={0.18}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
@@ -2784,9 +2784,9 @@ export function RitualWorkbench({
       <mesh position={[1.6, TABLE_Y + 0.014, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[0.016, 1.76]} />
         <meshBasicMaterial
-          color="#b8860b"
+          color={railColor}
           transparent
-          opacity={0.44}
+          opacity={0.2}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
@@ -2796,9 +2796,9 @@ export function RitualWorkbench({
       <mesh position={[-1.6, TABLE_Y + 0.014, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[0.016, 1.76]} />
         <meshBasicMaterial
-          color="#b8860b"
+          color={railColor}
           transparent
-          opacity={0.44}
+          opacity={0.2}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
@@ -2960,7 +2960,7 @@ export function RitualWorkbench({
         position={[0, TABLE_Y + 0.052, 0.54]}
         rotation={[-Math.PI / 2, 0, 0]}
         fontSize={0.04}
-        color={loading || oracleLoading ? '#ffcf7c' : '#9a6b48'}
+        color={loading || oracleLoading ? '#f8f3df' : '#60748a'}
         anchorX="center"
         anchorY="middle"
         maxWidth={1.7}
