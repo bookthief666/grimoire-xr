@@ -2,7 +2,7 @@ import { useMemo, useRef, type MutableRefObject } from 'react'
 import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { UnicursalHexagramGlyph } from './ThelemicSigils'
+import { BabalonStarGlyph } from './ThelemicSigils'
 
 type TempleAtmosphereProps = {
   ritualImpulseRef: MutableRefObject<number>
@@ -198,7 +198,7 @@ function HolographicFloorAura({
       </mesh>
 
       <group ref={crownRef} position={[0, 0.04, -1.0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <UnicursalHexagramGlyph
+        <BabalonStarGlyph
           radius={2.05}
           color="#f8f3df"
           opacity={0.34}
@@ -206,7 +206,7 @@ function HolographicFloorAura({
           withRose
         />
 
-        <UnicursalHexagramGlyph
+        <BabalonStarGlyph
           radius={2.12}
           color="#d8e8ff"
           opacity={0.11}
