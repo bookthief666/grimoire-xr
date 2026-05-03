@@ -2,6 +2,7 @@ import { useMemo, useRef, type MutableRefObject } from 'react'
 import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { UnicursalHexagramGlyph } from './ThelemicSigils'
 
 type Props = {
   ritualImpulseRef: MutableRefObject<number>
@@ -116,16 +117,6 @@ function ThelemicStarGate({ ritualImpulseRef, loading = false, oracleLoading = f
     }
   })
 
-  const hex = useMemo(() => {
-    return Array.from({ length: 6 }, (_, i) => {
-      const angle = -Math.PI / 2 + (i * Math.PI) / 3
-      return [
-        Math.cos(angle) * 1.05,
-        Math.sin(angle) * 1.05,
-        0,
-      ] as [number, number, number]
-    })
-  }, [])
 
   return (
     <group ref={groupRef} position={[0, 5.0, -12.0]} raycast={noRaycast}>
@@ -153,29 +144,28 @@ function ThelemicStarGate({ ritualImpulseRef, loading = false, oracleLoading = f
         />
       </mesh>
 
-      <HoloRing position={[0, 0, 0.02]} radius={1.25} tube={0.012} color="#d8e8ff" opacity={0.28} />
-      <HoloRing position={[0, 0, 0.035]} radius={0.88} tube={0.008} color="#4258ff" opacity={0.13} />
-      <HoloRing position={[0, 0, 0.05]} radius={0.48} tube={0.007} color="#f8f3df" opacity={0.24} />
+      <HoloRing position={[0, 0, 0.02]} radius={1.28} tube={0.008} color="#d8e8ff" opacity={0.18} />
+      <HoloRing position={[0, 0, 0.035]} radius={0.62} tube={0.006} color="#f8f3df" opacity={0.16} />
 
-      <HoloBar a={hex[0]} b={hex[2]} color="#d8e8ff" opacity={0.32} width={0.016} />
-      <HoloBar a={hex[2]} b={hex[4]} color="#d8e8ff" opacity={0.32} width={0.016} />
-      <HoloBar a={hex[4]} b={hex[0]} color="#d8e8ff" opacity={0.32} width={0.016} />
-      <HoloBar a={hex[1]} b={hex[3]} color="#ff3d5a" opacity={0.48} width={0.02} />
-      <HoloBar a={hex[3]} b={hex[5]} color="#ff3d5a" opacity={0.48} width={0.02} />
-      <HoloBar a={hex[5]} b={hex[1]} color="#ff3d5a" opacity={0.48} width={0.02} />
+      <group position={[0, 0, 0.07]}>
+        <UnicursalHexagramGlyph
+          radius={1.08}
+          color="#f8f3df"
+          opacity={0.72}
+          lineWidth={2.7}
+          withRose
+        />
+      </group>
 
-      {hex.map((p, i) => (
-        <mesh key={i} position={[p[0], p[1], 0.07]} raycast={noRaycast}>
-          <sphereGeometry args={[0.045, 12, 8]} />
-          <meshBasicMaterial
-            color={i % 2 === 0 ? '#ffd18a' : '#9a6bff'}
-            transparent
-            opacity={0.78}
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-          />
-        </mesh>
-      ))}
+      <group position={[0, 0, 0.055]}>
+        <UnicursalHexagramGlyph
+          radius={1.14}
+          color="#d8e8ff"
+          opacity={0.22}
+          lineWidth={5.2}
+          withRose={false}
+        />
+      </group>
 
       <Text visible={false}
         position={[0, 1.43, 0.1]}
