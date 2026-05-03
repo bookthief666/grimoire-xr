@@ -15,21 +15,24 @@ type UnicursalHexagramGlyphProps = {
 /**
  * Continuous-line Thelemic unicursal hexagram glyph.
  *
- * This is the recognizable Thelemic unicursal hexagram form: a single
- * self-crossing path, not a pentagram and not the ordinary two-triangle
- * hexagram.
- *
- * Path order:
- * top -> lower-left -> upper-right -> upper-left -> lower-right -> bottom -> top
- *
+ * This path is shaped after the standard Thelemic unicursal hexagram
+ * silhouette: top apex, side triangular wings, central crossing, lower
+ * diamond, and bottom apex. It is not the ordinary two-triangle hexagram
+ * and not a pentagram.
  */
 const UNICURSAL_POINTS: Vec3[] = [
   [0, 1.0, 0],
-  [-0.78, -0.46, 0],
-  [0.94, 0.30, 0],
-  [-0.94, 0.30, 0],
-  [0.78, -0.46, 0],
+  [0.34, 0.18, 0],
+  [0.94, 0.42, 0],
+  [0.53, -0.09, 0],
+  [0.78, -0.58, 0],
+  [0.16, -0.23, 0],
   [0, -1.0, 0],
+  [-0.16, -0.23, 0],
+  [-0.78, -0.58, 0],
+  [-0.53, -0.09, 0],
+  [-0.94, 0.42, 0],
+  [-0.34, 0.18, 0],
   [0, 1.0, 0],
 ]
 
