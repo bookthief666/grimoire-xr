@@ -199,18 +199,19 @@ function HolographicFloorAura({
 
       <group ref={crownRef} position={[0, 0.04, -1.0]} rotation={[-Math.PI / 2, 0, 0]}>
         <BabalonStarGlyph
-          radius={2.05}
+          radius={1.78}
           color="#f8f3df"
-          opacity={0.34}
-          lineWidth={2.6}
+          opacity={0.24}
+          lineWidth={1.8}
           withRose
         />
 
         <BabalonStarGlyph
-          radius={2.12}
+          radius={1.86}
           color="#d8e8ff"
-          opacity={0.11}
-          lineWidth={5.4}
+          opacity={0.065}
+          lineWidth={3.0}
+          withCircle={false}
           withRose={false}
         />
       </group>
