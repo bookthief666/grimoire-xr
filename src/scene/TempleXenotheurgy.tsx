@@ -153,13 +153,13 @@ function ThelemicStarGate({ ritualImpulseRef, loading = false, oracleLoading = f
         />
       </mesh>
 
-      <HoloRing position={[0, 0, 0.02]} radius={1.25} tube={0.018} color="#b8860b" opacity={0.62} />
-      <HoloRing position={[0, 0, 0.035]} radius={0.88} tube={0.012} color="#8a35ff" opacity={0.42} />
-      <HoloRing position={[0, 0, 0.05]} radius={0.48} tube={0.01} color="#ffcf7c" opacity={0.58} />
+      <HoloRing position={[0, 0, 0.02]} radius={1.25} tube={0.012} color="#d8e8ff" opacity={0.28} />
+      <HoloRing position={[0, 0, 0.035]} radius={0.88} tube={0.008} color="#4258ff" opacity={0.13} />
+      <HoloRing position={[0, 0, 0.05]} radius={0.48} tube={0.007} color="#f8f3df" opacity={0.24} />
 
-      <HoloBar a={hex[0]} b={hex[2]} color="#ffcf7c" opacity={0.62} width={0.025} />
-      <HoloBar a={hex[2]} b={hex[4]} color="#ffcf7c" opacity={0.62} width={0.025} />
-      <HoloBar a={hex[4]} b={hex[0]} color="#ffcf7c" opacity={0.62} width={0.025} />
+      <HoloBar a={hex[0]} b={hex[2]} color="#d8e8ff" opacity={0.32} width={0.016} />
+      <HoloBar a={hex[2]} b={hex[4]} color="#d8e8ff" opacity={0.32} width={0.016} />
+      <HoloBar a={hex[4]} b={hex[0]} color="#d8e8ff" opacity={0.32} width={0.016} />
       <HoloBar a={hex[1]} b={hex[3]} color="#ff3d5a" opacity={0.48} width={0.02} />
       <HoloBar a={hex[3]} b={hex[5]} color="#ff3d5a" opacity={0.48} width={0.02} />
       <HoloBar a={hex[5]} b={hex[1]} color="#ff3d5a" opacity={0.48} width={0.02} />
@@ -245,13 +245,13 @@ function FloatingOrrery({ ritualImpulseRef, loading = false, oracleLoading = fal
   return (
     <group position={[0, 6.0, -1.0]} scale={1.5} raycast={noRaycast}>
       <group ref={root}>
-        <HoloRing position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]} radius={0.86} tube={0.012} color="#b8860b" opacity={0.52} />
-        <HoloRing position={[0, 0, 0]} rotation={[0.75, 0, 0]} radius={0.66} tube={0.01} color="#8a35ff" opacity={0.38} />
-        <HoloRing position={[0, 0, 0]} rotation={[0, Math.PI / 2, 0]} radius={0.5} tube={0.008} color="#ff3d5a" opacity={0.28} />
+        <HoloRing position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]} radius={0.86} tube={0.008} color="#d8e8ff" opacity={0.22} />
+        <HoloRing position={[0, 0, 0]} rotation={[0.75, 0, 0]} radius={0.66} tube={0.007} color="#4258ff" opacity={0.12} />
+        <HoloRing position={[0, 0, 0]} rotation={[0, Math.PI / 2, 0]} radius={0.5} tube={0.006} color="#b98cff" opacity={0.10} />
       </group>
 
       <group ref={inner}>
-        <HoloRing position={[0, 0, 0]} rotation={[0, 0, Math.PI / 2]} radius={0.32} tube={0.008} color="#ffcf7c" opacity={0.54} />
+        <HoloRing position={[0, 0, 0]} rotation={[0, 0, Math.PI / 2]} radius={0.32} tube={0.006} color="#f8f3df" opacity={0.22} />
       </group>
 
       <mesh raycast={noRaycast}>
@@ -270,7 +270,7 @@ function FloatingOrrery({ ritualImpulseRef, loading = false, oracleLoading = fal
         ['☉', 1.02, '#ffd18a'],
         ['☽', 0.82, '#d9b5ff'],
         ['♀', 0.62, '#ff5d8f'],
-        ['☿', 0.47, '#b8860b'],
+        ['☿', 0.47, '#d8e8ff'],
       ].map(([glyph, r, color], i) => {
         const a = (i / 4) * Math.PI * 2
         return (
@@ -310,7 +310,7 @@ function QabalisticCircuitWall() {
           key={i}
           a={[nodes[a][0], nodes[a][1], 0.05]}
           b={[nodes[b][0], nodes[b][1], 0.05]}
-          color={i % 3 === 0 ? '#9a6bff' : '#b8860b'}
+          color={i % 3 === 0 ? '#4258ff' : '#d8e8ff'}
           opacity={0.34}
           width={0.012}
         />
