@@ -604,17 +604,17 @@ function TempleFloor() {
 
       <mesh position={[0, 0.004, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[2.45, 2.62, 48]} />
-        <meshBasicMaterial color={PALETTE.floorOuter} />
+        <meshBasicMaterial color="#d8e8ff" transparent opacity={0.18} />
       </mesh>
 
       <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[1.98, 2.03, 48]} />
-        <meshBasicMaterial color={PALETTE.floorMid} />
+        <meshBasicMaterial color="#4258ff" transparent opacity={0.08} />
       </mesh>
 
       <mesh position={[0, 0.006, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[1.28, 1.32, 48]} />
-        <meshBasicMaterial color={PALETTE.floorInner} />
+        <meshBasicMaterial color="#f8f3df" transparent opacity={0.16} />
       </mesh>
 
       <HexagramSeal />
