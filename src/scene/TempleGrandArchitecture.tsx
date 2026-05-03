@@ -486,7 +486,7 @@ function ChamberRaySystem({
         position={[-1.24, 1.08, -1.3]}
         rotation={[0, 0, -0.3]}
         size={[0.12, 2.2]}
-        color="#ff5a1f"
+        color="#4258ff"
         opacity={active ? 0.026 : 0.008}
       />
 
@@ -494,7 +494,7 @@ function ChamberRaySystem({
         position={[1.24, 1.08, -1.3]}
         rotation={[0, 0, 0.3]}
         size={[0.12, 2.2]}
-        color="#b8860b"
+        color="#d8e8ff"
         opacity={active ? 0.024 : 0.008}
       />
 

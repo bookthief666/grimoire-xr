@@ -180,7 +180,7 @@ function ThelemicStarGate({ ritualImpulseRef, loading = false, oracleLoading = f
       <Text visible={false}
         position={[0, 1.43, 0.1]}
         fontSize={0.105}
-        color="#ffd18a"
+        color="#f8f3df"
         anchorX="center"
         anchorY="middle"
         maxWidth={2.4}
@@ -346,22 +346,22 @@ function XenoObelisk({
     <group position={[x, 0, z]} raycast={noRaycast}>
       <mesh position={[0, height / 2, 0]} raycast={noRaycast}>
         <cylinderGeometry args={[0.075, 0.18, height, 5]} />
-        <meshLambertMaterial color="#070204" flatShading />
+        <meshLambertMaterial color="#020306" emissive="#03070b" flatShading />
       </mesh>
 
       <mesh position={[0, height + 0.12, 0]} raycast={noRaycast}>
         <coneGeometry args={[0.18, 0.35, 5]} />
         <meshBasicMaterial
-          color="#8a35ff"
+          color="#d8e8ff"
           transparent
-          opacity={0.62}
+          opacity={0.34}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
       </mesh>
 
-      <HoloRing position={[0, 0.18, 0]} rotation={[-Math.PI / 2, 0, 0]} radius={0.34} tube={0.006} color="#b8860b" opacity={0.32} />
-      <HoloRing position={[0, height * 0.55, 0]} rotation={[Math.PI / 2, 0, 0]} radius={0.22} tube={0.005} color="#ff3d5a" opacity={0.24} />
+      <HoloRing position={[0, 0.18, 0]} rotation={[-Math.PI / 2, 0, 0]} radius={0.34} tube={0.006} color="#d8e8ff" opacity={0.18} />
+      <HoloRing position={[0, height * 0.55, 0]} rotation={[Math.PI / 2, 0, 0]} radius={0.22} tube={0.005} color="#4258ff" opacity={0.12} />
     </group>
   )
 }
@@ -423,9 +423,9 @@ function ProcessionCircuits() {
         >
           <planeGeometry args={[0.018, 3.25]} />
           <meshBasicMaterial
-            color={i % 2 === 0 ? '#b8860b' : '#8a35ff'}
+            color={i % 2 === 0 ? '#d8e8ff' : '#4258ff'}
             transparent
-            opacity={0.24}
+            opacity={0.14}
             depthWrite={false}
             blending={THREE.AdditiveBlending}
             side={THREE.DoubleSide}
@@ -704,7 +704,7 @@ function DeckConstellation({
                 <mesh raycast={noRaycast}>
                   <planeGeometry args={[0.075, 0.12]} />
                   <meshBasicMaterial
-                    color={loading ? '#ff3d5a' : hasDeck ? '#ffcf7c' : '#8a35ff'}
+                    color={loading ? '#ffffff' : hasDeck ? '#f8f3df' : '#d8e8ff'}
                     transparent
                     opacity={opacity}
                     depthWrite={false}
@@ -734,7 +734,7 @@ function DeckConstellation({
         rotation={[0, 0, 0]}
         radius={1.52}
         tube={0.008}
-        color={hasDeck ? '#ffd18a' : '#8a35ff'}
+        color={hasDeck ? '#f8f3df' : '#d8e8ff'}
         opacity={active ? 0.34 : 0.12}
       />
 
@@ -877,7 +877,7 @@ function HumanScaleTempleLife({
           <planeGeometry args={[1.12, 2.28]} />
           <meshBasicMaterial
             ref={veilRef}
-            color={oracleActive ? '#8a35ff' : '#3a0714'}
+            color={oracleActive ? '#d8e8ff' : '#05070b'}
             transparent
             opacity={0.12}
             depthWrite={false}
@@ -890,7 +890,7 @@ function HumanScaleTempleLife({
           <planeGeometry args={[1.55, 2.65]} />
           <meshBasicMaterial
             ref={auraRef}
-            color={oracleActive ? '#d9b5ff' : '#8a1034'}
+            color={oracleActive ? '#f8f3df' : '#071018'}
             transparent
             opacity={0.08}
             depthWrite={false}
@@ -904,7 +904,7 @@ function HumanScaleTempleLife({
           rotation={[0, 0, 0]}
           radius={0.52}
           tube={0.007}
-          color={oracleActive ? '#d9b5ff' : '#b8860b'}
+          color={oracleActive ? '#f8f3df' : '#d8e8ff'}
           opacity={oracleActive ? 0.42 : 0.18}
         />
 
@@ -913,7 +913,7 @@ function HumanScaleTempleLife({
           rotation={[0, 0, Math.PI / 2]}
           radius={0.34}
           tube={0.006}
-          color={hasActiveCard ? '#ffcf7c' : '#8a35ff'}
+          color={hasActiveCard ? '#f8f3df' : '#4258ff'}
           opacity={active ? 0.34 : 0.13}
         />
 

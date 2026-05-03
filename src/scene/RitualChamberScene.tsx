@@ -196,7 +196,7 @@ function Pillar({ x, z = -3.55 }: { x: number; z?: number }) {
 
       <mesh position={[0, 2.62, 0]}>
         <torusGeometry args={[0.23, 0.025, 10, 28]} />
-        <meshBasicMaterial color={PALETTE.ember} />
+        <meshBasicMaterial color="#d8e8ff" transparent opacity={0.82} />
       </mesh>
 
       <mesh position={[0, 1.82, 0.19]}>
@@ -433,17 +433,17 @@ function RearShrine({
 
       <mesh position={[0, 2.25, 0.05]}>
         <torusGeometry args={[0.92, 0.07, 12, 36]} />
-        <meshBasicMaterial ref={outerRingRef} color={PALETTE.ember} />
+        <meshBasicMaterial ref={outerRingRef} color="#d8e8ff" />
       </mesh>
 
       <mesh position={[0, 2.25, 0.02]}>
         <circleGeometry args={[0.55, 24]} />
-        <meshBasicMaterial ref={innerDiskRef} color={PALETTE.bloodDim} />
+        <meshBasicMaterial ref={innerDiskRef} color="#05070b" transparent opacity={0.82} />
       </mesh>
 
       <mesh position={[0, 2.25, 0.08]}>
         <ringGeometry args={[0.2, 0.28, 24]} />
-        <meshBasicMaterial ref={centerRingRef} color={PALETTE.emberBright} />
+        <meshBasicMaterial ref={centerRingRef} color="#f8f3df" />
       </mesh>
 
       <mesh position={[0, 2.95, 0.06]}>
@@ -473,11 +473,11 @@ function CeilingCrown({
   const outerTorusRef = useRef<THREE.MeshBasicMaterial>(null)
   const innerRingRef = useRef<THREE.MeshBasicMaterial>(null)
 
-  const torusBase = useRef(new THREE.Color(PALETTE.bloodDim))
-  const torusPulse = useRef(new THREE.Color(PALETTE.emberBright))
+  const torusBase = useRef(new THREE.Color('#05070b'))
+  const torusPulse = useRef(new THREE.Color('#f8f3df'))
 
-  const ringBase = useRef(new THREE.Color(PALETTE.outlineDark))
-  const ringPulse = useRef(new THREE.Color(PALETTE.ember))
+  const ringBase = useRef(new THREE.Color('#18202b'))
+  const ringPulse = useRef(new THREE.Color('#d8e8ff'))
 
   const tempTorus = useRef(new THREE.Color())
   const tempRing = useRef(new THREE.Color())
@@ -520,7 +520,7 @@ function CeilingCrown({
         return (
           <mesh key={i} position={[x, 0, z]} rotation={[Math.PI, 0, 0]}>
             <coneGeometry args={[0.08, 0.24, 4]} />
-            <meshBasicMaterial color={PALETTE.ember} />
+            <meshBasicMaterial color="#d8e8ff" transparent opacity={0.72} />
           </mesh>
         )
       })}
