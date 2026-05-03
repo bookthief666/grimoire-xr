@@ -2,6 +2,7 @@ import { useMemo, useRef, type MutableRefObject } from 'react'
 import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { UnicursalHexagramGlyph } from './ThelemicSigils'
 
 type TempleAtmosphereProps = {
   ritualImpulseRef: MutableRefObject<number>
@@ -196,32 +197,22 @@ function HolographicFloorAura({
         />
       </mesh>
 
-      <group ref={crownRef} position={[0, 0.032, -1.0]}>
-        {Array.from({ length: 10 }, (_, index) => {
-          const angle = (index / 10) * Math.PI * 2
-          const radius = index % 2 === 0 ? 2.58 : 2.38
-          return (
-            <mesh
-              key={index}
-              position={[
-                Math.cos(angle) * radius,
-                0,
-                Math.sin(angle) * radius,
-              ]}
-              rotation={[-Math.PI / 2, 0, angle]}
-            >
-              <planeGeometry args={[0.045, 0.28]} />
-              <meshBasicMaterial
-                color={index % 3 === 0 ? '#f8f3df' : '#4258ff'}
-                transparent
-                opacity={0.24}
-                depthWrite={false}
-                blending={THREE.AdditiveBlending}
-                side={THREE.DoubleSide}
-              />
-            </mesh>
-          )
-        })}
+      <group ref={crownRef} position={[0, 0.04, -1.0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <UnicursalHexagramGlyph
+          radius={2.05}
+          color="#f8f3df"
+          opacity={0.34}
+          lineWidth={2.6}
+          withRose
+        />
+
+        <UnicursalHexagramGlyph
+          radius={2.12}
+          color="#d8e8ff"
+          opacity={0.11}
+          lineWidth={5.4}
+          withRose={false}
+        />
       </group>
     </group>
   )
