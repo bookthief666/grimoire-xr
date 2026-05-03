@@ -178,20 +178,60 @@ function Pillar({ x, z = -3.55 }: { x: number; z?: number }) {
     <group position={[x, 0, z]}>
       <mesh position={[0, 0.18, 0]}>
         <cylinderGeometry args={[0.3, 0.38, 0.36, 12]} />
-        <meshLambertMaterial color={PALETTE.massDark} flatShading />
-        <Edges color={PALETTE.outlineDark} />
+        <meshStandardMaterial
+          color="#070b10"
+          emissive="#101820"
+          emissiveIntensity={0.12}
+          roughness={0.24}
+          metalness={0.82}
+        />
+        <Edges color="#d8e8ff" />
       </mesh>
 
       <mesh position={[0, 1.55, 0]}>
         <cylinderGeometry args={[0.18, 0.22, 2.4, 12]} />
-        <meshLambertMaterial color={PALETTE.mass} flatShading />
-        <Edges color={PALETTE.outlineDark} />
+        <meshStandardMaterial
+          color="#080c12"
+          emissive="#111a22"
+          emissiveIntensity={0.16}
+          roughness={0.2}
+          metalness={0.86}
+        />
+        <Edges color="#d8e8ff" />
+      </mesh>
+
+      <mesh position={[0, 1.55, 0.226]}>
+        <boxGeometry args={[0.024, 2.02, 0.012]} />
+        <meshBasicMaterial
+          color="#d8e8ff"
+          transparent
+          opacity={0.24}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+
+      <mesh position={[0.19, 1.55, 0.04]} rotation={[0, 0.42, 0]}>
+        <boxGeometry args={[0.014, 1.82, 0.01]} />
+        <meshBasicMaterial
+          color="#f8f3df"
+          transparent
+          opacity={0.12}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+        />
       </mesh>
 
       <mesh position={[0, 2.84, 0]}>
         <cylinderGeometry args={[0.34, 0.22, 0.18, 12]} />
-        <meshLambertMaterial color={PALETTE.massLift} flatShading />
-        <Edges color={PALETTE.outlineDark} />
+        <meshStandardMaterial
+          color="#0b1016"
+          emissive="#121c26"
+          emissiveIntensity={0.14}
+          roughness={0.22}
+          metalness={0.84}
+        />
+        <Edges color="#f8f3df" />
       </mesh>
 
       <mesh position={[0, 2.62, 0]}>
@@ -222,15 +262,22 @@ function LateralWalls() {
           <group key={x}>
             <mesh position={[x, 2.2, -2.1]} rotation={[0, sign * Math.PI / 2, 0]}>
               <planeGeometry args={[7.6, 5.0]} />
-              <meshLambertMaterial color="#050404" flatShading side={THREE.FrontSide} />
+              <meshStandardMaterial
+                color="#030609"
+                emissive="#071018"
+                emissiveIntensity={0.1}
+                roughness={0.28}
+                metalness={0.62}
+                side={THREE.FrontSide}
+              />
             </mesh>
 
             <mesh position={[x + sign * 0.01, 1.86, -2.1]} rotation={[0, sign * Math.PI / 2, 0]}>
               <planeGeometry args={[7.0, 0.022]} />
               <meshBasicMaterial
-                color={PALETTE.glyphDim}
+                color="#d8e8ff"
                 transparent
-                opacity={0.42}
+                opacity={0.22}
                 depthWrite={false}
                 blending={THREE.AdditiveBlending}
                 side={THREE.DoubleSide}
@@ -240,9 +287,9 @@ function LateralWalls() {
             <mesh position={[x + sign * 0.01, 0.88, -2.1]} rotation={[0, sign * Math.PI / 2, 0]}>
               <planeGeometry args={[7.0, 0.014]} />
               <meshBasicMaterial
-                color={PALETTE.bloodDim}
+                color="#4258ff"
                 transparent
-                opacity={0.35}
+                opacity={0.105}
                 depthWrite={false}
                 blending={THREE.AdditiveBlending}
                 side={THREE.DoubleSide}
@@ -252,9 +299,9 @@ function LateralWalls() {
             <mesh position={[x + sign * 0.01, 2.95, -2.1]} rotation={[0, sign * Math.PI / 2, 0]}>
               <planeGeometry args={[7.0, 0.012]} />
               <meshBasicMaterial
-                color={PALETTE.ember}
+                color="#f8f3df"
                 transparent
-                opacity={0.22}
+                opacity={0.12}
                 depthWrite={false}
                 blending={THREE.AdditiveBlending}
                 side={THREE.DoubleSide}
@@ -343,24 +390,13 @@ function OracleDais() {
         />
       </mesh>
 
-      <mesh position={[0, 1.62, -0.55]}>
-        <planeGeometry args={[1.28, 2.96]} />
-        <meshBasicMaterial
-          color="#030101"
-          transparent
-          opacity={0.82}
-          depthWrite={false}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
       <mesh position={[0, 1.62, -0.52]}>
-        <planeGeometry args={[1.32, 3.0]} />
+        <planeGeometry args={[1.12, 2.72]} />
         <meshBasicMaterial
           ref={veilRef}
-          color={PALETTE.glyphDim}
+          color="#d8e8ff"
           transparent
-          opacity={0.06}
+          opacity={0.035}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
@@ -379,14 +415,14 @@ function RearShrine({
   const innerDiskRef = useRef<THREE.MeshBasicMaterial>(null)
   const centerRingRef = useRef<THREE.MeshBasicMaterial>(null)
 
-  const outerBase = useRef(new THREE.Color(PALETTE.ember))
-  const outerPulse = useRef(new THREE.Color(PALETTE.gold))
+  const outerBase = useRef(new THREE.Color('#18202b'))
+  const outerPulse = useRef(new THREE.Color('#d8e8ff'))
 
-  const diskBase = useRef(new THREE.Color(PALETTE.bloodDim))
-  const diskPulse = useRef(new THREE.Color(PALETTE.blood))
+  const diskBase = useRef(new THREE.Color('#030609'))
+  const diskPulse = useRef(new THREE.Color('#101820'))
 
-  const centerBase = useRef(new THREE.Color(PALETTE.emberBright))
-  const centerPulse = useRef(new THREE.Color(PALETTE.sacred))
+  const centerBase = useRef(new THREE.Color('#d8e8ff'))
+  const centerPulse = useRef(new THREE.Color('#f8f3df'))
 
   const tempOuter = useRef(new THREE.Color())
   const tempDisk = useRef(new THREE.Color())
@@ -413,12 +449,6 @@ function RearShrine({
 
   return (
     <group position={[0, 0, -4.45]}>
-      <mesh position={[0, 1.7, -0.16]}>
-        <boxGeometry args={[5.5, 3.9, 0.35]} />
-        <meshLambertMaterial color={PALETTE.massDark} flatShading />
-        <Edges color={PALETTE.outlineDark} />
-      </mesh>
-
       <mesh position={[0, 0.4, 0.45]}>
         <boxGeometry args={[2.2, 0.3, 1.2]} />
         <meshLambertMaterial color={PALETTE.massDark} flatShading />
@@ -1320,25 +1350,9 @@ export function RitualChamberScene({
         />
       ) : null}
 
-      <Text visible={false}
-        position={[0, 3.05, -2.55]}
-        fontSize={0.12}
-        color={PALETTE.gold}
-        anchorX="center"
-        anchorY="middle"
-      >
-        DO WHAT THOU WILT
-      </Text>
+      
 
-      <Text visible={false}
-        position={[0, 2.78, -2.58]}
-        fontSize={0.08}
-        color={PALETTE.textSecondary}
-        anchorX="center"
-        anchorY="middle"
-      >
-        GRIMOIRE XR // TEMPLE CHAMBER
-      </Text>
+      
     </group>
   )
 }
