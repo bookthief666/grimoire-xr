@@ -13,23 +13,24 @@ type UnicursalHexagramGlyphProps = {
 }
 
 /**
- * Continuous-line Thelemic unicursal hexagram approximation.
+ * Continuous-line Thelemic unicursal hexagram glyph.
  *
- * This intentionally avoids the ordinary two-triangle hexagram form.
- * Use this for Thelemic hard-light sigils throughout the XR space.
+ * This is the recognizable Thelemic unicursal hexagram form: a single
+ * self-crossing path, not a pentagram and not the ordinary two-triangle
+ * hexagram.
+ *
+ * Path order:
+ * top -> lower-left -> upper-right -> upper-left -> lower-right -> bottom -> top
+ *
  */
 const UNICURSAL_POINTS: Vec3[] = [
-  [0, 1, 0],
-  [0.34, 0.18, 0],
-  [0.92, 0.38, 0],
-  [0.42, -0.08, 0],
-  [0.58, -0.86, 0],
-  [0, -0.36, 0],
-  [-0.58, -0.86, 0],
-  [-0.42, -0.08, 0],
-  [-0.92, 0.38, 0],
-  [-0.34, 0.18, 0],
-  [0, 1, 0],
+  [0, 1.0, 0],
+  [-0.78, -0.46, 0],
+  [0.94, 0.30, 0],
+  [-0.94, 0.30, 0],
+  [0.78, -0.46, 0],
+  [0, -1.0, 0],
+  [0, 1.0, 0],
 ]
 
 export function UnicursalHexagramGlyph({
@@ -52,7 +53,7 @@ export function UnicursalHexagramGlyph({
       <Line
         points={points}
         color={color}
-        lineWidth={lineWidth * 3.2}
+        lineWidth={lineWidth * 2.2}
         transparent
         opacity={opacity * 0.16}
       />
