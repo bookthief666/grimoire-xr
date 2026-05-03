@@ -64,7 +64,7 @@ function CosmicVoid() {
         ] as [number, number, number],
         size: 0.012 + Math.random() * 0.026,
         phase: Math.random() * Math.PI * 2,
-        warm: index % 5 === 0,
+        warm: index % 9 === 0,
       }
     })
   }, [])
@@ -106,9 +106,9 @@ function CosmicVoid() {
         >
           <sphereGeometry args={[star.size, 5, 5]} />
           <meshBasicMaterial
-            color={star.warm ? '#ffcf7c' : '#d8e8ff'}
+            color={star.warm ? '#f8f3df' : '#d8e8ff'}
             transparent
-            opacity={star.warm ? 0.58 : 0.38}
+            opacity={star.warm ? 0.52 : 0.42}
             depthWrite={false}
             blending={THREE.AdditiveBlending}
           />
@@ -161,7 +161,7 @@ function HolographicFloorAura({
         <ringGeometry args={[2.85, 3.02, 72]} />
         <meshBasicMaterial
           ref={outerRef}
-          color="#b8860b"
+          color="#d8e8ff"
           transparent
           opacity={0.1}
           depthWrite={false}
@@ -174,7 +174,7 @@ function HolographicFloorAura({
         <ringGeometry args={[2.08, 2.18, 72]} />
         <meshBasicMaterial
           ref={middleRef}
-          color="#ff5a1f"
+          color="#b98cff"
           transparent
           opacity={0.13}
           depthWrite={false}
@@ -187,7 +187,7 @@ function HolographicFloorAura({
         <circleGeometry args={[1.0, 72]} />
         <meshBasicMaterial
           ref={innerRef}
-          color="#ffcf7c"
+          color="#f8f3df"
           transparent
           opacity={0.09}
           depthWrite={false}
@@ -212,7 +212,7 @@ function HolographicFloorAura({
             >
               <planeGeometry args={[0.045, 0.28]} />
               <meshBasicMaterial
-                color={index % 3 === 0 ? '#ffcf7c' : '#8d4d1e'}
+                color={index % 3 === 0 ? '#f8f3df' : '#4258ff'}
                 transparent
                 opacity={0.24}
                 depthWrite={false}
@@ -289,7 +289,7 @@ function DistantAATrace({
           key={`${a}-${b}-${index}`}
           a={nodes[a]}
           b={nodes[b]}
-          color={index % 3 === 0 ? '#ffcf7c' : '#b8860b'}
+          color={index % 3 === 0 ? '#f8f3df' : '#d8e8ff'}
           opacity={0.085}
           width={0.01}
           z={-4.08}
@@ -303,7 +303,7 @@ function DistantAATrace({
             ref={(el) => {
               sphereRefs.current[index] = el
             }}
-            color={index === 0 ? '#ffffff' : index === 9 ? '#ff5a1f' : '#ffcf7c'}
+            color={index === 0 ? '#ffffff' : index === 9 ? '#b98cff' : '#d8e8ff'}
             transparent
             opacity={0.13}
             depthWrite={false}
@@ -404,16 +404,16 @@ function FloatingSigils({
 
   const seals: SealDef[] = hasOracleReading
     ? [
-        { label: 'ORACLE', symbol: '☉', color: '#ffcf7c' },
-        { label: 'AGAPE', symbol: '✶', color: '#d6a642' },
-        { label: 'ABRAHADABRA', symbol: '⌬', color: '#ff5a1f' },
-        { label: '93', symbol: '☽', color: '#ffcf7c' },
+        { label: 'ORACLE', symbol: '☉', color: '#f8f3df' },
+        { label: 'AGAPE', symbol: '♀', color: '#d8e8ff' },
+        { label: 'ABRAHADABRA', symbol: '⌬', color: '#b98cff' },
+        { label: '93', symbol: '☽', color: '#f8f3df' },
       ]
     : [
-        { label: 'THELEMA', symbol: '93', color: '#ffcf7c' },
-        { label: 'AGAPE', symbol: '☽', color: '#ff5a1f' },
-        { label: 'WILL', symbol: '⌬', color: '#ffcf7c' },
-        { label: '93', symbol: '☉', color: '#d6a642' },
+        { label: 'THELEMA', symbol: '93', color: '#f8f3df' },
+        { label: 'AGAPE', symbol: '☽', color: '#d8e8ff' },
+        { label: 'WILL', symbol: '⌬', color: '#f8f3df' },
+        { label: '93', symbol: '☉', color: '#d8e8ff' },
       ]
 
   return (
@@ -491,12 +491,12 @@ function ReactiveLights({
 
   return (
     <group>
-      <ambientLight color="#170907" intensity={0.08} />
+      <ambientLight color="#070910" intensity={0.075} />
 
       <directionalLight
         ref={lowKeyRef}
         position={[-5.5, 1.1, 1.8]}
-        color="#ffd18a"
+        color="#d8e8ff"
         intensity={2.4}
         castShadow
         shadow-mapSize-width={512}
@@ -506,7 +506,7 @@ function ReactiveLights({
       <pointLight
         ref={altarLightRef}
         position={[0, 1.1, -0.82]}
-        color={hasOracleReading ? '#ffd18a' : '#ff9a00'}
+        color={hasOracleReading ? '#f8f3df' : '#d8e8ff'}
         intensity={6.6}
         distance={4.6}
       />
