@@ -271,13 +271,13 @@ function RearArch() {
   return (
     <group position={[0, 0, -3.55]}>
       <mesh position={[0, 3.28, 0]}>
-        <boxGeometry args={[4.58, 0.26, 0.32]} />
+        <boxGeometry args={[4.58, 0.055, 0.14]} />
         <meshLambertMaterial color={PALETTE.massDark} flatShading />
         <Edges color={PALETTE.outlineDark} />
       </mesh>
 
       <mesh position={[0, 3.48, 0]}>
-        <boxGeometry args={[1.85, 0.4, 0.26]} />
+        <boxGeometry args={[1.25, 0.075, 0.12]} />
         <meshLambertMaterial color={PALETTE.mass} flatShading />
         <Edges color={PALETTE.outlineDark} />
       </mesh>
@@ -287,7 +287,7 @@ function RearArch() {
         <meshBasicMaterial
           color={PALETTE.ember}
           transparent
-          opacity={0.52}
+          opacity={0.18}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
@@ -299,7 +299,7 @@ function RearArch() {
         <meshBasicMaterial
           color={PALETTE.gold}
           transparent
-          opacity={0.38}
+          opacity={0.12}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
@@ -453,8 +453,8 @@ function RearShrine({
 
       <mesh position={[0, 2.65, 0.1]}>
         <Text
-          fontSize={0.12}
-          color={PALETTE.sacred}
+          fontSize={0.07}
+          color="#8f7a5a"
           anchorX="center"
           anchorY="middle"
         >
@@ -1320,7 +1320,7 @@ export function RitualChamberScene({
         />
       ) : null}
 
-      <Text
+      <Text visible={false}
         position={[0, 3.05, -2.55]}
         fontSize={0.12}
         color={PALETTE.gold}
@@ -1330,7 +1330,7 @@ export function RitualChamberScene({
         DO WHAT THOU WILT
       </Text>
 
-      <Text
+      <Text visible={false}
         position={[0, 2.78, -2.58]}
         fontSize={0.08}
         color={PALETTE.textSecondary}
