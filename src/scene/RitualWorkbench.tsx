@@ -332,6 +332,103 @@ function TableBar({
   )
 }
 
+function AltarChromeHardware({
+  railColor,
+  forgeEnergy,
+}: {
+  railColor: string
+  forgeEnergy: ForgeEnergy
+}) {
+  const energized = forgeEnergy !== 'idle'
+
+  const seamOpacity =
+    forgeEnergy === 'working'
+      ? 0.34
+      : forgeEnergy === 'manifest'
+        ? 0.26
+        : forgeEnergy === 'tuning'
+          ? 0.22
+          : forgeEnergy === 'oracle'
+            ? 0.24
+            : 0.12
+
+  return (
+    <group>
+      <mesh position={[0, TABLE_Y + 0.018, 0.878]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[3.22, 0.032]} />
+        <meshBasicMaterial
+          color="#d8e8ff"
+          transparent
+          opacity={energized ? 0.18 : 0.105}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, TABLE_Y + 0.018, -0.878]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[3.22, 0.024]} />
+        <meshBasicMaterial
+          color="#f8f3df"
+          transparent
+          opacity={energized ? 0.13 : 0.075}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[1.6, TABLE_Y + 0.018, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[0.026, 1.76]} />
+        <meshBasicMaterial
+          color="#d8e8ff"
+          transparent
+          opacity={energized ? 0.14 : 0.08}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[-1.6, TABLE_Y + 0.018, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[0.026, 1.76]} />
+        <meshBasicMaterial
+          color="#d8e8ff"
+          transparent
+          opacity={energized ? 0.14 : 0.08}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, TABLE_Y + 0.021, 0.54]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[1.26, 0.018]} />
+        <meshBasicMaterial
+          color={railColor}
+          transparent
+          opacity={seamOpacity}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, TABLE_Y + 0.021, -0.54]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[1.26, 0.014]} />
+        <meshBasicMaterial
+          color="#f8f3df"
+          transparent
+          opacity={seamOpacity * 0.58}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+    </group>
+  )
+}
+
 function TableHexagram({
   active,
   energy = 'idle',
@@ -2716,6 +2813,8 @@ export function RitualWorkbench({
           side={THREE.DoubleSide}
         />
       </mesh>
+
+      <AltarChromeHardware railColor={railColor} forgeEnergy={forgeEnergy} />
 
       <AltarAstrolabeRings
         active={hasDeck || menuMode !== 'closed' || loading || oracleLoading || hasOracleReading}
