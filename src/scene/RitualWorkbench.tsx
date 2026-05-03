@@ -2152,32 +2152,11 @@ function FloatingSigilButton({
   onClick: () => void
 }) {
   const [hovered, setHovered] = useState(false)
-  const haloRef = useRef<THREE.MeshBasicMaterial>(null)
-  const outerRingRef = useRef<THREE.MeshBasicMaterial>(null)
-  const innerRingRef = useRef<THREE.MeshBasicMaterial>(null)
 
-  const baseColor = danger ? '#3a0707' : active ? '#3a1808' : '#120807'
-  const glowColor = danger ? '#ff3030' : active ? '#ffcf7c' : '#ff9a00'
-  const textColor = disabled ? '#5f4932' : hovered || active ? '#fff0c0' : '#d99b58'
-
-  useFrame(({ clock }) => {
-    if (disabled) return
-
-    const t = clock.getElapsedTime()
-    const pulse = active || hovered ? 0.5 + Math.sin(t * 3.2) * 0.5 : 0
-
-    if (haloRef.current) {
-      haloRef.current.opacity = hovered || active ? 0.13 + pulse * 0.12 : 0.075
-    }
-
-    if (outerRingRef.current) {
-      outerRingRef.current.opacity = hovered || active ? 0.58 + pulse * 0.26 : 0.42
-    }
-
-    if (innerRingRef.current) {
-      innerRingRef.current.opacity = hovered || active ? 0.52 + pulse * 0.24 : 0.35
-    }
-  })
+  const armed = !disabled && (hovered || active)
+  const accent = danger ? '#ff3d5a' : active ? '#f8f3df' : '#d8e8ff'
+  const plaque = danger ? '#210609' : '#05070b'
+  const glyphColor = disabled ? '#5e5048' : '#f8f3df'
 
   const trigger = () => {
     if (!disabled) onClick()
@@ -2186,8 +2165,7 @@ function FloatingSigilButton({
   return (
     <group
       position={[x, y, z]}
-      rotation={[-0.18, 0, 0]}
-      scale={hovered && !disabled ? 1.08 : 1}
+      scale={armed ? 1.055 : 1}
       onPointerOver={(event) => {
         event.stopPropagation()
         setHovered(true)
@@ -2216,8 +2194,8 @@ function FloatingSigilButton({
         trigger()
       }}
     >
-      <mesh position={[0, 0, -0.006]}>
-        <circleGeometry args={[0.24, 32]} />
+      <mesh position={[0, 0, -0.012]}>
+        <planeGeometry args={[0.38, 0.38]} />
         <meshBasicMaterial
           color="#ffffff"
           transparent
@@ -2227,37 +2205,59 @@ function FloatingSigilButton({
         />
       </mesh>
 
-      <mesh>
-        <circleGeometry args={[0.095, 32]} />
+      <mesh position={[0, 0, 0]}>
+        <planeGeometry args={[0.24, 0.128]} />
         <meshBasicMaterial
-          color={disabled ? '#070403' : baseColor}
+          color={plaque}
           transparent
-          opacity={disabled ? 0.12 : active || hovered ? 0.34 : 0.16}
+          opacity={disabled ? 0.18 : armed ? 0.74 : 0.5}
           depthWrite={false}
           side={THREE.DoubleSide}
         />
       </mesh>
 
-      <mesh position={[0, 0, 0.007]}>
-        <ringGeometry args={[0.065, 0.074, 24]} />
+      <mesh position={[0, 0.074, 0.01]}>
+        <planeGeometry args={[0.29, 0.008]} />
         <meshBasicMaterial
-          ref={innerRingRef}
-          color={glowColor}
+          color={accent}
           transparent
-          opacity={disabled ? 0.1 : hovered || active ? 0.72 : 0.35}
+          opacity={disabled ? 0.08 : armed ? 0.54 : 0.22}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
         />
       </mesh>
 
-      <mesh position={[0, 0, 0.01]}>
-        <ringGeometry args={[0.17, 0.185, 36]} />
+      <mesh position={[0, -0.074, 0.01]}>
+        <planeGeometry args={[0.23, 0.006]} />
         <meshBasicMaterial
-          ref={outerRingRef}
-          color={glowColor}
+          color={accent}
           transparent
-          opacity={disabled ? 0.14 : hovered || active ? 0.82 : 0.42}
+          opacity={disabled ? 0.06 : armed ? 0.34 : 0.14}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[-0.148, 0, 0.012]}>
+        <planeGeometry args={[0.01, 0.12]} />
+        <meshBasicMaterial
+          color={accent}
+          transparent
+          opacity={disabled ? 0.08 : armed ? 0.46 : 0.18}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0.148, 0, 0.012]}>
+        <planeGeometry args={[0.01, 0.12]} />
+        <meshBasicMaterial
+          color={accent}
+          transparent
+          opacity={disabled ? 0.08 : armed ? 0.46 : 0.18}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
@@ -2265,12 +2265,11 @@ function FloatingSigilButton({
       </mesh>
 
       <mesh position={[0, 0, 0.018]}>
-        <circleGeometry args={[0.27, 32]} />
+        <planeGeometry args={[0.34, 0.19]} />
         <meshBasicMaterial
-          ref={haloRef}
-          color={glowColor}
+          color={accent}
           transparent
-          opacity={disabled ? 0.035 : hovered || active ? 0.2 : 0.075}
+          opacity={disabled ? 0.012 : armed ? 0.105 : 0.032}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
@@ -2278,42 +2277,34 @@ function FloatingSigilButton({
       </mesh>
 
       <Text
-        position={[0, 0.003, 0.04]}
-        fontSize={0.092}
-        color={textColor}
+        position={[0, 0.004, 0.045]}
+        fontSize={0.076}
+        color={glyphColor}
         anchorX="center"
         anchorY="middle"
-        maxWidth={0.22}
+        fillOpacity={disabled ? 0.42 : 0.95}
+        maxWidth={0.18}
       >
         {sigil}
       </Text>
 
-      {hovered ? (
+      {armed ? (
         <Text
-          position={[0, -0.27, 0.05]}
-          fontSize={0.033}
-          color="#ffd18a"
+          position={[0, -0.138, 0.044]}
+          fontSize={0.018}
+          color={accent}
           anchorX="center"
           anchorY="middle"
-          maxWidth={0.58}
+          fillOpacity={0.72}
+          maxWidth={0.42}
         >
-          {label}
+          {label.toUpperCase()}
         </Text>
       ) : null}
-
-      <mesh position={[0, 0, 0.07]}>
-        <planeGeometry args={[0.52, 0.52]} />
-        <meshBasicMaterial
-          color="#ffffff"
-          transparent
-          opacity={0.001}
-          depthWrite={false}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
     </group>
   )
 }
+
 
 function FloatingArchiveMenu({
   hasSavedRitual,
