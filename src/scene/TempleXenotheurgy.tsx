@@ -106,7 +106,7 @@ function ThelemicStarGate({ ritualImpulseRef, loading = false, oracleLoading = f
       groupRef.current.rotation.z = Math.sin(t * (0.18 + stateBoost * 0.2)) * (0.035 + stateBoost * 0.03)
       groupRef.current.rotation.y = Math.sin(t * 0.11) * (0.025 + stateBoost * 0.035)
       const scale = 1 + Math.sin(t * 1.4) * 0.012 + stateBoost * 0.045
-      groupRef.current.scale.setScalar(4.0 * scale)
+      groupRef.current.scale.setScalar(2.55 * scale)
     }
 
     if (coreRef.current) {
@@ -119,7 +119,7 @@ function ThelemicStarGate({ ritualImpulseRef, loading = false, oracleLoading = f
 
 
   return (
-    <group ref={groupRef} position={[0, 5.0, -12.0]} raycast={noRaycast}>
+    <group ref={groupRef} position={[0, 5.55, -14.4]} raycast={noRaycast}>
       <mesh position={[0, 0, -0.035]} raycast={noRaycast}>
         <planeGeometry args={[2.9, 2.55]} />
         <meshBasicMaterial
@@ -144,25 +144,26 @@ function ThelemicStarGate({ ritualImpulseRef, loading = false, oracleLoading = f
         />
       </mesh>
 
-      <HoloRing position={[0, 0, 0.02]} radius={1.28} tube={0.008} color="#d8e8ff" opacity={0.18} />
-      <HoloRing position={[0, 0, 0.035]} radius={0.62} tube={0.006} color="#f8f3df" opacity={0.16} />
+      <HoloRing position={[0, 0, 0.02]} radius={1.18} tube={0.006} color="#d8e8ff" opacity={0.12} />
+      <HoloRing position={[0, 0, 0.035]} radius={0.54} tube={0.005} color="#f8f3df" opacity={0.1} />
 
       <group position={[0, 0, 0.07]}>
         <BabalonStarGlyph
-          radius={1.08}
+          radius={1.0}
           color="#f8f3df"
-          opacity={0.72}
-          lineWidth={2.7}
+          opacity={0.46}
+          lineWidth={1.85}
           withRose
         />
       </group>
 
       <group position={[0, 0, 0.055]}>
         <BabalonStarGlyph
-          radius={1.14}
+          radius={1.06}
           color="#d8e8ff"
-          opacity={0.22}
-          lineWidth={5.2}
+          opacity={0.105}
+          lineWidth={3.2}
+          withCircle={false}
           withRose={false}
         />
       </group>
