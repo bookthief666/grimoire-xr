@@ -247,7 +247,7 @@ function ConsoleDragHandle({
       <mesh position={[0, 0, 0.01]}>
         <planeGeometry args={[width + 0.12, 0.28]} />
         <meshBasicMaterial
-          color="#ffcf7c"
+          color="#ff7a8f"
           transparent
           opacity={dragging ? 0.32 : hovered ? 0.2 : 0.09}
           depthWrite={false}
@@ -445,7 +445,7 @@ function PanelFrame({
         anchorX="left"
         anchorY="top"
         fontSize={0.052}
-        color="#ffcf7c"
+        color="#ff7a8f"
         maxWidth={1.5}
       >
         {title}
@@ -518,7 +518,7 @@ function RayButton({
 
   const active = !disabled
   const baseColor = danger ? '#3a0808' : primary ? '#4a1608' : '#201010'
-  const glowColor = danger ? '#ff5050' : primary ? '#ffcf7c' : '#d89b6b'
+  const glowColor = danger ? '#ff5050' : primary ? '#ff7a8f' : '#d93a57'
   const displayedLabel = disabled && disabledLabel ? disabledLabel : label
 
   return (
@@ -566,7 +566,7 @@ function RayButton({
         anchorX="center"
         anchorY="middle"
         fontSize={0.038}
-        color={active ? (hovered ? '#ffffff' : '#ffcf7c') : '#6f5435'}
+        color={active ? (hovered ? '#ffffff' : '#ff7a8f') : '#5d2831'}
         maxWidth={width - 0.06}
       >
         {displayedLabel}
@@ -823,7 +823,7 @@ export function InWorldRitualConsole({
             anchorX="left"
             anchorY="middle"
             fontSize={0.045}
-            color="#ffcf7c"
+            color="#ff7a8f"
             maxWidth={0.9}
           >
             RITUAL CONSOLE
@@ -834,7 +834,7 @@ export function InWorldRitualConsole({
             anchorX="left"
             anchorY="middle"
             fontSize={0.032}
-            color={loading || oracleLoading ? '#ffcf7c' : '#8b6a45'}
+            color={loading || oracleLoading ? '#ff7a8f' : '#7a2d3a'}
             maxWidth={0.9}
           >
             {forgePhase.toUpperCase()}
@@ -1009,7 +1009,7 @@ export function InWorldRitualConsole({
             anchorX="center"
             anchorY="middle"
             fontSize={0.032}
-            color={targetLabel ? '#ffffff' : '#8b6a45'}
+            color={targetLabel ? '#ffffff' : '#7a2d3a'}
             maxWidth={1.68}
           >
             {targetLabel ? `TARGET: ${targetLabel.toUpperCase()}` : 'RAY-TYPE TEXT ONE KEY AT A TIME'}
@@ -1194,7 +1194,7 @@ export function InWorldRitualConsole({
           anchorX="center"
           anchorY="middle"
           fontSize={0.032}
-          color={targetLabel ? '#ffffff' : '#8b6a45'}
+          color={targetLabel ? '#ffffff' : '#7a2d3a'}
           maxWidth={1.68}
         >
           {targetLabel ? `TARGET: ${targetLabel.toUpperCase()}` : statusText}
