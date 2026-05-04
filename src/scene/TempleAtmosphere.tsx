@@ -162,7 +162,7 @@ function HolographicFloorAura({
         <ringGeometry args={[2.85, 3.02, 72]} />
         <meshBasicMaterial
           ref={outerRef}
-          color="#d8e8ff"
+          color="#ff7a8f"
           transparent
           opacity={0.1}
           depthWrite={false}
@@ -188,7 +188,7 @@ function HolographicFloorAura({
         <circleGeometry args={[1.0, 72]} />
         <meshBasicMaterial
           ref={innerRef}
-          color="#f8f3df"
+          color="#ff3048"
           transparent
           opacity={0.09}
           depthWrite={false}
@@ -200,7 +200,7 @@ function HolographicFloorAura({
       <group ref={crownRef} position={[0, 0.04, -1.0]} rotation={[-Math.PI / 2, 0, 0]}>
         <BabalonStarGlyph
           radius={1.78}
-          color="#f8f3df"
+          color="#ff3048"
           opacity={0.24}
           lineWidth={1.8}
           withRose
@@ -208,7 +208,7 @@ function HolographicFloorAura({
 
         <BabalonStarGlyph
           radius={1.86}
-          color="#d8e8ff"
+          color="#ff7a8f"
           opacity={0.065}
           lineWidth={3.0}
           withCircle={false}
@@ -310,7 +310,7 @@ function DistantAATrace({
         anchorX="center"
         anchorY="middle"
         fontSize={0.06}
-        color="#d8e8ff"
+        color="#ff7a8f"
         fillOpacity={0.22}
         maxWidth={1.8}
       >
@@ -488,7 +488,7 @@ function ReactiveLights({
       <directionalLight
         ref={lowKeyRef}
         position={[-5.5, 1.1, 1.8]}
-        color="#d8e8ff"
+        color="#ff7a8f"
         intensity={2.4}
         castShadow
         shadow-mapSize-width={512}

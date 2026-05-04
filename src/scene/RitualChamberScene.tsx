@@ -614,7 +614,7 @@ function Embers({
         >
           <sphereGeometry args={[d.size, 5, 5]} />
           <meshBasicMaterial
-            color={i % 3 === 0 ? PALETTE.emberBright : PALETTE.blood}
+            color={i % 3 === 0 ? '#ff5a72' : '#b31234'}
             transparent
             opacity={0.58}
           />
@@ -772,11 +772,11 @@ function Altar({
   const landedActivationIdRef = useRef<number | null>(null)
 
   const dormantRingColor = useRef(new THREE.Color(PALETTE.glyphDim))
-  const restingRingColor = useRef(new THREE.Color(PALETTE.ember))
+  const restingRingColor = useRef(new THREE.Color('#ff3048'))
   const flareRingColor = useRef(new THREE.Color(PALETTE.gold))
 
   const dormantHaloColor = useRef(new THREE.Color(PALETTE.goldDim))
-  const restingHaloColor = useRef(new THREE.Color(PALETTE.ember))
+  const restingHaloColor = useRef(new THREE.Color('#b31234'))
   const flareHaloColor = useRef(new THREE.Color(PALETTE.sacred))
 
   const tempRing = useRef(new THREE.Color())
@@ -877,7 +877,7 @@ function Altar({
         <ringGeometry args={[0.3, 0.37, 36]} />
         <meshBasicMaterial
           ref={altarRingMaterialRef}
-          color={manifest ? PALETTE.ember : PALETTE.glyphDim}
+          color={manifest ? '#ff3048' : '#9f1026'}
         />
       </mesh>
 
@@ -937,7 +937,7 @@ function Altar({
           </Text>
         </>
       ) : (
-        <Text
+        <Text visible={false}
           position={[0, 1.18, 0]}
           fontSize={0.068}
           color={PALETTE.textIdle}
