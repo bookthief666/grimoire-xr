@@ -406,6 +406,153 @@ function OracleDais() {
   )
 }
 
+
+function EyeBar({
+  position,
+  rotation = [0, 0, 0],
+  size,
+  color = '#ff003c',
+  opacity = 0.6,
+}: {
+  position: [number, number, number]
+  rotation?: [number, number, number]
+  size: [number, number]
+  color?: string
+  opacity?: number
+}) {
+  return (
+    <mesh position={position} rotation={rotation}>
+      <planeGeometry args={size} />
+      <meshBasicMaterial
+        color={color}
+        transparent
+        opacity={opacity}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  )
+}
+
+function HorusEyeCenterSigil() {
+  const irisRef = useRef<THREE.MeshBasicMaterial>(null)
+  const auraRef = useRef<THREE.MeshBasicMaterial>(null)
+  const groupRef = useRef<THREE.Group>(null)
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime()
+
+    if (groupRef.current) {
+      groupRef.current.rotation.z = Math.sin(t * 0.45) * 0.025
+      groupRef.current.position.y = 2.42 + Math.sin(t * 0.7) * 0.018
+    }
+
+    if (irisRef.current) {
+      irisRef.current.color.setHSL((t * 0.11) % 1, 1, 0.62)
+      irisRef.current.opacity = 0.82 + Math.sin(t * 2.8) * 0.12
+    }
+
+    if (auraRef.current) {
+      auraRef.current.color.setHSL((t * 0.07 + 0.58) % 1, 1, 0.56)
+      auraRef.current.opacity = 0.13 + Math.sin(t * 1.9) * 0.045
+    }
+  })
+
+  return (
+    <group ref={groupRef} position={[0, 2.42, 0.11]}>
+      <mesh scale={[1.42, 0.48, 1]}>
+        <ringGeometry args={[0.34, 0.37, 96]} />
+        <meshBasicMaterial
+          color="#d8e8ff"
+          transparent
+          opacity={0.46}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh scale={[1.62, 0.62, 1]} position={[0, 0, -0.012]}>
+        <ringGeometry args={[0.36, 0.42, 96]} />
+        <meshBasicMaterial
+          ref={auraRef}
+          color="#ff003c"
+          transparent
+          opacity={0.14}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, 0, 0.026]}>
+        <circleGeometry args={[0.142, 48]} />
+        <meshBasicMaterial
+          ref={irisRef}
+          color="#00e5ff"
+          transparent
+          opacity={0.9}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, 0, 0.038]}>
+        <circleGeometry args={[0.055, 32]} />
+        <meshBasicMaterial
+          color="#010103"
+          transparent
+          opacity={0.86}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, 0, 0.048]}>
+        <ringGeometry args={[0.18, 0.192, 64]} />
+        <meshBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.56}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      {/* Eye of Horus upper brow / lower line / tear stroke */}
+      <EyeBar position={[-0.36, 0.13, 0.04]} rotation={[0, 0, -0.12]} size={[0.52, 0.026]} color="#ff003c" opacity={0.74} />
+      <EyeBar position={[0.36, 0.13, 0.04]} rotation={[0, 0, 0.12]} size={[0.52, 0.026]} color="#ff003c" opacity={0.74} />
+      <EyeBar position={[-0.38, -0.14, 0.035]} rotation={[0, 0, 0.16]} size={[0.48, 0.02]} color="#ff5a72" opacity={0.54} />
+      <EyeBar position={[0.36, -0.14, 0.035]} rotation={[0, 0, -0.16]} size={[0.48, 0.02]} color="#ff5a72" opacity={0.54} />
+      <EyeBar position={[0.14, -0.34, 0.035]} rotation={[0, 0, -1.25]} size={[0.48, 0.018]} color="#ff003c" opacity={0.5} />
+      <EyeBar position={[0.36, -0.42, 0.032]} rotation={[0, 0, 0.08]} size={[0.42, 0.016]} color="#ff5a72" opacity={0.38} />
+
+      {/* Small chrome terminal points */}
+      {[
+        [-0.72, 0.02],
+        [0.72, 0.02],
+        [0.14, -0.58],
+      ].map(([x, y], index) => (
+        <mesh key={index} position={[x, y, 0.05]}>
+          <circleGeometry args={[0.032, 18]} />
+          <meshBasicMaterial
+            color="#d8e8ff"
+            transparent
+            opacity={0.7}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      ))}
+    </group>
+  )
+}
+
+
 function RearShrine({
   ritualImpulseRef,
 }: {
@@ -461,36 +608,7 @@ function RearShrine({
         <Edges color={PALETTE.outlineDark} />
       </mesh>
 
-      <mesh position={[0, 2.25, 0.05]}>
-        <torusGeometry args={[0.92, 0.07, 12, 36]} />
-        <meshBasicMaterial ref={outerRingRef} color="#d8e8ff" />
-      </mesh>
-
-      <mesh position={[0, 2.25, 0.02]}>
-        <circleGeometry args={[0.55, 24]} />
-        <meshBasicMaterial ref={innerDiskRef} color="#05070b" transparent opacity={0.82} />
-      </mesh>
-
-      <mesh position={[0, 2.25, 0.08]}>
-        <ringGeometry args={[0.2, 0.28, 24]} />
-        <meshBasicMaterial ref={centerRingRef} color="#f8f3df" />
-      </mesh>
-
-      <mesh position={[0, 2.95, 0.06]}>
-        <coneGeometry args={[0.18, 0.34, 4]} />
-        <meshBasicMaterial color={PALETTE.ember} />
-      </mesh>
-
-      <mesh position={[0, 2.65, 0.1]}>
-        <Text
-          fontSize={0.07}
-          color="#914052"
-          anchorX="center"
-          anchorY="middle"
-        >
-          THELEMA
-        </Text>
-      </mesh>
+      <HorusEyeCenterSigil />
     </group>
   )
 }
