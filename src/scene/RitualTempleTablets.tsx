@@ -559,7 +559,7 @@ export function RitualTempleTablets({
         title: focusedCard.name.toUpperCase(),
         subtitle: 'Active arcanum raised for inspection.',
         body: makeCardText(focusedCard),
-        accent: '#ffb000',
+        accent: '#ff003c',
         seal: '✶',
       }
     }

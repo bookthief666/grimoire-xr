@@ -484,7 +484,7 @@ function RearShrine({
       <mesh position={[0, 2.65, 0.1]}>
         <Text
           fontSize={0.07}
-          color="#8f7a5a"
+          color="#914052"
           anchorX="center"
           anchorY="middle"
         >
@@ -710,7 +710,7 @@ function ChamberCardFaceArt({
         <Text
           position={[0, 0, 0.04]}
           fontSize={Math.min(width, height) * 0.075}
-          color="#ff9a7a"
+          color="#ff5a72"
           anchorX="center"
           anchorY="middle"
           maxWidth={width * 0.76}

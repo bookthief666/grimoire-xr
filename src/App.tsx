@@ -96,7 +96,7 @@ function SelectField<T extends string>({
         padding: '10px 12px',
         background: '#120707',
         border: '1px solid #6a2b10',
-        color: '#ffe0a6',
+        color: '#ff8fa3',
         outline: 'none',
         fontFamily: 'monospace',
       }}
@@ -126,7 +126,7 @@ function SmallButton({
       style={{
         padding: '8px 9px',
         background: disabled ? '#1b0b07' : '#140b0b',
-        color: disabled ? '#735b43' : '#d7b891',
+        color: disabled ? '#5d2831' : '#d7b891',
         border: '1px solid rgba(143,91,0,0.4)',
         cursor: disabled ? 'not-allowed' : 'pointer',
         fontFamily: 'monospace',
@@ -180,7 +180,7 @@ function FloatingOpenButton({
         zIndex: 13,
         padding: '10px 12px',
         background: '#120000',
-        color: '#ffcf7c',
+        color: '#ff6f8c',
         border: '1px solid rgba(191,123,39,0.45)',
         fontFamily: 'monospace',
         cursor: 'pointer',
@@ -267,7 +267,7 @@ function RitualControlPanel({
         border: '1px solid rgba(191, 123, 39, 0.45)',
         background:
           'linear-gradient(180deg, rgba(18,6,6,0.92) 0%, rgba(9,4,4,0.88) 100%)',
-        color: '#ffe0a6',
+        color: '#ff8fa3',
         fontFamily: 'monospace',
         backdropFilter: 'blur(8px)',
         boxShadow: '0 0 30px rgba(0,0,0,0.45), 0 0 22px rgba(120,20,20,0.16)',
@@ -289,7 +289,7 @@ function RitualControlPanel({
           padding: '10px 12px',
           background: '#120707',
           border: '1px solid #6a2b10',
-          color: '#ffe0a6',
+          color: '#ff8fa3',
           outline: 'none',
         }}
       />
@@ -343,7 +343,7 @@ function RitualControlPanel({
             padding: '10px 12px',
             background: '#120707',
             border: '1px solid #6a2b10',
-            color: '#ffe0a6',
+            color: '#ff8fa3',
             outline: 'none',
             resize: 'vertical',
             fontFamily: 'monospace',
@@ -359,8 +359,8 @@ function RitualControlPanel({
             flex: 1,
             padding: '10px 12px',
             background: loading ? '#35140b' : '#5a1a0d',
-            color: '#ffe0a6',
-            border: '1px solid #d94e16',
+            color: '#ff8fa3',
+            border: '1px solid #ff003c',
             cursor: loading ? 'wait' : 'pointer',
           }}
         >
@@ -382,38 +382,38 @@ function RitualControlPanel({
       </div>
 
       <InfoBlock>
-        <div style={{ fontSize: 11, color: '#d89b6b', marginBottom: 4 }}>
+        <div style={{ fontSize: 11, color: '#d12a48', marginBottom: 4 }}>
           Forge phase: {phase}
         </div>
-        <div style={{ fontSize: 11, color: '#d89b6b', marginBottom: 4 }}>
+        <div style={{ fontSize: 11, color: '#d12a48', marginBottom: 4 }}>
           Tradition: {tradition}
         </div>
-        <div style={{ fontSize: 11, color: '#d89b6b', marginBottom: 4 }}>
+        <div style={{ fontSize: 11, color: '#d12a48', marginBottom: 4 }}>
           Tone: {tone}
         </div>
-        <div style={{ fontSize: 11, color: '#d89b6b', marginBottom: 4 }}>
+        <div style={{ fontSize: 11, color: '#d12a48', marginBottom: 4 }}>
           Tech level: {techLevel}
         </div>
-        <div style={{ fontSize: 11, color: '#d89b6b', marginBottom: 4 }}>
+        <div style={{ fontSize: 11, color: '#d12a48', marginBottom: 4 }}>
           VR panels: {showInWorldPanels ? 'visible' : 'hidden'}
         </div>
         {intent ? (
-          <div style={{ fontSize: 11, color: '#d89b6b', marginBottom: 4 }}>
+          <div style={{ fontSize: 11, color: '#d12a48', marginBottom: 4 }}>
             Intent: {intent}
           </div>
         ) : null}
         {deckName ? (
-          <div style={{ fontSize: 12, color: '#ffb000' }}>Active deck: {deckName}</div>
+          <div style={{ fontSize: 12, color: '#ff003c' }}>Active deck: {deckName}</div>
         ) : null}
       </InfoBlock>
 
       <div style={{ marginTop: 12 }}>
         <SectionLabel>Archive</SectionLabel>
         <InfoBlock>
-          <div style={{ fontSize: 11, color: '#d89b6b', marginBottom: 8 }}>
+          <div style={{ fontSize: 11, color: '#d12a48', marginBottom: 8 }}>
             Saved ritual: {hasSavedRitual ? 'yes' : 'no'}
           </div>
-          <div style={{ fontSize: 11, color: '#d89b6b', marginBottom: 10 }}>
+          <div style={{ fontSize: 11, color: '#d12a48', marginBottom: 10 }}>
             Last saved: {formatSavedAt(lastSavedAt)}
           </div>
 
@@ -473,7 +473,7 @@ function RitualControlPanel({
             <div>
               <SectionLabel>Archetype</SectionLabel>
               <InfoBlock>
-                <div style={{ fontSize: 12, color: '#ffe0a6' }}>{archetype}</div>
+                <div style={{ fontSize: 12, color: '#ff8fa3' }}>{archetype}</div>
               </InfoBlock>
             </div>
           ) : null}
@@ -581,7 +581,7 @@ function ActiveCardPanel({
         border: '1px solid rgba(191, 123, 39, 0.35)',
         background:
           'linear-gradient(180deg, rgba(15,6,6,0.88) 0%, rgba(10,4,4,0.82) 100%)',
-        color: '#ffe0a6',
+        color: '#ff8fa3',
         fontFamily: 'monospace',
         backdropFilter: 'blur(8px)',
         boxShadow: '0 0 30px rgba(0,0,0,0.38)',
@@ -591,7 +591,7 @@ function ActiveCardPanel({
 
       {cardName ? (
         <>
-          <div style={{ fontSize: 16, color: '#ffcf7c', marginBottom: 10 }}>
+          <div style={{ fontSize: 16, color: '#ff6f8c', marginBottom: 10 }}>
             {cardName}
           </div>
 
@@ -747,7 +747,7 @@ function OracleConsultationPanel({
         border: '1px solid rgba(191, 123, 39, 0.42)',
         background:
           'linear-gradient(180deg, rgba(14,5,5,0.92) 0%, rgba(8,3,3,0.88) 100%)',
-        color: '#ffe0a6',
+        color: '#ff8fa3',
         fontFamily: 'monospace',
         backdropFilter: 'blur(8px)',
         boxShadow: '0 0 30px rgba(0,0,0,0.4), 0 0 18px rgba(120,20,20,0.12)',
@@ -758,10 +758,10 @@ function OracleConsultationPanel({
       </div>
 
       <InfoBlock>
-        <div style={{ fontSize: 11, color: '#d89b6b', marginBottom: 4 }}>
+        <div style={{ fontSize: 11, color: '#d12a48', marginBottom: 4 }}>
           Deck: {deckReady ? 'active' : 'none'}
         </div>
-        <div style={{ fontSize: 11, color: '#d89b6b' }}>
+        <div style={{ fontSize: 11, color: '#d12a48' }}>
           Focused card: {focusedCardName ?? 'none selected'}
         </div>
       </InfoBlock>
@@ -779,7 +779,7 @@ function OracleConsultationPanel({
             padding: '10px 12px',
             background: '#120707',
             border: '1px solid #6a2b10',
-            color: '#ffe0a6',
+            color: '#ff8fa3',
             outline: 'none',
             resize: 'vertical',
             fontFamily: 'monospace',
@@ -795,7 +795,7 @@ function OracleConsultationPanel({
             flex: 1,
             padding: '10px 12px',
             background: canConsult ? '#5a1a0d' : '#2a100a',
-            color: canConsult ? '#ffe0a6' : '#735b43',
+            color: canConsult ? '#ff8fa3' : '#5d2831',
             border: '1px solid rgba(217,78,22,0.75)',
             cursor: canConsult ? 'pointer' : 'not-allowed',
             fontFamily: 'monospace',
@@ -855,7 +855,7 @@ function OracleConsultationPanel({
           <div>
             <SectionLabel>Prescription</SectionLabel>
             <InfoBlock>
-              <div style={{ fontSize: 12, lineHeight: 1.5, color: '#ffcf7c' }}>
+              <div style={{ fontSize: 12, lineHeight: 1.5, color: '#ff6f8c' }}>
                 {reading.prescription}
               </div>
             </InfoBlock>
@@ -878,7 +878,7 @@ function OracleConsultationPanel({
               <div style={{ display: 'grid', gap: 8 }}>
                 {reading.drawnCards.map((card) => (
                   <InfoBlock key={`${card.cardId}-${card.position}`}>
-                    <div style={{ fontSize: 12, color: '#ffcf7c', marginBottom: 4 }}>
+                    <div style={{ fontSize: 12, color: '#ff6f8c', marginBottom: 4 }}>
                       {card.position}: {card.cardName}
                     </div>
                     <div style={{ fontSize: 11, lineHeight: 1.45, color: '#d8bf9b' }}>
@@ -925,7 +925,7 @@ function CeremonyOverlay({
           padding: 18,
           border: '1px solid rgba(191,123,39,0.45)',
           background: 'rgba(15,5,5,0.82)',
-          color: '#ffe0a6',
+          color: '#ff8fa3',
           fontFamily: 'monospace',
           textAlign: 'center',
           boxShadow: '0 0 40px rgba(120,20,20,0.2)',
@@ -934,7 +934,7 @@ function CeremonyOverlay({
         <div style={{ fontSize: 11, letterSpacing: 1.8, color: '#c58a53', marginBottom: 8 }}>
           FORGING RITUAL IN PROGRESS
         </div>
-        <div style={{ fontSize: 18, color: '#ffcf7c', marginBottom: 8 }}>
+        <div style={{ fontSize: 18, color: '#ff6f8c', marginBottom: 8 }}>
           Inscribing the Arcanum
         </div>
         <div style={{ fontSize: 12, lineHeight: 1.45, color: '#d8bf9b' }}>

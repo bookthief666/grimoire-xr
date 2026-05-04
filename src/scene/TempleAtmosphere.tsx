@@ -16,7 +16,7 @@ function GlyphPlaneLine({
   a,
   b,
   z = -4.08,
-  color = '#ffb000',
+  color = '#ff003c',
   opacity = 0.38,
   width = 0.018,
 }: {

@@ -422,7 +422,7 @@ function PanelFrame({
       <mesh position={[0, 0, 0.006]}>
         <planeGeometry args={[1.98, 2.42]} />
         <meshBasicMaterial
-          color="#ffb000"
+          color="#ff003c"
           transparent
           opacity={0.12}
           depthWrite={false}
@@ -478,7 +478,7 @@ function MiniConsoleFrame({
       <mesh position={[0, 0, 0.006]}>
         <planeGeometry args={[1.18, 0.58]} />
         <meshBasicMaterial
-          color="#ffb000"
+          color="#ff003c"
           transparent
           opacity={0.12}
           depthWrite={false}
@@ -553,7 +553,7 @@ function RayButton({
       <mesh position={[0, 0, 0.006]}>
         <planeGeometry args={[width + 0.08, 0.23]} />
         <meshBasicMaterial
-          color={hovered && active ? glowColor : '#8f5b00'}
+          color={hovered && active ? glowColor : '#6e0018'}
           transparent
           opacity={hovered && active ? 0.36 : active ? 0.12 : 0.06}
           depthWrite={false}

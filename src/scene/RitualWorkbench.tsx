@@ -704,7 +704,7 @@ function FloatingMenuButton({
       <mesh position={[0, 0, 0.012]}>
         <planeGeometry args={[width + 0.12, 0.24]} />
         <meshBasicMaterial
-          color="#ffb000"
+          color="#ff003c"
           transparent
           opacity={hovered && !disabled ? 0.28 : 0.045}
           depthWrite={false}
@@ -1020,7 +1020,7 @@ function ForgeConfigReadout({
       <mesh position={[0, 0, 0.012]}>
         <planeGeometry args={[1.86, 1.62]} />
         <meshBasicMaterial
-          color="#ff7a1a"
+          color="#ff003c"
           transparent
           opacity={energized ? 0.08 : 0.04}
           depthWrite={false}
@@ -1710,7 +1710,7 @@ function CardFaceArt({ imageUrl }: { imageUrl: string }) {
         <Text
           position={[0, 0, 0.045]}
           fontSize={0.024}
-          color="#ff9a7a"
+          color="#ff5a72"
           anchorX="center"
           anchorY="middle"
           maxWidth={0.22}
@@ -2094,7 +2094,7 @@ function DeckTray({
           position={[-1.2, TABLE_Y + 0.158, 0.12]}
           rotation={[-Math.PI / 2, 0, 0]}
           fontSize={0.034}
-          color={active ? '#ff95a3' : '#8b6a45'}
+          color={active ? '#ff95a3' : '#7a2d3a'}
           anchorX="center"
           anchorY="middle"
           maxWidth={0.34}
