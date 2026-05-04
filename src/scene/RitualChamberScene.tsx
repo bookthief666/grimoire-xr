@@ -473,6 +473,103 @@ function OuroborosScaleTicks({
   )
 }
 
+const OUROBOROS_TEXTURE_PATHS = [
+  '/sigils/ouroboros-eye-talisman.png',
+  '/sigils/ouroboros-eye-talisman.jpg',
+  '/sigils/ouroboros-eye-talisman.jpeg',
+]
+
+function OuroborosImagePlate() {
+  const [texture, setTexture] = useState<THREE.Texture | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    const loader = new THREE.TextureLoader()
+
+    const loadPath = (index: number) => {
+      const path = OUROBOROS_TEXTURE_PATHS[index]
+
+      if (!path) return
+
+      loader.load(
+        path,
+        (loadedTexture) => {
+          if (cancelled) {
+            loadedTexture.dispose()
+            return
+          }
+
+          loadedTexture.colorSpace = THREE.SRGBColorSpace
+          loadedTexture.minFilter = THREE.LinearFilter
+          loadedTexture.magFilter = THREE.LinearFilter
+          loadedTexture.needsUpdate = true
+          setTexture(loadedTexture)
+        },
+        undefined,
+        () => {
+          loadPath(index + 1)
+        },
+      )
+    }
+
+    loadPath(0)
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  if (!texture) {
+    return (
+      <group>
+        <mesh position={[0, 0, 0.022]}>
+          <ringGeometry args={[0.95, 1.02, 128]} />
+          <meshBasicMaterial
+            color="#ff003c"
+            transparent
+            opacity={0.24}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+
+        <OuroborosScaleTicks radius={0.99} count={58} />
+      </group>
+    )
+  }
+
+  return (
+    <group>
+      <mesh position={[0, 0, 0.018]}>
+        <planeGeometry args={[2.18, 2.18]} />
+        <meshBasicMaterial
+          map={texture}
+          color="#ff174f"
+          transparent
+          opacity={0.86}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+          toneMapped={false}
+        />
+      </mesh>
+
+      <mesh position={[0, 0, 0.01]}>
+        <circleGeometry args={[1.15, 96]} />
+        <meshBasicMaterial
+          color="#120007"
+          transparent
+          opacity={0.18}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+    </group>
+  )
+}
+
+
 function OuroborosEyeTalisman() {
   const rootRef = useRef<THREE.Group>(null)
   const serpentRef = useRef<THREE.Group>(null)
@@ -482,41 +579,23 @@ function OuroborosEyeTalisman() {
   const upperLidRef = useRef<THREE.Mesh>(null)
   const lowerLidRef = useRef<THREE.Mesh>(null)
 
-  const hexPoints = useMemo(() => {
-    return Array.from({ length: 6 }, (_, index) => {
-      const angle = Math.PI / 2 + (index / 6) * Math.PI * 2
-      return [Math.cos(angle) * 0.68, Math.sin(angle) * 0.68] as [number, number]
-    })
-  }, [])
-
-  const starLines = useMemo(() => {
-    return [
-      [hexPoints[0], hexPoints[2]],
-      [hexPoints[2], hexPoints[4]],
-      [hexPoints[4], hexPoints[0]],
-      [hexPoints[1], hexPoints[3]],
-      [hexPoints[3], hexPoints[5]],
-      [hexPoints[5], hexPoints[1]],
-    ] as [[number, number], [number, number]][]
-  }, [hexPoints])
-
-  const planetGlyphs = useMemo(
-    () => [
-      { glyph: '☉', x: 0, y: 0.5 },
-      { glyph: '♃', x: 0.48, y: 0.18 },
-      { glyph: '♀', x: 0.52, y: -0.22 },
-      { glyph: '☽', x: 0.24, y: -0.48 },
-      { glyph: '☿', x: -0.34, y: -0.42 },
-      { glyph: '♂', x: -0.52, y: -0.1 },
-      { glyph: '♄', x: -0.44, y: 0.26 },
-    ],
-    [],
-  )
-
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime()
-    const blink = (Math.sin(t * 4.4) + 1) * 0.5
-    const open = 0.32 + blink * 0.68
+
+    // True eyelid cycle: open most of the time, closes once every 8 seconds.
+    // 0 = fully shut, 1 = fully open.
+    const cycle = t % 8
+    let open = 1
+
+    if (cycle > 6.55 && cycle <= 7.08) {
+      open = 1 - THREE.MathUtils.smoothstep(cycle, 6.55, 7.08)
+    } else if (cycle > 7.08 && cycle <= 7.44) {
+      open = 0.02
+    } else if (cycle > 7.44 && cycle <= 8) {
+      open = THREE.MathUtils.smoothstep(cycle, 7.44, 8)
+    }
+
+    open = THREE.MathUtils.clamp(open + Math.sin(t * 9.0) * 0.012, 0.02, 1)
 
     if (rootRef.current) {
       rootRef.current.position.y = 2.36 + Math.sin(t * 0.72) * 0.016
@@ -538,131 +617,26 @@ function OuroborosEyeTalisman() {
     }
 
     if (pupilRef.current) {
-      pupilRef.current.scale.set(1, 0.55 + open * 0.58, 1)
+      pupilRef.current.scale.set(1, 0.46 + open * 0.76, 1)
     }
 
     if (upperLidRef.current) {
-      upperLidRef.current.position.y = 0.09 + open * 0.058
-      upperLidRef.current.scale.y = 1.08 - open * 0.3
+      upperLidRef.current.position.y = 0.15 - (1 - open) * 0.112
+      upperLidRef.current.scale.set(1.62, 0.32 + (1 - open) * 1.38, 1)
     }
 
     if (lowerLidRef.current) {
-      lowerLidRef.current.position.y = -0.09 - open * 0.058
-      lowerLidRef.current.scale.y = 1.08 - open * 0.3
+      lowerLidRef.current.position.y = -0.15 + (1 - open) * 0.112
+      lowerLidRef.current.scale.set(1.62, 0.32 + (1 - open) * 1.38, 1)
     }
+
   })
 
   return (
     <group ref={rootRef} position={[0, 2.36, 0.12]} scale={0.92}>
       <group ref={serpentRef}>
-        <mesh>
-          <ringGeometry args={[0.95, 1.02, 128]} />
-          <meshBasicMaterial
-            color="#ff003c"
-            transparent
-            opacity={0.22}
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
-
-        <mesh rotation={[0, 0, -0.22]}>
-          <ringGeometry args={[0.98, 1.01, 128, 1, 0.5, Math.PI * 1.7]} />
-          <meshBasicMaterial
-            color="#ff5a72"
-            transparent
-            opacity={0.48}
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
-
-        <OuroborosScaleTicks />
-
-        <mesh position={[0.88, 0.26, 0.09]} rotation={[0, 0, -0.72]}>
-          <coneGeometry args={[0.11, 0.24, 3]} />
-          <meshBasicMaterial
-            color="#ff5a72"
-            transparent
-            opacity={0.62}
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-          />
-        </mesh>
-
-        <mesh position={[-0.86, -0.2, 0.09]} rotation={[0, 0, 2.38]}>
-          <coneGeometry args={[0.055, 0.22, 3]} />
-          <meshBasicMaterial
-            color="#ff003c"
-            transparent
-            opacity={0.42}
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-          />
-        </mesh>
+        <OuroborosImagePlate />
       </group>
-
-      <mesh position={[0, 0, 0.04]}>
-        <ringGeometry args={[0.71, 0.725, 96]} />
-        <meshBasicMaterial
-          color="#d8e8ff"
-          transparent
-          opacity={0.24}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      {starLines.map(([a, b], index) => (
-        <TalismanLine
-          key={index}
-          a={a}
-          b={b}
-          color={index < 3 ? '#ff003c' : '#ff5a72'}
-          opacity={0.38}
-          width={0.014}
-          z={0.058}
-        />
-      ))}
-
-      {planetGlyphs.map(({ glyph, x, y }) => (
-        <Text
-          key={glyph}
-          position={[x, y, 0.092]}
-          fontSize={0.078}
-          color="#ff5a72"
-          fillOpacity={0.64}
-          anchorX="center"
-          anchorY="middle"
-        >
-          {glyph}
-        </Text>
-      ))}
-
-      <Text
-        position={[0, -0.76, 0.09]}
-        fontSize={0.07}
-        color="#ff8fa3"
-        fillOpacity={0.68}
-        anchorX="center"
-        anchorY="middle"
-      >
-        יהוה
-      </Text>
-
-      <Text
-        position={[0, 0.86, 0.09]}
-        fontSize={0.052}
-        color="#d8e8ff"
-        fillOpacity={0.44}
-        anchorX="center"
-        anchorY="middle"
-      >
-        ὁ ὄφις
-      </Text>
 
       <mesh position={[0, 0, 0.106]} scale={[1.65, 0.62, 1]}>
         <ringGeometry args={[0.18, 0.205, 96]} />
@@ -725,27 +699,36 @@ function OuroborosEyeTalisman() {
         />
       </mesh>
 
-      <mesh ref={upperLidRef} position={[0, 0.14, 0.136]}>
-        <planeGeometry args={[0.54, 0.06]} />
+      <mesh ref={upperLidRef} position={[0, 0.15, 0.146]} scale={[1.62, 0.32, 1]}>
+        <circleGeometry args={[0.22, 48]} />
         <meshBasicMaterial
           color="#05070b"
           transparent
-          opacity={0.84}
+          opacity={0.97}
           depthWrite={false}
           side={THREE.DoubleSide}
         />
       </mesh>
 
-      <mesh ref={lowerLidRef} position={[0, -0.14, 0.136]}>
-        <planeGeometry args={[0.54, 0.06]} />
+      <mesh ref={lowerLidRef} position={[0, -0.15, 0.146]} scale={[1.62, 0.32, 1]}>
+        <circleGeometry args={[0.22, 48]} />
         <meshBasicMaterial
           color="#05070b"
           transparent
-          opacity={0.84}
+          opacity={0.97}
           depthWrite={false}
           side={THREE.DoubleSide}
         />
       </mesh>
+
+      <TalismanLine a={[-0.38, 0.084]} b={[-0.13, 0.142]} color="#ff8fa3" opacity={0.48} width={0.01} z={0.154} />
+      <TalismanLine a={[-0.13, 0.142]} b={[0.14, 0.142]} color="#ff8fa3" opacity={0.48} width={0.01} z={0.154} />
+      <TalismanLine a={[0.14, 0.142]} b={[0.38, 0.084]} color="#ff8fa3" opacity={0.48} width={0.01} z={0.154} />
+
+      <TalismanLine a={[-0.36, -0.078]} b={[-0.11, -0.132]} color="#ff5a72" opacity={0.34} width={0.008} z={0.153} />
+      <TalismanLine a={[-0.11, -0.132]} b={[0.13, -0.132]} color="#ff5a72" opacity={0.34} width={0.008} z={0.153} />
+      <TalismanLine a={[0.13, -0.132]} b={[0.36, -0.078]} color="#ff5a72" opacity={0.34} width={0.008} z={0.153} />
+
     </group>
   )
 }
