@@ -406,47 +406,351 @@ function OracleDais() {
   )
 }
 
-function RearShrine({
-  ritualImpulseRef,
+function TalismanLine({
+  a,
+  b,
+  z = 0.06,
+  color = '#ff003c',
+  opacity = 0.62,
+  width = 0.018,
 }: {
-  ritualImpulseRef: MutableRefObject<number>
+  a: [number, number]
+  b: [number, number]
+  z?: number
+  color?: string
+  opacity?: number
+  width?: number
 }) {
-  const outerRingRef = useRef<THREE.MeshBasicMaterial>(null)
-  const innerDiskRef = useRef<THREE.MeshBasicMaterial>(null)
-  const centerRingRef = useRef<THREE.MeshBasicMaterial>(null)
+  const dx = b[0] - a[0]
+  const dy = b[1] - a[1]
+  const length = Math.hypot(dx, dy)
+  const angle = Math.atan2(dy, dx)
 
-  const outerBase = useRef(new THREE.Color('#18202b'))
-  const outerPulse = useRef(new THREE.Color('#d8e8ff'))
+  return (
+    <mesh position={[(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, z]} rotation={[0, 0, angle]}>
+      <planeGeometry args={[length, width]} />
+      <meshBasicMaterial
+        color={color}
+        transparent
+        opacity={opacity}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  )
+}
 
-  const diskBase = useRef(new THREE.Color('#030609'))
-  const diskPulse = useRef(new THREE.Color('#101820'))
+function OuroborosScaleTicks({
+  radius = 0.98,
+  count = 44,
+}: {
+  radius?: number
+  count?: number
+}) {
+  return (
+    <>
+      {Array.from({ length: count }, (_, index) => {
+        const angle = (index / count) * Math.PI * 2
+        const inner = radius - 0.045
+        const outer = radius + 0.015
+        const a: [number, number] = [Math.cos(angle) * inner, Math.sin(angle) * inner]
+        const b: [number, number] = [Math.cos(angle + 0.035) * outer, Math.sin(angle + 0.035) * outer]
 
-  const centerBase = useRef(new THREE.Color('#d8e8ff'))
-  const centerPulse = useRef(new THREE.Color('#f8f3df'))
+        return (
+          <TalismanLine
+            key={index}
+            a={a}
+            b={b}
+            color={index % 3 === 0 ? '#ff5a72' : '#ff003c'}
+            opacity={0.28}
+            width={0.008}
+            z={0.078}
+          />
+        )
+      })}
+    </>
+  )
+}
 
-  const tempOuter = useRef(new THREE.Color())
-  const tempDisk = useRef(new THREE.Color())
-  const tempCenter = useRef(new THREE.Color())
+function OuroborosEyeTalisman() {
+  const rootRef = useRef<THREE.Group>(null)
+  const serpentRef = useRef<THREE.Group>(null)
+  const irisRef = useRef<THREE.MeshBasicMaterial>(null)
+  const irisGlowRef = useRef<THREE.MeshBasicMaterial>(null)
+  const pupilRef = useRef<THREE.Mesh>(null)
+  const upperLidRef = useRef<THREE.Mesh>(null)
+  const lowerLidRef = useRef<THREE.Mesh>(null)
 
-  useFrame((_, delta) => {
-    const impulse = ritualImpulseRef.current
+  const hexPoints = useMemo(() => {
+    return Array.from({ length: 6 }, (_, index) => {
+      const angle = Math.PI / 2 + (index / 6) * Math.PI * 2
+      return [Math.cos(angle) * 0.68, Math.sin(angle) * 0.68] as [number, number]
+    })
+  }, [])
 
-    if (outerRingRef.current) {
-      tempOuter.current.copy(outerBase.current).lerp(outerPulse.current, impulse * 0.92)
-      outerRingRef.current.color.lerp(tempOuter.current, delta * 7)
+  const starLines = useMemo(() => {
+    return [
+      [hexPoints[0], hexPoints[2]],
+      [hexPoints[2], hexPoints[4]],
+      [hexPoints[4], hexPoints[0]],
+      [hexPoints[1], hexPoints[3]],
+      [hexPoints[3], hexPoints[5]],
+      [hexPoints[5], hexPoints[1]],
+    ] as [[number, number], [number, number]][]
+  }, [hexPoints])
+
+  const planetGlyphs = useMemo(
+    () => [
+      { glyph: '☉', x: 0, y: 0.5 },
+      { glyph: '♃', x: 0.48, y: 0.18 },
+      { glyph: '♀', x: 0.52, y: -0.22 },
+      { glyph: '☽', x: 0.24, y: -0.48 },
+      { glyph: '☿', x: -0.34, y: -0.42 },
+      { glyph: '♂', x: -0.52, y: -0.1 },
+      { glyph: '♄', x: -0.44, y: 0.26 },
+    ],
+    [],
+  )
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime()
+    const blink = (Math.sin(t * 4.4) + 1) * 0.5
+    const open = 0.32 + blink * 0.68
+
+    if (rootRef.current) {
+      rootRef.current.position.y = 2.36 + Math.sin(t * 0.72) * 0.016
+      rootRef.current.rotation.z = Math.sin(t * 0.34) * 0.018
     }
 
-    if (innerDiskRef.current) {
-      tempDisk.current.copy(diskBase.current).lerp(diskPulse.current, impulse * 0.55)
-      innerDiskRef.current.color.lerp(tempDisk.current, delta * 5)
+    if (serpentRef.current) {
+      serpentRef.current.rotation.z += 0.0035
     }
 
-    if (centerRingRef.current) {
-      tempCenter.current.copy(centerBase.current).lerp(centerPulse.current, impulse)
-      centerRingRef.current.color.lerp(tempCenter.current, delta * 7.5)
+    if (irisRef.current) {
+      irisRef.current.color.setHSL((t * 0.58) % 1, 1, 0.58)
+      irisRef.current.opacity = 0.78 + Math.sin(t * 8.2) * 0.16
+    }
+
+    if (irisGlowRef.current) {
+      irisGlowRef.current.color.setHSL((t * 0.58 + 0.12) % 1, 1, 0.62)
+      irisGlowRef.current.opacity = 0.18 + Math.sin(t * 7.0) * 0.08
+    }
+
+    if (pupilRef.current) {
+      pupilRef.current.scale.set(1, 0.55 + open * 0.58, 1)
+    }
+
+    if (upperLidRef.current) {
+      upperLidRef.current.position.y = 0.09 + open * 0.058
+      upperLidRef.current.scale.y = 1.08 - open * 0.3
+    }
+
+    if (lowerLidRef.current) {
+      lowerLidRef.current.position.y = -0.09 - open * 0.058
+      lowerLidRef.current.scale.y = 1.08 - open * 0.3
     }
   })
 
+  return (
+    <group ref={rootRef} position={[0, 2.36, 0.12]} scale={0.92}>
+      <group ref={serpentRef}>
+        <mesh>
+          <ringGeometry args={[0.95, 1.02, 128]} />
+          <meshBasicMaterial
+            color="#ff003c"
+            transparent
+            opacity={0.22}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+
+        <mesh rotation={[0, 0, -0.22]}>
+          <ringGeometry args={[0.98, 1.01, 128, 1, 0.5, Math.PI * 1.7]} />
+          <meshBasicMaterial
+            color="#ff5a72"
+            transparent
+            opacity={0.48}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+
+        <OuroborosScaleTicks />
+
+        <mesh position={[0.88, 0.26, 0.09]} rotation={[0, 0, -0.72]}>
+          <coneGeometry args={[0.11, 0.24, 3]} />
+          <meshBasicMaterial
+            color="#ff5a72"
+            transparent
+            opacity={0.62}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+
+        <mesh position={[-0.86, -0.2, 0.09]} rotation={[0, 0, 2.38]}>
+          <coneGeometry args={[0.055, 0.22, 3]} />
+          <meshBasicMaterial
+            color="#ff003c"
+            transparent
+            opacity={0.42}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
+      </group>
+
+      <mesh position={[0, 0, 0.04]}>
+        <ringGeometry args={[0.71, 0.725, 96]} />
+        <meshBasicMaterial
+          color="#d8e8ff"
+          transparent
+          opacity={0.24}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      {starLines.map(([a, b], index) => (
+        <TalismanLine
+          key={index}
+          a={a}
+          b={b}
+          color={index < 3 ? '#ff003c' : '#ff5a72'}
+          opacity={0.38}
+          width={0.014}
+          z={0.058}
+        />
+      ))}
+
+      {planetGlyphs.map(({ glyph, x, y }) => (
+        <Text
+          key={glyph}
+          position={[x, y, 0.092]}
+          fontSize={0.078}
+          color="#ff5a72"
+          fillOpacity={0.64}
+          anchorX="center"
+          anchorY="middle"
+        >
+          {glyph}
+        </Text>
+      ))}
+
+      <Text
+        position={[0, -0.76, 0.09]}
+        fontSize={0.07}
+        color="#ff8fa3"
+        fillOpacity={0.68}
+        anchorX="center"
+        anchorY="middle"
+      >
+        יהוה
+      </Text>
+
+      <Text
+        position={[0, 0.86, 0.09]}
+        fontSize={0.052}
+        color="#d8e8ff"
+        fillOpacity={0.44}
+        anchorX="center"
+        anchorY="middle"
+      >
+        ὁ ὄφις
+      </Text>
+
+      <mesh position={[0, 0, 0.106]} scale={[1.65, 0.62, 1]}>
+        <ringGeometry args={[0.18, 0.205, 96]} />
+        <meshBasicMaterial
+          color="#d8e8ff"
+          transparent
+          opacity={0.4}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, 0, 0.112]} scale={[1.45, 0.52, 1]}>
+        <circleGeometry args={[0.2, 64]} />
+        <meshBasicMaterial
+          ref={irisGlowRef}
+          color="#00e5ff"
+          transparent
+          opacity={0.24}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0, 0, 0.122]} scale={[1.12, 0.88, 1]}>
+        <circleGeometry args={[0.122, 64]} />
+        <meshBasicMaterial
+          ref={irisRef}
+          color="#00e5ff"
+          transparent
+          opacity={0.92}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh ref={pupilRef} position={[0, 0, 0.132]}>
+        <circleGeometry args={[0.052, 32]} />
+        <meshBasicMaterial
+          color="#010103"
+          transparent
+          opacity={0.92}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh position={[0.044, 0.04, 0.142]} scale={[1.0, 0.48, 1]}>
+        <circleGeometry args={[0.026, 20]} />
+        <meshBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.72}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh ref={upperLidRef} position={[0, 0.14, 0.136]}>
+        <planeGeometry args={[0.54, 0.06]} />
+        <meshBasicMaterial
+          color="#05070b"
+          transparent
+          opacity={0.84}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh ref={lowerLidRef} position={[0, -0.14, 0.136]}>
+        <planeGeometry args={[0.54, 0.06]} />
+        <meshBasicMaterial
+          color="#05070b"
+          transparent
+          opacity={0.84}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+    </group>
+  )
+}
+
+function RearShrine() {
   return (
     <group position={[0, 0, -4.45]}>
       <mesh position={[0, 0.4, 0.45]}>
@@ -461,36 +765,7 @@ function RearShrine({
         <Edges color={PALETTE.outlineDark} />
       </mesh>
 
-      <mesh position={[0, 2.25, 0.05]}>
-        <torusGeometry args={[0.92, 0.07, 12, 36]} />
-        <meshBasicMaterial ref={outerRingRef} color="#d8e8ff" />
-      </mesh>
-
-      <mesh position={[0, 2.25, 0.02]}>
-        <circleGeometry args={[0.55, 24]} />
-        <meshBasicMaterial ref={innerDiskRef} color="#05070b" transparent opacity={0.82} />
-      </mesh>
-
-      <mesh position={[0, 2.25, 0.08]}>
-        <ringGeometry args={[0.2, 0.28, 24]} />
-        <meshBasicMaterial ref={centerRingRef} color="#f8f3df" />
-      </mesh>
-
-      <mesh position={[0, 2.95, 0.06]}>
-        <coneGeometry args={[0.18, 0.34, 4]} />
-        <meshBasicMaterial color={PALETTE.ember} />
-      </mesh>
-
-      <mesh position={[0, 2.65, 0.1]}>
-        <Text
-          fontSize={0.07}
-          color="#914052"
-          anchorX="center"
-          anchorY="middle"
-        >
-          THELEMA
-        </Text>
-      </mesh>
+      <OuroborosEyeTalisman />
     </group>
   )
 }
@@ -1246,7 +1521,7 @@ export function RitualChamberScene({
 
       <TempleFloor />
       <LateralWalls />
-      <RearShrine ritualImpulseRef={ritualImpulseRef} />
+      <RearShrine />
       <RearArch />
       <OracleDais />
       <Pillar x={-2.1} />
