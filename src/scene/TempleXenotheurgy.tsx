@@ -47,7 +47,7 @@ function HoloRing({
 function HoloBar({
   a,
   b,
-  color = '#b8860b',
+  color = '#8f1022',
   opacity = 0.38,
   width = 0.018,
   yOffset = 0,
@@ -196,7 +196,7 @@ function ThelemicStarGate({ ritualImpulseRef, loading = false, oracleLoading = f
         <Text visible={false}
           position={[0, -1.66, 0.12]}
           fontSize={0.065}
-          color={oracleLoading || hasOracleReading ? '#d9b5ff' : '#ffd18a'}
+          color={oracleLoading || hasOracleReading ? '#d9b5ff' : '#ff95a3'}
           anchorX="center"
           anchorY="middle"
           maxWidth={2.6}
@@ -258,7 +258,7 @@ function FloatingOrrery({ ritualImpulseRef, loading = false, oracleLoading = fal
       </mesh>
 
       {[
-        ['☉', 1.02, '#ffd18a'],
+        ['☉', 1.02, '#ff95a3'],
         ['☽', 0.82, '#d9b5ff'],
         ['♀', 0.62, '#ff5d8f'],
         ['☿', 0.47, '#d8e8ff'],
@@ -311,7 +311,7 @@ function QabalisticCircuitWall() {
         <mesh key={i} position={[x, y, 0.08]} raycast={noRaycast}>
           <circleGeometry args={[0.045, 18]} />
           <meshBasicMaterial
-            color={i % 2 === 0 ? '#ffd18a' : '#9a6bff'}
+            color={i % 2 === 0 ? '#ff95a3' : '#9a6bff'}
             transparent
             opacity={0.7}
             depthWrite={false}
@@ -456,10 +456,10 @@ function RitualStateConduit({
   const stateColor = oracleLoading || hasOracleReading
     ? '#9a6bff'
     : hasActiveCard
-      ? '#ffcf7c'
+      ? '#ff7a8f'
       : loading
         ? '#ff3d5a'
-        : '#b8860b'
+        : '#8f1022'
 
   useFrame(({ clock }, delta) => {
     const t = clock.getElapsedTime()
@@ -524,7 +524,7 @@ function RitualStateConduit({
         <ringGeometry args={[0.72, 0.735, 96]} />
         <meshBasicMaterial
           ref={ringBRef}
-          color={oracleLoading || hasOracleReading ? '#d9b5ff' : '#ffcf7c'}
+          color={oracleLoading || hasOracleReading ? '#d9b5ff' : '#ff7a8f'}
           transparent
           opacity={0.14}
           depthWrite={false}
@@ -547,7 +547,7 @@ function RitualStateConduit({
           rotation={[0.82, 0, 0]}
           radius={0.3}
           tube={0.007}
-          color={oracleLoading || hasOracleReading ? '#d9b5ff' : '#ffd18a'}
+          color={oracleLoading || hasOracleReading ? '#d9b5ff' : '#ff95a3'}
           opacity={active ? 0.42 : 0.14}
         />
 
@@ -572,7 +572,7 @@ function RitualStateConduit({
       <Text visible={false}
         position={[0, 2.08, 0]}
         fontSize={0.065}
-        color={active ? stateColor : '#7b5536'}
+        color={active ? stateColor : '#5d2831'}
         anchorX="center"
         anchorY="middle"
         maxWidth={1.65}
@@ -668,7 +668,7 @@ function DeckConstellation({
               >
                 <planeGeometry args={[0.055, 0.09]} />
                 <meshBasicMaterial
-                  color={oracleLoading || hasOracleReading ? '#9a6bff' : '#b8860b'}
+                  color={oracleLoading || hasOracleReading ? '#9a6bff' : '#8f1022'}
                   transparent
                   opacity={opacity}
                   depthWrite={false}
@@ -707,7 +707,7 @@ function DeckConstellation({
                 <mesh position={[0, 0, 0.008]} raycast={noRaycast}>
                   <ringGeometry args={[0.018, 0.024, 12]} />
                   <meshBasicMaterial
-                    color="#ffd18a"
+                    color="#ff95a3"
                     transparent
                     opacity={active ? 0.7 : 0.25}
                     depthWrite={false}
@@ -734,14 +734,14 @@ function DeckConstellation({
         rotation={[0, 0, Math.PI / 2]}
         radius={2.06}
         tube={0.006}
-        color={oracleLoading || hasOracleReading ? '#d9b5ff' : '#b8860b'}
+        color={oracleLoading || hasOracleReading ? '#d9b5ff' : '#8f1022'}
         opacity={active ? 0.22 : 0.075}
       />
 
       <Text visible={false}
         position={[0, -0.92, 0.06]}
         fontSize={0.062}
-        color={active ? '#ffd18a' : '#7b5536'}
+        color={active ? '#ff95a3' : '#5d2831'}
         anchorX="center"
         anchorY="middle"
         maxWidth={2.5}
@@ -779,7 +779,7 @@ function HumanScaleTempleLife({
         y: 1.18 + (i % 4) * 0.11,
         z: -0.92 + Math.sin(angle) * 0.38,
         phase: i * 0.77,
-        color: i % 3 === 0 ? '#ffd18a' : i % 3 === 1 ? '#9a6bff' : '#ff3d5a',
+        color: i % 3 === 0 ? '#ff95a3' : i % 3 === 1 ? '#9a6bff' : '#ff3d5a',
       }
     })
   }, [])
@@ -911,7 +911,7 @@ function HumanScaleTempleLife({
         <Text visible={false}
           position={[0, 2.92, 0.08]}
           fontSize={0.072}
-          color={oracleActive ? '#d9b5ff' : '#9f744b'}
+          color={oracleActive ? '#d9b5ff' : '#914052'}
           anchorX="center"
           anchorY="middle"
           maxWidth={1.82}

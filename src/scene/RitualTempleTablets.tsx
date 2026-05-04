@@ -322,7 +322,7 @@ function TabletButton({
       <Text
         position={[0, 0.003, 0.04]}
         fontSize={0.055}
-        color={disabled ? '#665039' : hovered ? '#ffffff' : '#ffd18a'}
+        color={disabled ? '#665039' : hovered ? '#ffffff' : '#ff95a3'}
         anchorX="center"
         anchorY="middle"
       >
@@ -467,7 +467,7 @@ function TempleTablet({ data }: { data: TabletData }) {
       <Text
         position={[0, 0.61, 0.08]}
         fontSize={0.062}
-        color="#ffd18a"
+        color="#ff95a3"
         anchorX="center"
         anchorY="middle"
         maxWidth={1.42}
@@ -478,7 +478,7 @@ function TempleTablet({ data }: { data: TabletData }) {
       <Text
         position={[0, 0.51, 0.08]}
         fontSize={0.028}
-        color="#9f744b"
+        color="#914052"
         anchorX="center"
         anchorY="middle"
         maxWidth={1.48}
@@ -519,7 +519,7 @@ function TempleTablet({ data }: { data: TabletData }) {
       <Text
         position={[0, -0.67, 0.12]}
         fontSize={0.03}
-        color="#9f744b"
+        color="#914052"
         anchorX="center"
         anchorY="middle"
         maxWidth={0.4}
@@ -569,7 +569,7 @@ export function RitualTempleTablets({
         title: dossier.subject.toUpperCase(),
         subtitle: dossier.archetype || 'Subject dossier engraved in the field.',
         body: makeDossierText(dossier),
-        accent: '#ff5a1f',
+        accent: '#ff3355',
         seal: '⌬',
       }
     }

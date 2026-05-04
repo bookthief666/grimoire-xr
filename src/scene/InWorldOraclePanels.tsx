@@ -523,7 +523,7 @@ function PanelButton({
         anchorX="center"
         anchorY="middle"
         fontSize={0.042}
-        color={disabled ? '#6e4934' : hovered ? '#ffffff' : '#ffd18a'}
+        color={disabled ? '#6e4934' : hovered ? '#ffffff' : '#ff95a3'}
         maxWidth={width - 0.03}
       >
         {label}
@@ -689,7 +689,7 @@ function DragHeader({
         anchorX="left"
         anchorY="middle"
         fontSize={0.044}
-        color="#ffd18a"
+        color="#ff95a3"
         maxWidth={0.82}
       >
         {title}
@@ -1070,7 +1070,7 @@ export function InWorldOraclePanels({
             title={dossierTitle.toUpperCase()}
             subtitle="SUBJECT DOSSIER"
             pages={dossierPages}
-            accent="#ff9a00"
+            accent="#ff3048"
             dragging={draggingPanel === 'dossier'}
             onDragStart={(point) => startDrag('dossier', point)}
             onDragMove={updateDrag}
@@ -1094,7 +1094,7 @@ export function InWorldOraclePanels({
             title={cardTitle.toUpperCase()}
             subtitle="ACTIVE ARCANUM"
             pages={cardPages}
-            accent="#ffcf7c"
+            accent="#ff7a8f"
             dragging={draggingPanel === 'card'}
             onDragStart={(point) => startDrag('card', point)}
             onDragMove={updateDrag}
