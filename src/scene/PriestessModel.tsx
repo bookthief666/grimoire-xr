@@ -1,10 +1,13 @@
-import { useEffect, useMemo } from 'react'
+import { useFrame } from '@react-three/fiber'
+import { useEffect, useMemo, useRef } from 'react'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 
 const PRIESTESS_MODEL_PATH = '/models/obsidian-veil-priestess.glb'
 
 export function PriestessModel() {
+  const auraRingRef = useRef<THREE.Mesh>(null)
+  const auraDiscRef = useRef<THREE.Mesh>(null)
   const gltf = useGLTF(PRIESTESS_MODEL_PATH)
   const scene = useMemo(() => gltf.scene.clone(true), [gltf.scene])
 
@@ -20,6 +23,25 @@ export function PriestessModel() {
       }),
     [],
   )
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime()
+
+    if (auraRingRef.current) {
+      auraRingRef.current.rotation.z = t * 0.035
+      const material = auraRingRef.current.material
+      if (material instanceof THREE.MeshBasicMaterial) {
+        material.opacity = 0.16 + Math.sin(t * 0.9) * 0.035
+      }
+    }
+
+    if (auraDiscRef.current) {
+      const material = auraDiscRef.current.material
+      if (material instanceof THREE.MeshBasicMaterial) {
+        material.opacity = 0.045 + Math.sin(t * 0.65) * 0.015
+      }
+    }
+  })
 
   useEffect(() => {
     scene.traverse((object) => {
@@ -43,6 +65,44 @@ export function PriestessModel() {
       rotation={[0, 0, 0]}
       scale={0.96}
     >
+      <mesh
+        name="PriestessAuraDisc"
+        ref={auraDiscRef}
+        position={[0, 0.92, -0.16]}
+        renderOrder={10}
+      >
+        <circleGeometry args={[0.82, 96]} />
+        <meshBasicMaterial
+          color="#ff003c"
+          transparent
+          opacity={0.045}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+          depthTest
+          toneMapped={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      <mesh
+        name="PriestessAuraRing"
+        ref={auraRingRef}
+        position={[0, 0.92, -0.15]}
+        renderOrder={11}
+      >
+        <ringGeometry args={[0.76, 0.8, 128]} />
+        <meshBasicMaterial
+          color="#ff1a3d"
+          transparent
+          opacity={0.16}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+          depthTest
+          toneMapped={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
       <primitive object={scene} />
     </group>
   )
