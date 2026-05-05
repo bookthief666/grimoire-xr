@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type MutableRefObject,
-} from 'react'
+import { Suspense, type MutableRefObject, useEffect, useMemo, useRef, useState } from 'react'
 import { Edges, Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -30,6 +24,10 @@ import { InWorldRitualConsole } from './InWorldRitualConsole'
 import { RitualWorkbench } from './RitualWorkbench'
 import { BabalonStarGlyph } from './ThelemicSigils'
 import type { ArtStyleFamily } from '../constants/artStyles'
+import { PriestessModel } from './PriestessModel'
+
+const ENABLE_PRIESTESS_MODEL = import.meta.env.DEV
+
 
 function isUsableGeneratedCardImageUrl(value: string | undefined): value is string {
   if (!value) return false
@@ -1270,6 +1268,11 @@ export function RitualChamberScene({
       <TempleFloor />
       <LateralWalls />
       <RearShrine />
+      {ENABLE_PRIESTESS_MODEL ? (
+        <Suspense fallback={null}>
+          <PriestessModel />
+        </Suspense>
+      ) : null}
       <RearArch />
       <OracleDais />
       <Pillar x={-2.1} />
