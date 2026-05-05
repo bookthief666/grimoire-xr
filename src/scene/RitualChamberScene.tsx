@@ -406,41 +406,6 @@ function OracleDais() {
   )
 }
 
-function TalismanLine({
-  a,
-  b,
-  z = 0.06,
-  color = '#ff003c',
-  opacity = 0.62,
-  width = 0.018,
-}: {
-  a: [number, number]
-  b: [number, number]
-  z?: number
-  color?: string
-  opacity?: number
-  width?: number
-}) {
-  const dx = b[0] - a[0]
-  const dy = b[1] - a[1]
-  const length = Math.hypot(dx, dy)
-  const angle = Math.atan2(dy, dx)
-
-  return (
-    <mesh position={[(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, z]} rotation={[0, 0, angle]}>
-      <planeGeometry args={[length, width]} />
-      <meshBasicMaterial
-        color={color}
-        transparent
-        opacity={opacity}
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-        side={THREE.DoubleSide}
-      />
-    </mesh>
-  )
-}
-
 const OUROBOROS_TEXTURE_PATHS = [
   '/sigils/ouroboros-eye-talisman-cutout.png',
   '/sigils/ouroboros-eye-talisman.png',
@@ -509,75 +474,25 @@ function OuroborosImagePlate() {
 
 function OuroborosEyeTalisman() {
   const rootRef = useRef<THREE.Group>(null)
-  const upperLidRef = useRef<THREE.Mesh>(null)
-  const lowerLidRef = useRef<THREE.Mesh>(null)
+  const spinRef = useRef<THREE.Group>(null)
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime()
 
-    const cycle = t % 8
-    let open = 1
-
-    if (cycle > 6.55 && cycle <= 7.08) {
-      open = 1 - THREE.MathUtils.smoothstep(cycle, 6.55, 7.08)
-    } else if (cycle > 7.08 && cycle <= 7.44) {
-      open = 0.02
-    } else if (cycle > 7.44 && cycle <= 8) {
-      open = THREE.MathUtils.smoothstep(cycle, 7.44, 8)
-    }
-
-    open = THREE.MathUtils.clamp(open, 0.02, 1)
-
     if (rootRef.current) {
       rootRef.current.position.y = 2.36 + Math.sin(t * 0.48) * 0.012
-      rootRef.current.rotation.z = Math.sin(t * 0.22) * 0.012
     }
 
-    if (upperLidRef.current) {
-      upperLidRef.current.position.y = 0.085 - (1 - open) * 0.105
-      upperLidRef.current.scale.set(1.72, 0.24 + (1 - open) * 1.52, 1)
-    }
-
-    if (lowerLidRef.current) {
-      lowerLidRef.current.position.y = -0.085 + (1 - open) * 0.105
-      lowerLidRef.current.scale.set(1.72, 0.24 + (1 - open) * 1.52, 1)
+    if (spinRef.current) {
+      spinRef.current.rotation.z = t * 0.18
     }
   })
 
   return (
     <group ref={rootRef} position={[0, 2.36, 0.12]} scale={0.92}>
-      <OuroborosImagePlate />
-
-      {/* Eyelid occluders over the real eye in the image. No fake iris overlay. */}
-      <mesh ref={upperLidRef} position={[0, 0.085, 0.082]} scale={[1.72, 0.24, 1]}>
-        <circleGeometry args={[0.18, 48]} />
-        <meshBasicMaterial
-          color="#05070b"
-          transparent
-          opacity={0.98}
-          depthWrite={false}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh ref={lowerLidRef} position={[0, -0.085, 0.082]} scale={[1.72, 0.24, 1]}>
-        <circleGeometry args={[0.18, 48]} />
-        <meshBasicMaterial
-          color="#05070b"
-          transparent
-          opacity={0.98}
-          depthWrite={false}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <TalismanLine a={[-0.32, 0.058]} b={[-0.1, 0.11]} color="#ff8fa3" opacity={0.34} width={0.008} z={0.095} />
-      <TalismanLine a={[-0.1, 0.11]} b={[0.12, 0.11]} color="#ff8fa3" opacity={0.34} width={0.008} z={0.095} />
-      <TalismanLine a={[0.12, 0.11]} b={[0.32, 0.058]} color="#ff8fa3" opacity={0.34} width={0.008} z={0.095} />
-
-      <TalismanLine a={[-0.31, -0.052]} b={[-0.09, -0.098]} color="#ff5a72" opacity={0.26} width={0.007} z={0.094} />
-      <TalismanLine a={[-0.09, -0.098]} b={[0.11, -0.098]} color="#ff5a72" opacity={0.26} width={0.007} z={0.094} />
-      <TalismanLine a={[0.11, -0.098]} b={[0.31, -0.052]} color="#ff5a72" opacity={0.26} width={0.007} z={0.094} />
+      <group ref={spinRef}>
+        <OuroborosImagePlate />
+      </group>
     </group>
   )
 }
