@@ -39,9 +39,9 @@ export function PriestessModel() {
   return (
     <group
       name="ObsidianVeilPriestess"
-      position={[0, -0.04, -3.05]}
-      rotation={[0, Math.PI, 0]}
-      scale={1.08}
+      position={[0, -0.08, -1.72]}
+      rotation={[0, 0, 0]}
+      scale={0.96}
     >
       <primitive object={scene} />
     </group>
