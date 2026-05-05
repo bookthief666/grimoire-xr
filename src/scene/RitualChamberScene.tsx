@@ -207,7 +207,7 @@ function Pillar({ x, z = -3.55 }: { x: number; z?: number }) {
           transparent
           opacity={0.24}
           depthWrite={false}
-          blending={THREE.AdditiveBlending}
+          blending={THREE.NormalBlending}
         />
       </mesh>
 
@@ -218,7 +218,7 @@ function Pillar({ x, z = -3.55 }: { x: number; z?: number }) {
           transparent
           opacity={0.12}
           depthWrite={false}
-          blending={THREE.AdditiveBlending}
+          blending={THREE.NormalBlending}
         />
       </mesh>
 
@@ -441,42 +441,9 @@ function TalismanLine({
   )
 }
 
-function OuroborosScaleTicks({
-  radius = 0.98,
-  count = 44,
-}: {
-  radius?: number
-  count?: number
-}) {
-  return (
-    <>
-      {Array.from({ length: count }, (_, index) => {
-        const angle = (index / count) * Math.PI * 2
-        const inner = radius - 0.045
-        const outer = radius + 0.015
-        const a: [number, number] = [Math.cos(angle) * inner, Math.sin(angle) * inner]
-        const b: [number, number] = [Math.cos(angle + 0.035) * outer, Math.sin(angle + 0.035) * outer]
-
-        return (
-          <TalismanLine
-            key={index}
-            a={a}
-            b={b}
-            color={index % 3 === 0 ? '#ff5a72' : '#ff003c'}
-            opacity={0.28}
-            width={0.008}
-            z={0.078}
-          />
-        )
-      })}
-    </>
-  )
-}
-
 const OUROBOROS_TEXTURE_PATHS = [
+  '/sigils/ouroboros-eye-talisman-cutout.png',
   '/sigils/ouroboros-eye-talisman.png',
-  '/sigils/ouroboros-eye-talisman.jpg',
-  '/sigils/ouroboros-eye-talisman.jpeg',
 ]
 
 function OuroborosImagePlate() {
@@ -488,7 +455,6 @@ function OuroborosImagePlate() {
 
     const loadPath = (index: number) => {
       const path = OUROBOROS_TEXTURE_PATHS[index]
-
       if (!path) return
 
       loader.load(
@@ -520,70 +486,35 @@ function OuroborosImagePlate() {
   }, [])
 
   if (!texture) {
-    return (
-      <group>
-        <mesh position={[0, 0, 0.022]}>
-          <ringGeometry args={[0.95, 1.02, 128]} />
-          <meshBasicMaterial
-            color="#ff003c"
-            transparent
-            opacity={0.24}
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
-
-        <OuroborosScaleTicks radius={0.99} count={58} />
-      </group>
-    )
+    return null
   }
 
   return (
-    <group>
-      <mesh position={[0, 0, 0.018]}>
-        <planeGeometry args={[2.18, 2.18]} />
-        <meshBasicMaterial
-          map={texture}
-          color="#ff174f"
-          transparent
-          opacity={0.86}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-          toneMapped={false}
-        />
-      </mesh>
-
-      <mesh position={[0, 0, 0.01]}>
-        <circleGeometry args={[1.15, 96]} />
-        <meshBasicMaterial
-          color="#120007"
-          transparent
-          opacity={0.18}
-          depthWrite={false}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-    </group>
+    <mesh position={[0, 0, 0.018]}>
+      <planeGeometry args={[2.08, 2.08]} />
+      <meshBasicMaterial
+        map={texture}
+        color="#ffffff"
+        transparent
+        opacity={0.98}
+        alphaTest={0.12}
+        depthWrite={false}
+        blending={THREE.NormalBlending}
+        side={THREE.DoubleSide}
+        toneMapped={false}
+      />
+    </mesh>
   )
 }
 
-
 function OuroborosEyeTalisman() {
   const rootRef = useRef<THREE.Group>(null)
-  const serpentRef = useRef<THREE.Group>(null)
-  const irisRef = useRef<THREE.MeshBasicMaterial>(null)
-  const irisGlowRef = useRef<THREE.MeshBasicMaterial>(null)
-  const pupilRef = useRef<THREE.Mesh>(null)
   const upperLidRef = useRef<THREE.Mesh>(null)
   const lowerLidRef = useRef<THREE.Mesh>(null)
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime()
 
-    // True eyelid cycle: open most of the time, closes once every 8 seconds.
-    // 0 = fully shut, 1 = fully open.
     const cycle = t % 8
     let open = 1
 
@@ -595,143 +526,62 @@ function OuroborosEyeTalisman() {
       open = THREE.MathUtils.smoothstep(cycle, 7.44, 8)
     }
 
-    open = THREE.MathUtils.clamp(open + Math.sin(t * 9.0) * 0.012, 0.02, 1)
+    open = THREE.MathUtils.clamp(open, 0.02, 1)
 
     if (rootRef.current) {
-      rootRef.current.position.y = 2.36 + Math.sin(t * 0.72) * 0.016
-      rootRef.current.rotation.z = Math.sin(t * 0.34) * 0.018
-    }
-
-    if (serpentRef.current) {
-      serpentRef.current.rotation.z += 0.0035
-    }
-
-    if (irisRef.current) {
-      irisRef.current.color.setHSL((t * 0.58) % 1, 1, 0.58)
-      irisRef.current.opacity = 0.78 + Math.sin(t * 8.2) * 0.16
-    }
-
-    if (irisGlowRef.current) {
-      irisGlowRef.current.color.setHSL((t * 0.58 + 0.12) % 1, 1, 0.62)
-      irisGlowRef.current.opacity = 0.18 + Math.sin(t * 7.0) * 0.08
-    }
-
-    if (pupilRef.current) {
-      pupilRef.current.scale.set(1, 0.46 + open * 0.76, 1)
+      rootRef.current.position.y = 2.36 + Math.sin(t * 0.48) * 0.012
+      rootRef.current.rotation.z = Math.sin(t * 0.22) * 0.012
     }
 
     if (upperLidRef.current) {
-      upperLidRef.current.position.y = 0.15 - (1 - open) * 0.112
-      upperLidRef.current.scale.set(1.62, 0.32 + (1 - open) * 1.38, 1)
+      upperLidRef.current.position.y = 0.085 - (1 - open) * 0.105
+      upperLidRef.current.scale.set(1.72, 0.24 + (1 - open) * 1.52, 1)
     }
 
     if (lowerLidRef.current) {
-      lowerLidRef.current.position.y = -0.15 + (1 - open) * 0.112
-      lowerLidRef.current.scale.set(1.62, 0.32 + (1 - open) * 1.38, 1)
+      lowerLidRef.current.position.y = -0.085 + (1 - open) * 0.105
+      lowerLidRef.current.scale.set(1.72, 0.24 + (1 - open) * 1.52, 1)
     }
-
   })
 
   return (
     <group ref={rootRef} position={[0, 2.36, 0.12]} scale={0.92}>
-      <group ref={serpentRef}>
-        <OuroborosImagePlate />
-      </group>
+      <OuroborosImagePlate />
 
-      <mesh position={[0, 0, 0.106]} scale={[1.65, 0.62, 1]}>
-        <ringGeometry args={[0.18, 0.205, 96]} />
-        <meshBasicMaterial
-          color="#d8e8ff"
-          transparent
-          opacity={0.4}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh position={[0, 0, 0.112]} scale={[1.45, 0.52, 1]}>
-        <circleGeometry args={[0.2, 64]} />
-        <meshBasicMaterial
-          ref={irisGlowRef}
-          color="#00e5ff"
-          transparent
-          opacity={0.24}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh position={[0, 0, 0.122]} scale={[1.12, 0.88, 1]}>
-        <circleGeometry args={[0.122, 64]} />
-        <meshBasicMaterial
-          ref={irisRef}
-          color="#00e5ff"
-          transparent
-          opacity={0.92}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh ref={pupilRef} position={[0, 0, 0.132]}>
-        <circleGeometry args={[0.052, 32]} />
-        <meshBasicMaterial
-          color="#010103"
-          transparent
-          opacity={0.92}
-          depthWrite={false}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh position={[0.044, 0.04, 0.142]} scale={[1.0, 0.48, 1]}>
-        <circleGeometry args={[0.026, 20]} />
-        <meshBasicMaterial
-          color="#ffffff"
-          transparent
-          opacity={0.72}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh ref={upperLidRef} position={[0, 0.15, 0.146]} scale={[1.62, 0.32, 1]}>
-        <circleGeometry args={[0.22, 48]} />
+      {/* Eyelid occluders over the real eye in the image. No fake iris overlay. */}
+      <mesh ref={upperLidRef} position={[0, 0.085, 0.082]} scale={[1.72, 0.24, 1]}>
+        <circleGeometry args={[0.18, 48]} />
         <meshBasicMaterial
           color="#05070b"
           transparent
-          opacity={0.97}
+          opacity={0.98}
           depthWrite={false}
           side={THREE.DoubleSide}
         />
       </mesh>
 
-      <mesh ref={lowerLidRef} position={[0, -0.15, 0.146]} scale={[1.62, 0.32, 1]}>
-        <circleGeometry args={[0.22, 48]} />
+      <mesh ref={lowerLidRef} position={[0, -0.085, 0.082]} scale={[1.72, 0.24, 1]}>
+        <circleGeometry args={[0.18, 48]} />
         <meshBasicMaterial
           color="#05070b"
           transparent
-          opacity={0.97}
+          opacity={0.98}
           depthWrite={false}
           side={THREE.DoubleSide}
         />
       </mesh>
 
-      <TalismanLine a={[-0.38, 0.084]} b={[-0.13, 0.142]} color="#ff8fa3" opacity={0.48} width={0.01} z={0.154} />
-      <TalismanLine a={[-0.13, 0.142]} b={[0.14, 0.142]} color="#ff8fa3" opacity={0.48} width={0.01} z={0.154} />
-      <TalismanLine a={[0.14, 0.142]} b={[0.38, 0.084]} color="#ff8fa3" opacity={0.48} width={0.01} z={0.154} />
+      <TalismanLine a={[-0.32, 0.058]} b={[-0.1, 0.11]} color="#ff8fa3" opacity={0.34} width={0.008} z={0.095} />
+      <TalismanLine a={[-0.1, 0.11]} b={[0.12, 0.11]} color="#ff8fa3" opacity={0.34} width={0.008} z={0.095} />
+      <TalismanLine a={[0.12, 0.11]} b={[0.32, 0.058]} color="#ff8fa3" opacity={0.34} width={0.008} z={0.095} />
 
-      <TalismanLine a={[-0.36, -0.078]} b={[-0.11, -0.132]} color="#ff5a72" opacity={0.34} width={0.008} z={0.153} />
-      <TalismanLine a={[-0.11, -0.132]} b={[0.13, -0.132]} color="#ff5a72" opacity={0.34} width={0.008} z={0.153} />
-      <TalismanLine a={[0.13, -0.132]} b={[0.36, -0.078]} color="#ff5a72" opacity={0.34} width={0.008} z={0.153} />
-
+      <TalismanLine a={[-0.31, -0.052]} b={[-0.09, -0.098]} color="#ff5a72" opacity={0.26} width={0.007} z={0.094} />
+      <TalismanLine a={[-0.09, -0.098]} b={[0.11, -0.098]} color="#ff5a72" opacity={0.26} width={0.007} z={0.094} />
+      <TalismanLine a={[0.11, -0.098]} b={[0.31, -0.052]} color="#ff5a72" opacity={0.26} width={0.007} z={0.094} />
     </group>
   )
 }
+
 
 function RearShrine() {
   return (
