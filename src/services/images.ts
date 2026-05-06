@@ -1,4 +1,11 @@
-import type { CardMetadata, ErosField, VisualStyle } from '../types/grimoire'
+import type {
+  ArtStyle,
+  CardMetadata,
+  ErosField,
+  ErosLevel,
+  TarotSystem,
+  VisualStyle,
+} from '../types/grimoire'
 
 export type CardImageRequest = {
   deckId: string
@@ -6,6 +13,9 @@ export type CardImageRequest = {
   cardName: string
   sigil: string
   artPrompt: string
+  tarotSystem?: TarotSystem
+  erosLevel?: ErosLevel
+  artStyle?: ArtStyle
   visualStyle?: VisualStyle
   erosField?: ErosField
   metadata?: CardMetadata
