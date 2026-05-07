@@ -284,6 +284,107 @@ function TwinThelemicPillars({
   )
 }
 
+function RearDepthArchitecture() {
+  const gateDepths = [-9.5, -13.5, -18.0, -23.5]
+  const sideRails = [
+    { x: -2.8, z: -8.4, h: 2.2, o: 0.12 },
+    { x: 2.8, z: -8.4, h: 2.2, o: 0.12 },
+    { x: -4.4, z: -13.2, h: 3.2, o: 0.095 },
+    { x: 4.4, z: -13.2, h: 3.2, o: 0.095 },
+    { x: -6.4, z: -19.2, h: 4.5, o: 0.07 },
+    { x: 6.4, z: -19.2, h: 4.5, o: 0.07 },
+  ]
+
+  return (
+    <group raycast={noRaycast}>
+      {gateDepths.map((z, index) => {
+        const width = 4.6 + index * 1.45
+        const height = 2.25 + index * 0.72
+        const y = 1.72 + index * 0.34
+        const opacity = 0.12 - index * 0.018
+
+        return (
+          <group key={z} position={[0, y, z]} raycast={noRaycast}>
+            <Beam
+              position={[0, height * 0.5, 0]}
+              rotation={[0, 0, 0]}
+              size={[width, 0.025]}
+              color={index % 2 === 0 ? '#d8e8ff' : '#f8f3df'}
+              opacity={opacity}
+            />
+
+            <Beam
+              position={[-width * 0.5, 0, 0]}
+              rotation={[0, 0, 0]}
+              size={[0.026, height]}
+              color="#d8e8ff"
+              opacity={opacity * 0.78}
+            />
+
+            <Beam
+              position={[width * 0.5, 0, 0]}
+              rotation={[0, 0, 0]}
+              size={[0.026, height]}
+              color="#d8e8ff"
+              opacity={opacity * 0.78}
+            />
+
+            <Ring
+              position={[0, height * 0.5, 0.018]}
+              rotation={[0, 0, 0]}
+              radius={0.38 + index * 0.16}
+              tube={0.004}
+              color={index % 2 === 0 ? '#f8f3df' : '#4258ff'}
+              opacity={opacity * 0.68}
+            />
+          </group>
+        )
+      })}
+
+      {sideRails.map((rail, index) => (
+        <group key={`${rail.x}-${rail.z}`} position={[rail.x, rail.h * 0.5, rail.z]} raycast={noRaycast}>
+          <mesh raycast={noRaycast}>
+            <boxGeometry args={[0.095, rail.h, 0.095]} />
+            <meshStandardMaterial
+              color="#030507"
+              emissive="#071018"
+              emissiveIntensity={0.18}
+              roughness={0.22}
+              metalness={0.8}
+              transparent
+              opacity={0.86}
+            />
+          </mesh>
+
+          <Beam
+            position={[rail.x < 0 ? 0.08 : -0.08, 0, 0.06]}
+            rotation={[0, 0, 0]}
+            size={[0.012, rail.h * 0.92]}
+            color={index % 2 === 0 ? '#d8e8ff' : '#f8f3df'}
+            opacity={rail.o}
+          />
+        </group>
+      ))}
+
+      <Beam
+        position={[0, 0.34, -12.0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        size={[8.8, 0.018]}
+        color="#d8e8ff"
+        opacity={0.055}
+      />
+
+      <Beam
+        position={[0, 0.36, -18.0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        size={[12.4, 0.014]}
+        color="#f8f3df"
+        opacity={0.04}
+      />
+    </group>
+  )
+}
+
 function FloatingObeliskField({ ritualImpulseRef }: Props) {
   const rootRef = useRef<THREE.Group>(null)
   const stones = useMemo(
@@ -520,6 +621,7 @@ export function TempleGrandArchitecture({
   return (
     <group>
       <DaliesqueVoidFloor />
+      <RearDepthArchitecture />
       <TwinThelemicPillars
         ritualImpulseRef={ritualImpulseRef}
         loading={loading}
