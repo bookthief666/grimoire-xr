@@ -4,6 +4,9 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { GrimoireCard, OracleReading, SubjectDossier } from '../types/grimoire'
 
+/** Raised above and behind the altar, in the CONTENT zone (~1.78m in VR). */
+const CONTENT_ANCHOR: [number, number, number] = [0, 1.72, -1.78]
+
 type UnknownRecord = Record<string, unknown>
 
 type TabletData = {
@@ -580,7 +583,13 @@ export function RitualTempleTablets({
   if (!data) return null
 
   return (
-    <group position={[0, 1.58, -1.22]} rotation={[0, 0, 0]} scale={0.9}>
+    // Sits in the CONTENT zone (see scene/zones.ts). At the previous
+    // [0, 1.58, -1.22] this slab was 1.22m from the VR user - inside the WORK
+    // zone, in front of the altar controls, and 1.73m wide, so it eclipsed the
+    // whole workbench control layer whenever a reading appeared. Pushed back and
+    // lifted so it reads as an inscription raised above and behind the altar,
+    // and so nearer controls correctly draw in front of it.
+    <group position={CONTENT_ANCHOR} rotation={[0, 0, 0]} scale={0.9}>
       <TempleTablet data={data} />
     </group>
   )

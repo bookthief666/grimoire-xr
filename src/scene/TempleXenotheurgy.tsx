@@ -776,7 +776,13 @@ function HumanScaleTempleLife({
       return {
         glyph,
         x: Math.cos(angle) * (1.15 + (i % 3) * 0.08),
-        y: 1.18 + (i % 4) * 0.11,
+        // Lifted into a canopy above the altar. At the previous y 1.18-1.51 these
+        // ten medallions hung at eye height 0.67-1.53m from the VR user - a hoop
+        // of coloured rings sitting exactly where the controls and the user's
+        // hands belong, which is what made the altar read as an instrument
+        // cluster. Above OVERHEAD_CLEARANCE (see scene/zones.ts) they clear the
+        // working volume entirely and read as a ring of planetary seals overhead.
+        y: 2.42 + (i % 4) * 0.11,
         z: -0.92 + Math.sin(angle) * 0.38,
         phase: i * 0.77,
         color: i % 3 === 0 ? '#ffd18a' : i % 3 === 1 ? '#9a6bff' : '#ff3d5a',
