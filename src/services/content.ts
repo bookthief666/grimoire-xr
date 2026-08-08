@@ -1,15 +1,12 @@
 import {
-  grimoireCardSchema,
   grimoireDeckSchema,
   oracleConsultationRequestSchema,
   oracleReadingSchema,
   ritualConfigSchema,
-  type GrimoireCard,
   type GrimoireDeck,
   type OracleConsultationRequest,
   type OracleReading,
   type RitualConfig,
-  type SubjectDossier,
 } from '../types/grimoire'
 
 type ForgeSuccess = {
@@ -100,19 +97,4 @@ export async function consultOracle(
   }
 
   return oracleReadingSchema.parse(payload.reading)
-}
-
-export async function generateSubjectDossier(
-  config: RitualConfig,
-): Promise<SubjectDossier> {
-  const deck = await generateDeck(config)
-  return deck.dossier
-}
-
-export async function generateCardExegesis(card: GrimoireCard, _config: RitualConfig) {
-  return grimoireCardSchema.parse(card).exegesis
-}
-
-export async function generateCardMetadata(card: GrimoireCard) {
-  return grimoireCardSchema.parse(card).metadata
 }
