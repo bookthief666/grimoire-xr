@@ -179,6 +179,13 @@ export function RitualWorkbench({
   const canConsult =
     hasDeck && !loading && !oracleLoading && oracleQuestion.trim().length >= 3
 
+  // These two readouts share the same volume to the right of the altar, so only
+  // one may ever be mounted. The forge readout takes precedence while the user
+  // is tuning or a forge is running; otherwise the image pipeline reports on an
+  // existing deck. Idle with no deck shows neither, leaving the altar clean.
+  const showForgeReadout = menuMode === 'forge' || loading || oracleLoading
+  const showImagePipeline = !showForgeReadout && hasDeck
+
   const forgeEnergy: ForgeEnergy =
     loading || oracleLoading
       ? 'working'
@@ -252,11 +259,17 @@ export function RitualWorkbench({
         </Text>
       </group>
 
-      <ImagePipelineStatus
-        cards={cards}
-        selectedCardId={selectedCardId}
-        archiveMessage={archiveMessage}
-      />
+      {/* Summoned, not permanent. The forge readout owns this space while the
+          user is configuring or forging; the image pipeline only reports once a
+          deck exists. They must never both render - their bounds overlap and
+          the pipeline panel would eclipse 7 of the readout's 8 rows. */}
+      {showImagePipeline ? (
+        <ImagePipelineStatus
+          cards={cards}
+          selectedCardId={selectedCardId}
+          archiveMessage={archiveMessage}
+        />
+      ) : null}
       <mesh position={[0, TABLE_Y - 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <boxGeometry args={[3.3, 1.85, 0.08]} />
         <meshStandardMaterial
@@ -342,19 +355,21 @@ export function RitualWorkbench({
 
       <DeckTray count={cards.length} active={hasDeck} />
 
-      <ForgeConfigReadout
-        activeSubject={activeSubject}
-        tarotSystem={tarotSystem}
-        tone={tone}
-        techLevel={techLevel}
-        activeIntent={activeIntent}
-        artStyleFamily={artStyleFamily}
-        artStyle={artStyle}
-        erosLevel={erosLevel}
-        forgePhase={forgePhase}
-        loading={loading || oracleLoading}
-        canForge={canForge}
-      />
+      {showForgeReadout ? (
+        <ForgeConfigReadout
+          activeSubject={activeSubject}
+          tarotSystem={tarotSystem}
+          tone={tone}
+          techLevel={techLevel}
+          activeIntent={activeIntent}
+          artStyleFamily={artStyleFamily}
+          artStyle={artStyle}
+          erosLevel={erosLevel}
+          forgePhase={forgePhase}
+          loading={loading || oracleLoading}
+          canForge={canForge}
+        />
+      ) : null}
 
       <SpreadMandala
         active={menuMode === 'spread' || hasDeck}

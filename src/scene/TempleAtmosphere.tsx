@@ -322,6 +322,21 @@ function DistantAATrace({
 
 type SealDef = { label: string; symbol: string; color: string }
 
+// Ambient decoration must never enter the user's working sightline. The user
+// stands at roughly [0, 1.6, 3] looking down -Z and cannot move (there is no
+// locomotion), so the forward view at eye height is the one thing that has to
+// stay clear.
+//
+// These seals orbit, so the nearest point of the orbit is what matters:
+// nearest z = SIGIL_ORBIT_Z + SIGIL_ORBIT_RADIUS. Previously that was
+// -1.72 + 2.48 = +0.76 at y 1.74 - dead centre, at eye level, 2.24m from the
+// face, which made it the worst occluder in the scene. Pushing the orbit back
+// and lifting it above eye height keeps the nearest approach at z = -0.32 and
+// ~1.0m above the sightline, so it reads as atmosphere overhead instead.
+const SIGIL_ORBIT_Y = 2.62
+const SIGIL_ORBIT_Z = -2.6
+const SIGIL_ORBIT_RADIUS = 2.28
+
 function AmbientSigilSeal({ label, symbol, color }: SealDef) {
   return (
     <group>
@@ -391,7 +406,7 @@ function FloatingSigils({
     if (!groupRef.current) return
 
     groupRef.current.rotation.y += delta * (0.026 + impulse * 0.035)
-    groupRef.current.position.y = 1.74 + Math.sin(t * 0.58) * 0.028
+    groupRef.current.position.y = SIGIL_ORBIT_Y + Math.sin(t * 0.58) * 0.028
   })
 
   const seals: SealDef[] = hasOracleReading
@@ -409,10 +424,10 @@ function FloatingSigils({
       ]
 
   return (
-    <group ref={groupRef} position={[0, 1.74, -1.72]}>
+    <group ref={groupRef} position={[0, SIGIL_ORBIT_Y, SIGIL_ORBIT_Z]}>
       {seals.map((seal, index) => {
         const angle = (index / seals.length) * Math.PI * 2
-        const radius = 2.48
+        const radius = SIGIL_ORBIT_RADIUS
         return (
           <group
             key={seal.label}

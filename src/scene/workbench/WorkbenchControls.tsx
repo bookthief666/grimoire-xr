@@ -116,6 +116,80 @@ export function FloatingMenuButton({
 }
 
 
+/**
+ * A dial's ‹ / › arrow. Uses the same pointer-down/up + pointer-capture pattern
+ * as FloatingMenuButton above: bare onClick is unreliable against XR controller
+ * rays, and these arrows are how every forge option gets chosen, so they must
+ * not be on the fragile path. Visuals are unchanged - a glyph plus a generous
+ * transparent hitbox (opacity 0.001, depthWrite false, never visible={false},
+ * which would stop raycasting entirely).
+ */
+function DialArrow({
+  glyph,
+  x,
+  onActivate,
+}: {
+  glyph: string
+  x: number
+  onActivate: () => void
+}) {
+  const [hovered, setHovered] = useState(false)
+
+  return (
+    <group
+      scale={hovered ? 1.12 : 1}
+      onPointerOver={(event) => {
+        event.stopPropagation()
+        setHovered(true)
+      }}
+      onPointerOut={(event) => {
+        event.stopPropagation()
+        setHovered(false)
+      }}
+      onPointerDown={(event) => {
+        event.stopPropagation()
+
+        const target = event.target as unknown as {
+          setPointerCapture?: (pointerId: number) => void
+        }
+
+        target.setPointerCapture?.(event.pointerId)
+      }}
+      onPointerUp={(event) => {
+        event.stopPropagation()
+
+        const target = event.target as unknown as {
+          releasePointerCapture?: (pointerId: number) => void
+        }
+
+        target.releasePointerCapture?.(event.pointerId)
+        onActivate()
+      }}
+    >
+      <Text
+        position={[x, 0.002, 0.078]}
+        fontSize={0.058}
+        color={hovered ? '#ffffff' : '#ffcf7c'}
+        anchorX="center"
+        anchorY="middle"
+      >
+        {glyph}
+      </Text>
+
+      <mesh position={[x, 0, 0.092]}>
+        <planeGeometry args={[0.2, 0.18]} />
+        <meshBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.001}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+    </group>
+  )
+}
+
 function dialGlyph(label: string) {
   if (label === 'TAROT SYSTEM') return '☉'
   if (label === 'TONE') return '☽'
@@ -201,33 +275,7 @@ export function FloatingDial({
         {label}
       </Text>
 
-      <Text
-        position={[-0.28, 0.002, 0.078]}
-        fontSize={0.058}
-        color="#ffcf7c"
-        anchorX="center"
-        anchorY="middle"
-        onClick={(event) => {
-          event.stopPropagation()
-          onPrevious()
-        }}
-      >
-        ◂
-      </Text>
-
-      <mesh position={[-0.28, 0, 0.092]} onClick={(event) => {
-        event.stopPropagation()
-        onPrevious()
-      }}>
-        <planeGeometry args={[0.18, 0.16]} />
-        <meshBasicMaterial
-          color="#ffffff"
-          transparent
-          opacity={0.001}
-          depthWrite={false}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
+      <DialArrow glyph="◂" x={-0.28} onActivate={onPrevious} />
 
       <mesh position={[0.18, 0, 0.045]}>
         <planeGeometry args={[0.73, 0.116]} />
@@ -262,33 +310,7 @@ export function FloatingDial({
         {shortText(value, 30)}
       </Text>
 
-      <Text
-        position={[0.65, 0.002, 0.078]}
-        fontSize={0.058}
-        color="#ffcf7c"
-        anchorX="center"
-        anchorY="middle"
-        onClick={(event) => {
-          event.stopPropagation()
-          onNext()
-        }}
-      >
-        ▸
-      </Text>
-
-      <mesh position={[0.65, 0, 0.092]} onClick={(event) => {
-        event.stopPropagation()
-        onNext()
-      }}>
-        <planeGeometry args={[0.18, 0.16]} />
-        <meshBasicMaterial
-          color="#ffffff"
-          transparent
-          opacity={0.001}
-          depthWrite={false}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
+      <DialArrow glyph="▸" x={0.65} onActivate={onNext} />
     </group>
   )
 }
