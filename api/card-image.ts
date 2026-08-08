@@ -53,47 +53,6 @@ async function readJsonBody(request: NodeApiRequest): Promise<unknown> {
   return JSON.parse(raw)
 }
 
-function hashString(input: string) {
-  let hash = 2166136261
-
-  for (let i = 0; i < input.length; i += 1) {
-    hash ^= input.charCodeAt(i)
-    hash = Math.imul(hash, 16777619)
-  }
-
-  return hash >>> 0
-}
-
-function escapeXml(value: string) {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&apos;')
-}
-
-function wrapText(value: string, maxChars = 31, maxLines = 5) {
-  const words = value.replace(/\s+/g, ' ').trim().split(' ')
-  const lines: string[] = []
-  let current = ''
-
-  for (const word of words) {
-    const next = current ? `${current} ${word}` : word
-
-    if (next.length > maxChars) {
-      if (current) lines.push(current)
-      current = word
-    } else {
-      current = next
-    }
-
-    if (lines.length >= maxLines) break
-  }
-
-  if (current && lines.length < maxLines) lines.push(current)
-  return lines
-}
 
 function metadataText(metadata: unknown) {
   if (!metadata || typeof metadata !== 'object') return ''

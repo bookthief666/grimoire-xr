@@ -407,17 +407,6 @@ function techLevelDirective(techLevel: TechLevel) {
   return TECH_LEVELS[techLevel]?.instruction ?? TECH_LEVELS.adept.instruction
 }
 
-function correspondenceDirective(techLevel: TechLevel) {
-  switch (techLevel) {
-    case 'neophyte':
-      return 'Keep correspondences light and readable. Use the extra metadata only when it genuinely clarifies the reading.'
-    case 'adept':
-      return 'Use moderate esoteric density. Include alchemical and Hebrew correspondences where they materially sharpen the interpretation.'
-    case 'magus':
-      return 'Use high-magick density. For each card, strongly prefer including alchemical, hebrew, daimon, and gematria correspondences in a meaningful, non-random way.'
-  }
-}
-
 function buildPrompt({
   subject,
   tradition,

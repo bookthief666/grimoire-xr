@@ -1,6 +1,5 @@
 /// <reference types="node" />
 import { GoogleGenAI } from '@google/genai'
-import * as z from 'zod'
 import { TECH_LEVELS } from '../src/constants/ritualOptions.js'
 import {
   oracleConsultationRequestSchema,
