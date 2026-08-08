@@ -251,7 +251,7 @@ function buildPrompt({
       : '',
     '',
     'Drawn cards:',
-    drawnCards.map(formatCardForPrompt).join('\\n\\n'),
+    drawnCards.map(formatCardForPrompt).join('\n\n'),
     '',
     'Required JSON shape:',
     '{',
@@ -292,7 +292,7 @@ function buildPrompt({
     config.intent ? `Original ritual intent: ${config.intent}` : 'Original ritual intent: none',
   ]
     .filter(Boolean)
-    .join('\\n')
+    .join('\n')
 }
 
 function normalizeDrawnCards(raw: unknown, drawnCards: GrimoireCard[]) {

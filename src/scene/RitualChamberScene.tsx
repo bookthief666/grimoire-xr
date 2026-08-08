@@ -23,6 +23,7 @@ import type {
   ErosLevel,
 } from '../types/grimoire'
 import { InWorldOraclePanels } from './InWorldOraclePanels'
+import { RitualTempleTablets } from './RitualTempleTablets'
 import { TempleAtmosphere } from './TempleAtmosphere'
 import { TempleXenotheurgy } from './TempleXenotheurgy'
 import { TempleGrandArchitecture } from './TempleGrandArchitecture'
@@ -54,6 +55,11 @@ type ManifestState = {
 
 const SHOW_LEGACY_VR_CONSOLE = false
 const SHOW_LEGACY_CARD_ARC = false
+
+// Reading surface. RitualTempleTablets is the intended in-world display;
+// InWorldOraclePanels is the older draggable panel system kept for A/B in VR.
+const SHOW_TEMPLE_TABLETS = true
+const SHOW_LEGACY_ORACLE_PANELS = false
 
 let ritualAudioCtx: AudioContext | null = null
 
@@ -1342,7 +1348,15 @@ export function RitualChamberScene({
         />
       ) : null}
 
-      {shouldShowOraclePanels ? (
+      {shouldShowOraclePanels && SHOW_TEMPLE_TABLETS ? (
+        <RitualTempleTablets
+          dossier={dossier ?? null}
+          focusedCard={focusedCard ?? null}
+          oracleReading={oracleReading ?? null}
+        />
+      ) : null}
+
+      {shouldShowOraclePanels && SHOW_LEGACY_ORACLE_PANELS ? (
         <InWorldOraclePanels
           dossier={dossier ?? null}
           focusedCard={focusedCard ?? null}
