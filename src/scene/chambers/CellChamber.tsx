@@ -1,5 +1,4 @@
 import { useMemo, useRef, useState } from 'react'
-import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import {
@@ -12,6 +11,7 @@ import {
 } from '../../tools/abulafia'
 import { USER_EYE_VR } from '../zones'
 import type { ChamberProps } from './types'
+import { TempleText } from '../TempleText'
 
 /**
  * THE CELL — abulafia.exe
@@ -126,7 +126,7 @@ function AxisMarker({
         />
       </mesh>
 
-      <Text
+      <TempleText
         position={[0, 0.005, 0.01]}
         fontSize={0.088}
         color={active ? '#ffffff' : '#39424a'}
@@ -134,9 +134,9 @@ function AxisMarker({
         anchorY="middle"
       >
         {sound}
-      </Text>
+      </TempleText>
 
-      <Text
+      <TempleText
         position={[0, -0.28, 0.01]}
         fontSize={0.036}
         color={active ? CELL_ACCENT : '#2d353b'}
@@ -144,7 +144,7 @@ function AxisMarker({
         anchorY="middle"
       >
         {label.toUpperCase()}
-      </Text>
+      </TempleText>
     </group>
   )
 }
@@ -318,7 +318,7 @@ export function CellInstrument({ morphRef, active }: ChamberProps) {
         />
       </mesh>
 
-      <Text
+      <TempleText
         position={[0, 0.1, 0]}
         fontSize={0.19}
         color="#ffffff"
@@ -327,9 +327,9 @@ export function CellInstrument({ morphRef, active }: ChamberProps) {
         letterSpacing={0.18}
       >
         {current.hebrew}
-      </Text>
+      </TempleText>
 
-      <Text
+      <TempleText
         position={[0, -0.08, 0]}
         fontSize={0.072}
         color={CELL_ACCENT}
@@ -338,9 +338,9 @@ export function CellInstrument({ morphRef, active }: ChamberProps) {
         letterSpacing={0.3}
       >
         {current.latin}
-      </Text>
+      </TempleText>
 
-      <Text
+      <TempleText
         position={[0, -0.17, 0]}
         fontSize={0.03}
         color="#8a949c"
@@ -348,9 +348,9 @@ export function CellInstrument({ morphRef, active }: ChamberProps) {
         anchorY="middle"
       >
         {`${current.vowel.name.toUpperCase()} · ${current.vowel.sound} · ${current.vowel.axis.toUpperCase()}`}
-      </Text>
+      </TempleText>
 
-      <Text
+      <TempleText
         position={[0, -0.235, 0]}
         fontSize={0.024}
         color="#4d565e"
@@ -358,14 +358,14 @@ export function CellInstrument({ morphRef, active }: ChamberProps) {
         anchorY="middle"
       >
         {`${(display.step % sequence.length) + 1} / ${sequence.length}   ${display.phase.toUpperCase()}`}
-      </Text>
+      </TempleText>
 
       {/* Controls, kept to the minimum the practice needs. */}
       <group position={[0, -0.34, 0.02]}>
         <group position={[-0.2, 0, 0]} {...press(() => setRunning((r) => !r))}>
-          <Text fontSize={0.032} color="#c8ced4" anchorX="center" anchorY="middle">
+          <TempleText fontSize={0.032} color="#c8ced4" anchorX="center" anchorY="middle">
             {running ? 'HOLD' : 'RESUME'}
-          </Text>
+          </TempleText>
           <mesh position={[0, 0, 0.01]}>
             <planeGeometry args={[0.2, 0.09]} />
             <meshBasicMaterial
@@ -382,9 +382,9 @@ export function CellInstrument({ morphRef, active }: ChamberProps) {
           position={[0.06, 0, 0]}
           {...press(() => setManualStep((s) => (s + 1) % sequence.length))}
         >
-          <Text fontSize={0.032} color="#c8ced4" anchorX="center" anchorY="middle">
+          <TempleText fontSize={0.032} color="#c8ced4" anchorX="center" anchorY="middle">
             STEP
-          </Text>
+          </TempleText>
           <mesh position={[0, 0, 0.01]}>
             <planeGeometry args={[0.18, 0.09]} />
             <meshBasicMaterial
@@ -404,9 +404,9 @@ export function CellInstrument({ morphRef, active }: ChamberProps) {
             setManualStep(0)
           })}
         >
-          <Text fontSize={0.032} color={CELL_ACCENT} anchorX="center" anchorY="middle">
+          <TempleText fontSize={0.032} color={CELL_ACCENT} anchorX="center" anchorY="middle">
             {name.label}
-          </Text>
+          </TempleText>
           <mesh position={[0, 0, 0.01]}>
             <planeGeometry args={[0.22, 0.09]} />
             <meshBasicMaterial

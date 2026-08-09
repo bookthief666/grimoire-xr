@@ -1,5 +1,4 @@
 import * as THREE from 'three'
-import { Text } from '@react-three/drei'
 import { TECH_LEVEL_OPTIONS, TONE_OPTIONS } from '../../constants/ritualOptions'
 import { TAROT_SYSTEM_OPTIONS } from '../../constants/tarotSystems'
 import { EROS_LEVEL_OPTIONS } from '../../constants/erosLevels'
@@ -8,6 +7,7 @@ import type { ArtStyleFamily } from '../../constants/artStyles'
 import type { ArtStyle, ErosLevel, ForgePhase, TarotSystem, TechLevel, Tone } from '../../types/grimoire'
 import { FloatingDial, FloatingMenuButton } from './WorkbenchControls'
 import { INTENT_OPTIONS, SUBJECT_OPTIONS, cycleOption, cycleString, optionLabel, shortText } from './shared'
+import { TempleText } from '../TempleText'
 
 function ForgeGlyph({
   glyph,
@@ -20,7 +20,7 @@ function ForgeGlyph({
 }) {
   return (
     <group position={[x, y, 0.08]}>
-      <Text
+      <TempleText
         position={[0, 0, 0]}
         fontSize={0.09}
         color="#ff6a00"
@@ -29,8 +29,8 @@ function ForgeGlyph({
         fillOpacity={0.18}
       >
         {glyph}
-      </Text>
-      <Text
+      </TempleText>
+      <TempleText
         position={[0, 0, 0.003]}
         fontSize={0.058}
         color="#ffd7a3"
@@ -38,7 +38,7 @@ function ForgeGlyph({
         anchorY="middle"
       >
         {glyph}
-      </Text>
+      </TempleText>
     </group>
   )
 }
@@ -151,7 +151,7 @@ export function ForgeConfigReadout({
       <ForgeGlyph glyph="☽" x={0.74} y={-0.61} />
 
       {glyphRail.map((glyph, index) => (
-        <Text
+        <TempleText
           key={`${glyph}-${index}`}
           position={[-0.34 + index * 0.17, 0.46, 0.07]}
           fontSize={0.027}
@@ -160,10 +160,10 @@ export function ForgeConfigReadout({
           anchorY="middle"
         >
           {glyph}
-        </Text>
+        </TempleText>
       ))}
 
-      <Text
+      <TempleText
         position={[0, 0.545, 0.07]}
         fontSize={0.044}
         color="#ffd18a"
@@ -172,9 +172,9 @@ export function ForgeConfigReadout({
         maxWidth={1.28}
       >
         ACTIVE FORGE CONFIG
-      </Text>
+      </TempleText>
 
-      <Text
+      <TempleText
         position={[0, 0.40, 0.07]}
         fontSize={0.026}
         color={canForge ? '#ffcf7c' : '#9a6558'}
@@ -183,7 +183,7 @@ export function ForgeConfigReadout({
         maxWidth={1.22}
       >
         {phaseLabel} · {status}
-      </Text>
+      </TempleText>
 
       {rows.map(([label, value], index) => {
         const y = 0.295 - index * 0.104
@@ -202,7 +202,7 @@ export function ForgeConfigReadout({
               />
             </mesh>
 
-            <Text
+            <TempleText
               position={[-0.62, y, 0.07]}
               fontSize={0.025}
               color="#8f6742"
@@ -211,9 +211,9 @@ export function ForgeConfigReadout({
               maxWidth={0.34}
             >
               {label}
-            </Text>
+            </TempleText>
 
-            <Text
+            <TempleText
               position={[-0.18, y, 0.07]}
               fontSize={0.028}
               color="#f2d4a2"
@@ -222,7 +222,7 @@ export function ForgeConfigReadout({
               maxWidth={0.82}
             >
               {shortText(value, 30)}
-            </Text>
+            </TempleText>
           </group>
         )
       })}
@@ -352,7 +352,7 @@ export function FloatingForgeMenu({
         )
       })}
 
-      <Text
+      <TempleText
         position={[0, 0.67, 0.07]}
         fontSize={0.05}
         color="#ffd18a"
@@ -361,7 +361,7 @@ export function FloatingForgeMenu({
         maxWidth={1.5}
       >
         GRIMOIRE ENGINE FORGE
-      </Text>
+      </TempleText>
 
       <mesh position={[0, 0.615, 0.065]}>
         <planeGeometry args={[1.62, 0.012]} />
@@ -375,7 +375,7 @@ export function FloatingForgeMenu({
         />
       </mesh>
 
-      <Text
+      <TempleText
         position={[0, 0.57, 0.07]}
         fontSize={0.026}
         color="#8f6742"
@@ -384,7 +384,7 @@ export function FloatingForgeMenu({
         maxWidth={1.48}
       >
         Tune the deck-current. Ignite only when the engine is aligned.
-      </Text>
+      </TempleText>
 
       <FloatingDial
         label="SUBJECT"

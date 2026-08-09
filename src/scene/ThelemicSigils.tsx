@@ -1,6 +1,7 @@
-import { Line, Text } from '@react-three/drei'
+import { Line } from '@react-three/drei'
 import { useMemo } from 'react'
 import * as THREE from 'three'
+import { TempleText } from './TempleText'
 
 type Vec3 = [number, number, number]
 
@@ -213,7 +214,7 @@ export function BabalonStarGlyph({
       {withLetters ? (
         <group>
           {vertices.map((point, index) => (
-            <Text
+            <TempleText
               key={`${BABALON_LETTERS[index]}-${index}`}
               position={[point.x * 0.72, point.y * 0.72, 0.02]}
               fontSize={radius * 0.115}
@@ -224,7 +225,7 @@ export function BabalonStarGlyph({
               maxWidth={radius * 0.18}
             >
               {BABALON_LETTERS[index]}
-            </Text>
+            </TempleText>
           ))}
         </group>
       ) : null}

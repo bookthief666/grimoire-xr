@@ -1,9 +1,9 @@
 import * as THREE from 'three'
 import { useState } from 'react'
-import { Text } from '@react-three/drei'
 import { FloatingMenuButton } from './WorkbenchControls'
 import { TABLE_Y, formatArchiveTime } from './shared'
 import type { WorkbenchMode } from './shared'
+import { TempleText } from '../TempleText'
 
 function FloatingSigilButton({
   sigil,
@@ -151,7 +151,7 @@ function FloatingSigilButton({
         />
       </mesh>
 
-      <Text
+      <TempleText
         position={[0, 0.004, 0.045]}
         fontSize={0.076}
         color={glyphColor}
@@ -161,10 +161,10 @@ function FloatingSigilButton({
         maxWidth={0.18}
       >
         {sigil}
-      </Text>
+      </TempleText>
 
       {armed ? (
-        <Text
+        <TempleText
           position={[0, -0.138, 0.044]}
           fontSize={0.018}
           color={accent}
@@ -174,7 +174,7 @@ function FloatingSigilButton({
           maxWidth={0.42}
         >
           {label.toUpperCase()}
-        </Text>
+        </TempleText>
       ) : null}
     </group>
   )
@@ -224,7 +224,7 @@ export function FloatingArchiveMenu({
         />
       </mesh>
 
-      <Text
+      <TempleText
         position={[0, 0.39, 0.05]}
         fontSize={0.045}
         color="#ffd18a"
@@ -233,9 +233,9 @@ export function FloatingArchiveMenu({
         maxWidth={1.1}
       >
         RITUAL ARCHIVE
-      </Text>
+      </TempleText>
 
-      <Text
+      <TempleText
         position={[0, 0.26, 0.05]}
         fontSize={0.028}
         color={hasSavedRitual ? '#d9b5ff' : '#9f744b'}
@@ -244,9 +244,9 @@ export function FloatingArchiveMenu({
         maxWidth={1.18}
       >
         {hasSavedRitual ? 'LOCAL MEMORY SEALED' : 'NO RITUAL SEALED'}
-      </Text>
+      </TempleText>
 
-      <Text
+      <TempleText
         position={[0, 0.13, 0.05]}
         fontSize={0.026}
         color="#bfa788"
@@ -255,7 +255,7 @@ export function FloatingArchiveMenu({
         maxWidth={1.18}
       >
         {formatArchiveTime(lastSavedAt)}
-      </Text>
+      </TempleText>
 
       <FloatingMenuButton
         label="SEAL CURRENT"
@@ -287,7 +287,7 @@ export function FloatingArchiveMenu({
         onClick={onClearArchive}
       />
 
-      <Text
+      <TempleText
         position={[0, -0.48, 0.05]}
         fontSize={0.026}
         color="#8f6742"
@@ -296,7 +296,7 @@ export function FloatingArchiveMenu({
         maxWidth={1.2}
       >
         {archiveMessage ?? 'Deck, selection, and ritual configuration persist locally.'}
-      </Text>
+      </TempleText>
     </group>
   )
 }

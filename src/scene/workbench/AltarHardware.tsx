@@ -1,11 +1,11 @@
 import * as THREE from 'three'
 import { useRef } from 'react'
-import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { UnicursalHexagramGlyph } from '../ThelemicSigils'
 import type { ErosField } from '../../types/grimoire'
 import { TABLE_Y } from './shared'
 import type { ForgeEnergy, Vec2 } from './shared'
+import { TempleText } from '../TempleText'
 
 export function TableBar({
   a,
@@ -324,7 +324,7 @@ export function AltarAstrolabeRings({
         )
       })}
 
-      <Text
+      <TempleText
         position={[0, TABLE_Y + 0.05, 0.72]}
         rotation={[-Math.PI / 2, 0, 0]}
         fontSize={0.032}
@@ -334,7 +334,7 @@ export function AltarAstrolabeRings({
         maxWidth={0.72}
       >
         GRIMOIRE ENGINE
-      </Text>
+      </TempleText>
     </group>
   )
 }

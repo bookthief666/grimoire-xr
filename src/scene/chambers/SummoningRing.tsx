@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react'
-import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { Chamber, ChamberId } from './types'
+import { TempleText } from '../TempleText'
 
 /**
  * The one control that is always present in every chamber: four seals that
@@ -147,7 +147,7 @@ function Seal({
         </mesh>
       ) : null}
 
-      <Text
+      <TempleText
         position={[0, 0.001, 0.02]}
         fontSize={0.05}
         color={disabled ? '#4a4a52' : active ? '#ffffff' : chamber.accent}
@@ -155,11 +155,11 @@ function Seal({
         anchorY="middle"
       >
         {chamber.seal}
-      </Text>
+      </TempleText>
 
       {hovered ? (
         <>
-          <Text
+          <TempleText
             position={[0, -0.105, 0.02]}
             fontSize={0.026}
             color="#f2f2f5"
@@ -168,8 +168,8 @@ function Seal({
             maxWidth={0.6}
           >
             {chamber.name}
-          </Text>
-          <Text
+          </TempleText>
+          <TempleText
             position={[0, -0.142, 0.02]}
             fontSize={0.017}
             color="#8b8b96"
@@ -178,7 +178,7 @@ function Seal({
             maxWidth={0.66}
           >
             {chamber.purpose}
-          </Text>
+          </TempleText>
         </>
       ) : null}
 

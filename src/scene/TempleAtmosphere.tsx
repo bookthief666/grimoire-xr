@@ -1,8 +1,8 @@
 import { useMemo, useRef, type MutableRefObject } from 'react'
-import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { BabalonStarGlyph } from './ThelemicSigils'
+import { TempleText } from './TempleText'
 
 type TempleAtmosphereProps = {
   ritualImpulseRef: MutableRefObject<number>
@@ -305,7 +305,7 @@ function DistantAATrace({
         </mesh>
       ))}
 
-      <Text
+      <TempleText
         position={[0, 3.28, -4.02]}
         anchorX="center"
         anchorY="middle"
@@ -315,7 +315,7 @@ function DistantAATrace({
         maxWidth={1.8}
       >
         A∴A∴
-      </Text>
+      </TempleText>
     </group>
   )
 }
@@ -363,7 +363,7 @@ function AmbientSigilSeal({ label, symbol, color }: SealDef) {
         />
       </mesh>
 
-      <Text
+      <TempleText
         position={[-0.16, 0.002, 0.026]}
         fontSize={0.074}
         color={color}
@@ -373,9 +373,9 @@ function AmbientSigilSeal({ label, symbol, color }: SealDef) {
         maxWidth={0.22}
       >
         {symbol}
-      </Text>
+      </TempleText>
 
-      <Text
+      <TempleText
         position={[0.04, 0.002, 0.026]}
         fontSize={0.026}
         color={color}
@@ -385,7 +385,7 @@ function AmbientSigilSeal({ label, symbol, color }: SealDef) {
         maxWidth={0.36}
       >
         {label}
-      </Text>
+      </TempleText>
     </group>
   )
 }

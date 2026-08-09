@@ -1,7 +1,7 @@
 import * as THREE from 'three'
-import { Text } from '@react-three/drei'
 import type { GrimoireCard } from '../../types/grimoire'
 import { shortText } from './shared'
+import { TempleText } from '../TempleText'
 
 export function ImagePipelineStatus({
   cards,
@@ -69,7 +69,7 @@ export function ImagePipelineStatus({
         />
       </mesh>
 
-      <Text
+      <TempleText
         position={[0, 0.34, 0.04]}
         fontSize={0.042}
         color="#ffd18a"
@@ -78,9 +78,9 @@ export function ImagePipelineStatus({
         maxWidth={1.36}
       >
         IMAGE PIPELINE
-      </Text>
+      </TempleText>
 
-      <Text
+      <TempleText
         position={[-0.68, 0.20, 0.04]}
         fontSize={0.031}
         color="#d8bf9b"
@@ -89,9 +89,9 @@ export function ImagePipelineStatus({
         maxWidth={1.32}
       >
         {`CARD: ${selectedCard ? shortText(selectedCard.name, 34) : 'NONE'}`}
-      </Text>
+      </TempleText>
 
-      <Text
+      <TempleText
         position={[-0.68, 0.08, 0.04]}
         fontSize={0.031}
         color={statusColor}
@@ -100,9 +100,9 @@ export function ImagePipelineStatus({
         maxWidth={1.32}
       >
         {`STATUS: ${status.toUpperCase()}${hasImage ? ' / IMAGE URL' : ''}`}
-      </Text>
+      </TempleText>
 
-      <Text
+      <TempleText
         position={[-0.68, -0.04, 0.04]}
         fontSize={0.031}
         color={hasPrompt ? '#9fffb7' : '#ff7a7a'}
@@ -111,9 +111,9 @@ export function ImagePipelineStatus({
         maxWidth={1.32}
       >
         {`ART SEED: ${hasPrompt ? 'YES' : 'NO'}`}
-      </Text>
+      </TempleText>
 
-      <Text
+      <TempleText
         position={[-0.68, -0.16, 0.04]}
         fontSize={0.031}
         color="#d8bf9b"
@@ -122,9 +122,9 @@ export function ImagePipelineStatus({
         maxWidth={1.32}
       >
         {`READY: ${readyCount}/${cards.length}   GENERATING: ${generatingCount}   ERRORS: ${errorCount}`}
-      </Text>
+      </TempleText>
 
-      <Text
+      <TempleText
         position={[-0.68, -0.31, 0.04]}
         fontSize={0.027}
         color="#bfa788"
@@ -133,7 +133,7 @@ export function ImagePipelineStatus({
         maxWidth={1.34}
       >
         {`ENGINE: ${engineLine}`}
-      </Text>
+      </TempleText>
     </group>
   )
 }

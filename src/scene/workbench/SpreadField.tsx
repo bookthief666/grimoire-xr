@@ -1,9 +1,9 @@
 import * as THREE from 'three'
 import { useRef } from 'react'
-import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { TableBar } from './AltarHardware'
 import { TABLE_Y } from './shared'
+import { TempleText } from '../TempleText'
 
 export function SpreadMandala({
   active,
@@ -108,7 +108,7 @@ export function SpreadMandala({
             />
           </mesh>
 
-          <Text
+          <TempleText
             position={[0, 0.024, 0]}
             rotation={[-Math.PI / 2, 0, 0]}
             fontSize={0.038}
@@ -117,11 +117,11 @@ export function SpreadMandala({
             anchorY="middle"
           >
             {String(glyph)}
-          </Text>
+          </TempleText>
         </group>
       ))}
 
-      <Text
+      <TempleText
         position={[0, TABLE_Y + 0.054, -0.94]}
         rotation={[-Math.PI / 2, 0, 0]}
         fontSize={0.032}
@@ -131,7 +131,7 @@ export function SpreadMandala({
         maxWidth={1.2}
       >
         SPREAD FIELD // CARD CURRENT ACTIVE
-      </Text>
+      </TempleText>
     </group>
   )
 }
@@ -235,7 +235,7 @@ export function SpreadSlot({
         </group>
       ))}
 
-      <Text
+      <TempleText
         position={[x, TABLE_Y + 0.046, z + 0.42]}
         rotation={[-Math.PI / 2, 0, 0]}
         fontSize={0.03}
@@ -245,7 +245,7 @@ export function SpreadSlot({
         maxWidth={0.44}
       >
         {label}
-      </Text>
+      </TempleText>
     </group>
   )
 }

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import {
   TECH_LEVEL_OPTIONS,
@@ -7,6 +6,7 @@ import {
   TRADITION_OPTIONS,
 } from '../constants/ritualOptions'
 import type { ForgePhase, TechLevel, Tone, Tradition } from '../types/grimoire'
+import { TempleText } from './TempleText'
 
 type ConsoleVec3 = [number, number, number]
 
@@ -255,7 +255,7 @@ function ConsoleDragHandle({
         />
       </mesh>
 
-      <Text
+      <TempleText
         position={[0, 0.003, 0.03]}
         anchorX="center"
         anchorY="middle"
@@ -264,7 +264,7 @@ function ConsoleDragHandle({
         maxWidth={width - 0.08}
       >
         {dragging ? 'MOVING WINDOW' : label}
-      </Text>
+      </TempleText>
 
       {dragging ? (
         <mesh
@@ -440,7 +440,7 @@ function PanelFrame({
         />
       </mesh>
 
-      <Text
+      <TempleText
         position={[-0.78, 0.96, 0.03]}
         anchorX="left"
         anchorY="top"
@@ -449,7 +449,7 @@ function PanelFrame({
         maxWidth={1.5}
       >
         {title}
-      </Text>
+      </TempleText>
 
       {children}
     </group>
@@ -561,7 +561,7 @@ function RayButton({
         />
       </mesh>
 
-      <Text
+      <TempleText
         position={[0, 0.003, 0.018]}
         anchorX="center"
         anchorY="middle"
@@ -570,7 +570,7 @@ function RayButton({
         maxWidth={width - 0.06}
       >
         {displayedLabel}
-      </Text>
+      </TempleText>
 
       <mesh position={[0, 0, 0.035]}>
         <planeGeometry args={[width + 0.18, 0.34]} />
@@ -603,7 +603,7 @@ function ValueStepper({
 }) {
   return (
     <group position={[0, y, 0.04]}>
-      <Text
+      <TempleText
         position={[-0.78, 0.07, 0.01]}
         anchorX="left"
         anchorY="middle"
@@ -612,7 +612,7 @@ function ValueStepper({
         maxWidth={0.54}
       >
         {label.toUpperCase()}
-      </Text>
+      </TempleText>
 
       <RayButton
         label="‹"
@@ -633,7 +633,7 @@ function ValueStepper({
         />
       </mesh>
 
-      <Text
+      <TempleText
         position={[0.24, 0.003, 0.018]}
         anchorX="center"
         anchorY="middle"
@@ -642,7 +642,7 @@ function ValueStepper({
         maxWidth={0.62}
       >
         {shortText(value, 26)}
-      </Text>
+      </TempleText>
 
       <RayButton
         label="›"
@@ -818,7 +818,7 @@ export function InWorldRitualConsole({
             onScaleChange={setConsoleScale}
             onScaleReset={() => setConsoleScale(0.92)}
           />
-          <Text
+          <TempleText
             position={[-0.44, 0.16, 0.03]}
             anchorX="left"
             anchorY="middle"
@@ -827,9 +827,9 @@ export function InWorldRitualConsole({
             maxWidth={0.9}
           >
             RITUAL CONSOLE
-          </Text>
+          </TempleText>
 
-          <Text
+          <TempleText
             position={[-0.44, 0.01, 0.03]}
             anchorX="left"
             anchorY="middle"
@@ -838,7 +838,7 @@ export function InWorldRitualConsole({
             maxWidth={0.9}
           >
             {forgePhase.toUpperCase()}
-          </Text>
+          </TempleText>
 
           <RayButton
             label="OPEN"
@@ -874,7 +874,7 @@ export function InWorldRitualConsole({
             onScaleChange={setConsoleScale}
             onScaleReset={() => setConsoleScale(0.92)}
           />
-          <Text
+          <TempleText
             position={[-0.78, 0.78, 0.04]}
             anchorX="left"
             anchorY="middle"
@@ -883,7 +883,7 @@ export function InWorldRitualConsole({
             maxWidth={1.5}
           >
             EDITING: {fieldLabel(editorField)}
-          </Text>
+          </TempleText>
 
           <mesh position={[0, 0.58, 0.02]}>
             <planeGeometry args={[1.58, 0.24]} />
@@ -895,7 +895,7 @@ export function InWorldRitualConsole({
             />
           </mesh>
 
-          <Text
+          <TempleText
             position={[0, 0.59, 0.04]}
             anchorX="center"
             anchorY="middle"
@@ -904,7 +904,7 @@ export function InWorldRitualConsole({
             maxWidth={1.44}
           >
             {shortText(editorValue || ' ', 58)}
-          </Text>
+          </TempleText>
 
           <RayButton
             label="SUBJECT"
@@ -1004,7 +1004,7 @@ export function InWorldRitualConsole({
             onTargetChange={setTargetLabel}
           />
 
-          <Text
+          <TempleText
             position={[0, -1.08, 0.04]}
             anchorX="center"
             anchorY="middle"
@@ -1013,7 +1013,7 @@ export function InWorldRitualConsole({
             maxWidth={1.68}
           >
             {targetLabel ? `TARGET: ${targetLabel.toUpperCase()}` : 'RAY-TYPE TEXT ONE KEY AT A TIME'}
-          </Text>
+          </TempleText>
         </PanelFrame>
       </group>
     )
@@ -1038,7 +1038,7 @@ export function InWorldRitualConsole({
         />
 
         <ResetLayoutButton />
-        <Text
+        <TempleText
           position={[-0.78, 0.78, 0.04]}
           anchorX="left"
           anchorY="top"
@@ -1048,7 +1048,7 @@ export function InWorldRitualConsole({
           lineHeight={1.16}
         >
           Compact VR controls. Hide before selecting cards if the ray feels crowded.
-        </Text>
+        </TempleText>
 
         <RayButton
           label="HIDE"
@@ -1189,7 +1189,7 @@ export function InWorldRitualConsole({
           onTargetChange={setTargetLabel}
         />
 
-        <Text
+        <TempleText
           position={[0, -1.31, 0.04]}
           anchorX="center"
           anchorY="middle"
@@ -1198,7 +1198,7 @@ export function InWorldRitualConsole({
           maxWidth={1.68}
         >
           {targetLabel ? `TARGET: ${targetLabel.toUpperCase()}` : statusText}
-        </Text>
+        </TempleText>
       </PanelFrame>
     </group>
   )

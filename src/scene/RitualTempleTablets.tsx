@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { GrimoireCard, OracleReading, SubjectDossier } from '../types/grimoire'
+import { TempleText } from './TempleText'
 
 /** Raised above and behind the altar, in the CONTENT zone (~1.78m in VR). */
 const CONTENT_ANCHOR: [number, number, number] = [0, 1.72, -1.78]
@@ -322,7 +322,7 @@ function TabletButton({
         />
       </mesh>
 
-      <Text
+      <TempleText
         position={[0, 0.003, 0.04]}
         fontSize={0.055}
         color={disabled ? '#665039' : hovered ? '#ffffff' : '#ffd18a'}
@@ -330,7 +330,7 @@ function TabletButton({
         anchorY="middle"
       >
         {label}
-      </Text>
+      </TempleText>
 
       <mesh position={[0, 0, 0.06]}>
         <planeGeometry args={[0.34, 0.34]} />
@@ -467,7 +467,7 @@ function TempleTablet({ data }: { data: TabletData }) {
       <TabletRune x={-0.84} y={-0.63} accent={data.accent} />
       <TabletRune x={0.84} y={-0.63} accent={data.accent} />
 
-      <Text
+      <TempleText
         position={[0, 0.61, 0.08]}
         fontSize={0.062}
         color="#ffd18a"
@@ -476,9 +476,9 @@ function TempleTablet({ data }: { data: TabletData }) {
         maxWidth={1.42}
       >
         {data.title}
-      </Text>
+      </TempleText>
 
-      <Text
+      <TempleText
         position={[0, 0.51, 0.08]}
         fontSize={0.028}
         color="#9f744b"
@@ -487,9 +487,9 @@ function TempleTablet({ data }: { data: TabletData }) {
         maxWidth={1.48}
       >
         {data.subtitle}
-      </Text>
+      </TempleText>
 
-      <Text
+      <TempleText
         position={[0, 0.35, 0.08]}
         fontSize={0.052}
         color={data.accent}
@@ -497,9 +497,9 @@ function TempleTablet({ data }: { data: TabletData }) {
         anchorY="middle"
       >
         {data.seal}
-      </Text>
+      </TempleText>
 
-      <Text
+      <TempleText
         position={[-0.78, 0.22, 0.08]}
         fontSize={0.038}
         color="#f2d4a2"
@@ -509,7 +509,7 @@ function TempleTablet({ data }: { data: TabletData }) {
         lineHeight={1.2}
       >
         {page}
-      </Text>
+      </TempleText>
 
       <TabletButton
         label="‹"
@@ -519,7 +519,7 @@ function TempleTablet({ data }: { data: TabletData }) {
         onClick={previous}
       />
 
-      <Text
+      <TempleText
         position={[0, -0.67, 0.12]}
         fontSize={0.03}
         color="#9f744b"
@@ -528,7 +528,7 @@ function TempleTablet({ data }: { data: TabletData }) {
         maxWidth={0.4}
       >
         {pages.length > 1 ? `${pageIndex + 1}/${pages.length}` : 'INSCRIPTION'}
-      </Text>
+      </TempleText>
 
       <TabletButton
         label="›"

@@ -5,7 +5,7 @@ import {
   useState,
   type MutableRefObject,
 } from 'react'
-import { Edges, Text } from '@react-three/drei'
+import { Edges } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { PALETTE } from '../theme/palette'
@@ -36,6 +36,7 @@ import { SummoningRing } from './chambers/SummoningRing'
 import { MorphGroup } from './chambers/MorphGroup'
 import type { Chamber, ChamberProps } from './chambers/types'
 import type { ArtStyleFamily } from '../constants/artStyles'
+import { TempleText } from './TempleText'
 
 function isUsableGeneratedCardImageUrl(value: string | undefined): value is string {
   if (!value) return false
@@ -266,14 +267,14 @@ function Pillar({ x, z = -3.55 }: { x: number; z?: number }) {
       </mesh>
 
       <mesh position={[0, 1.82, 0.19]}>
-        <Text
+        <TempleText
           fontSize={0.14}
           color={PALETTE.gold}
           anchorX="center"
           anchorY="middle"
         >
           93
-        </Text>
+        </TempleText>
       </mesh>
     </group>
   )
@@ -508,14 +509,14 @@ function RearShrine({
       </mesh>
 
       <mesh position={[0, 2.65, 0.1]}>
-        <Text
+        <TempleText
           fontSize={0.07}
           color="#8f7a5a"
           anchorX="center"
           anchorY="middle"
         >
           THELEMA
-        </Text>
+        </TempleText>
       </mesh>
     </group>
   )
@@ -733,7 +734,7 @@ function ChamberCardFaceArt({
           <meshBasicMaterial color="#160807" side={THREE.DoubleSide} />
         </mesh>
 
-        <Text
+        <TempleText
           position={[0, 0, 0.04]}
           fontSize={Math.min(width, height) * 0.075}
           color="#ff9a7a"
@@ -742,7 +743,7 @@ function ChamberCardFaceArt({
           maxWidth={width * 0.76}
         >
           IMAGE ERROR
-        </Text>
+        </TempleText>
       </group>
     )
   }
@@ -755,7 +756,7 @@ function ChamberCardFaceArt({
           <meshBasicMaterial color="#120806" side={THREE.DoubleSide} />
         </mesh>
 
-        <Text
+        <TempleText
           position={[0, 0, 0.04]}
           fontSize={Math.min(width, height) * 0.07}
           color="#d9b5ff"
@@ -764,7 +765,7 @@ function ChamberCardFaceArt({
           maxWidth={width * 0.76}
         >
           SEALING {label}
-        </Text>
+        </TempleText>
       </group>
     )
   }
@@ -940,7 +941,7 @@ function Altar({
               <meshBasicMaterial color={PALETTE.gold} />
             </mesh>
 
-            <Text
+            <TempleText
               position={[0, -0.3, 0.03]}
               fontSize={0.05}
               maxWidth={0.34}
@@ -949,10 +950,10 @@ function Altar({
               anchorY="middle"
             >
               {manifest.card.name}
-            </Text>
+            </TempleText>
           </group>
 
-          <Text
+          <TempleText
             position={[0, 1.22, 0]}
             fontSize={0.075}
             color={PALETTE.textPrimary}
@@ -960,10 +961,10 @@ function Altar({
             anchorY="middle"
           >
             {manifest.card.name}
-          </Text>
+          </TempleText>
         </>
       ) : (
-        <Text
+        <TempleText
           position={[0, 1.18, 0]}
           fontSize={0.068}
           color={PALETTE.textIdle}
@@ -971,7 +972,7 @@ function Altar({
           anchorY="middle"
         >
           Awaiting Selection
-        </Text>
+        </TempleText>
       )}
     </group>
   )
@@ -1061,7 +1062,7 @@ function CardArc({
               <meshBasicMaterial color={isSelected ? PALETTE.gold : PALETTE.goldDim} />
             </mesh>
 
-            <Text
+            <TempleText
               position={[0, -0.26, 0.026]}
               fontSize={0.04}
               maxWidth={0.28}
@@ -1070,7 +1071,7 @@ function CardArc({
               anchorY="middle"
             >
               {card.name}
-            </Text>
+            </TempleText>
           </group>
         )
       })}

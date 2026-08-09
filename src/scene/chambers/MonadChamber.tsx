@@ -1,5 +1,4 @@
 import { useMemo, useRef, useState } from 'react'
-import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import {
@@ -9,6 +8,7 @@ import {
   type GlyphPhase,
 } from '../../tools/monas'
 import type { ChamberProps } from './types'
+import { TempleText } from '../TempleText'
 
 /**
  * THE MONAD — monas-hieroglyphica
@@ -325,7 +325,7 @@ export function MonadInstrument({ morphRef, active }: ChamberProps) {
           />
         </mesh>
 
-        <Text
+        <TempleText
           position={[-0.53, 0.176, 0.006]}
           fontSize={0.028}
           color={MONAD_ACCENT}
@@ -333,9 +333,9 @@ export function MonadInstrument({ morphRef, active }: ChamberProps) {
           anchorY="middle"
         >
           {`THEOREMA ${['I', 'II', 'III', 'IV', 'V', 'VI'][index] ?? theorem.number}  ·  ${theorem.title.toUpperCase()}`}
-        </Text>
+        </TempleText>
 
-        <Text
+        <TempleText
           position={[-0.53, 0.1, 0.006]}
           fontSize={0.026}
           color="#9fb4cc"
@@ -345,9 +345,9 @@ export function MonadInstrument({ morphRef, active }: ChamberProps) {
           lineHeight={1.28}
         >
           {theorem.latin}
-        </Text>
+        </TempleText>
 
-        <Text
+        <TempleText
           position={[-0.53, -0.012, 0.006]}
           fontSize={0.026}
           color="#f2f6fb"
@@ -357,9 +357,9 @@ export function MonadInstrument({ morphRef, active }: ChamberProps) {
           lineHeight={1.28}
         >
           {theorem.english}
-        </Text>
+        </TempleText>
 
-        <Text
+        <TempleText
           position={[-0.53, -0.124, 0.006]}
           fontSize={0.019}
           color="#6b7f96"
@@ -369,12 +369,12 @@ export function MonadInstrument({ morphRef, active }: ChamberProps) {
           lineHeight={1.36}
         >
           {theorem.commentary}
-        </Text>
+        </TempleText>
 
         <group position={[0.4, -0.19, 0.01]} {...press(() => setIndex((i) => (i + 1) % THEOREMS.length))}>
-          <Text fontSize={0.03} color="#ffffff" anchorX="center" anchorY="middle">
+          <TempleText fontSize={0.03} color="#ffffff" anchorX="center" anchorY="middle">
             ADVANCE ▸
-          </Text>
+          </TempleText>
           <mesh position={[0, 0, 0.01]}>
             <planeGeometry args={[0.34, 0.1]} />
             <meshBasicMaterial
@@ -388,9 +388,9 @@ export function MonadInstrument({ morphRef, active }: ChamberProps) {
         </group>
 
         <group position={[-0.36, -0.19, 0.01]} {...press(() => setIndex(0))}>
-          <Text fontSize={0.03} color="#7f93a8" anchorX="center" anchorY="middle">
+          <TempleText fontSize={0.03} color="#7f93a8" anchorX="center" anchorY="middle">
             ◂ RESET
-          </Text>
+          </TempleText>
           <mesh position={[0, 0, 0.01]}>
             <planeGeometry args={[0.3, 0.1]} />
             <meshBasicMaterial

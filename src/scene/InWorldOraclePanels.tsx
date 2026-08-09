@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { GrimoireCard, OracleReading, SubjectDossier } from '../types/grimoire'
+import { TempleText } from './TempleText'
 
 type InWorldOraclePanelsProps = {
   dossier?: SubjectDossier | null
@@ -518,7 +518,7 @@ function PanelButton({
         />
       </mesh>
 
-      <Text
+      <TempleText
         position={[0, 0.004, 0.025]}
         anchorX="center"
         anchorY="middle"
@@ -527,7 +527,7 @@ function PanelButton({
         maxWidth={width - 0.03}
       >
         {label}
-      </Text>
+      </TempleText>
 
       <mesh position={[0, 0, 0.04]}>
         <planeGeometry args={[width + 0.2, 0.34]} />
@@ -684,7 +684,7 @@ function DragHeader({
         />
       </mesh>
 
-      <Text
+      <TempleText
         position={[-0.43, 0.005, 0.03]}
         anchorX="left"
         anchorY="middle"
@@ -693,9 +693,9 @@ function DragHeader({
         maxWidth={0.82}
       >
         {title}
-      </Text>
+      </TempleText>
 
-      <Text
+      <TempleText
         position={[0.42, 0.005, 0.03]}
         anchorX="center"
         anchorY="middle"
@@ -704,7 +704,7 @@ function DragHeader({
         maxWidth={0.28}
       >
         {dragging ? 'MOVING' : 'MOVE'}
-      </Text>
+      </TempleText>
 
       <mesh position={[0, 0, 0.04]}>
         <planeGeometry args={[1.24, 0.42]} />
@@ -866,7 +866,7 @@ function PanelShell({
       <CornerGlyph x={-0.48} y={-0.68} accent={accent} />
       <CornerGlyph x={0.48} y={-0.68} accent={accent} />
 
-      <Text
+      <TempleText
         position={[0, 0.45, 0.045]}
         anchorX="center"
         anchorY="middle"
@@ -875,9 +875,9 @@ function PanelShell({
         maxWidth={1.02}
       >
         {subtitle}
-      </Text>
+      </TempleText>
 
-      <Text
+      <TempleText
         position={[-0.53, 0.31, 0.045]}
         anchorX="left"
         anchorY="top"
@@ -887,7 +887,7 @@ function PanelShell({
         lineHeight={1.22}
       >
         {currentPage}
-      </Text>
+      </TempleText>
 
       <PanelButton
         label="‹"
@@ -898,7 +898,7 @@ function PanelShell({
         onClick={goPrevious}
       />
 
-      <Text
+      <TempleText
         position={[0, -0.52, 0.055]}
         anchorX="center"
         anchorY="middle"
@@ -909,7 +909,7 @@ function PanelShell({
         {safePages.length > 1
           ? `${pageIndex + 1}/${safePages.length}`
           : 'TAP PANEL'}
-      </Text>
+      </TempleText>
 
       <PanelButton
         label="›"

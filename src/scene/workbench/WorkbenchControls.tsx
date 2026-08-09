@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import { useState } from 'react'
-import { Text } from '@react-three/drei'
 import { shortText } from './shared'
+import { TempleText } from '../TempleText'
 
 export function FloatingMenuButton({
   label,
@@ -90,7 +90,7 @@ export function FloatingMenuButton({
         />
       </mesh>
 
-      <Text
+      <TempleText
         position={[0, 0.002, 0.03]}
         fontSize={0.04}
         color={disabled ? '#6d5135' : hovered ? '#ffffff' : '#ffd18a'}
@@ -99,7 +99,7 @@ export function FloatingMenuButton({
         maxWidth={width - 0.03}
       >
         {label}
-      </Text>
+      </TempleText>
 
       <mesh position={[0, 0, 0.055]}>
         <planeGeometry args={[width + 0.26, 0.38]} />
@@ -166,7 +166,7 @@ function DialArrow({
         onActivate()
       }}
     >
-      <Text
+      <TempleText
         position={[x, 0.002, 0.078]}
         fontSize={0.058}
         color={hovered ? '#ffffff' : '#ffcf7c'}
@@ -174,7 +174,7 @@ function DialArrow({
         anchorY="middle"
       >
         {glyph}
-      </Text>
+      </TempleText>
 
       <mesh position={[x, 0, 0.092]}>
         <planeGeometry args={[0.2, 0.18]} />
@@ -197,8 +197,13 @@ function dialGlyph(label: string) {
   if (label === 'STYLE FAMILY') return '☿'
   if (label === 'ART STYLE') return '✶'
   if (label === 'EROS LEVEL') return '♀'
-  if (label === 'INTENT') return '🜂'
-  if (label === 'SUBJECT') return '🜃'
+  // Fire and Earth as their plain triangles rather than the Alchemical Symbols
+  // block (U+1F702/1F703). Those two codepoints are absent from the bundled
+  // font, and a single missing glyph is enough to send troika back to the
+  // jsdelivr resolver at runtime - which is the whole dependency we are cutting.
+  // The traditional alchemical forms are these triangles anyway.
+  if (label === 'INTENT') return '△'
+  if (label === 'SUBJECT') return '▽'
   return '✦'
 }
 
@@ -254,7 +259,7 @@ export function FloatingDial({
         />
       </mesh>
 
-      <Text
+      <TempleText
         position={[-0.76, 0, 0.074]}
         fontSize={0.052}
         color="#f7be72"
@@ -262,9 +267,9 @@ export function FloatingDial({
         anchorY="middle"
       >
         {glyph}
-      </Text>
+      </TempleText>
 
-      <Text
+      <TempleText
         position={[-0.67, 0, 0.062]}
         fontSize={0.027}
         color="#9f744b"
@@ -273,7 +278,7 @@ export function FloatingDial({
         maxWidth={0.36}
       >
         {label}
-      </Text>
+      </TempleText>
 
       <DialArrow glyph="◂" x={-0.28} onActivate={onPrevious} />
 
@@ -299,7 +304,7 @@ export function FloatingDial({
         />
       </mesh>
 
-      <Text
+      <TempleText
         position={[0.18, 0.002, 0.078]}
         fontSize={0.033}
         color="#f2d4a2"
@@ -308,7 +313,7 @@ export function FloatingDial({
         maxWidth={0.66}
       >
         {shortText(value, 30)}
-      </Text>
+      </TempleText>
 
       <DialArrow glyph="▸" x={0.65} onActivate={onNext} />
     </group>

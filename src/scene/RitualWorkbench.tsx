@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-import { Text } from '@react-three/drei'
 import * as THREE from 'three'
 import type {
   ForgePhase,
@@ -31,6 +30,7 @@ import { FloatingForgeMenu, ForgeConfigReadout } from './workbench/ForgeMenu'
 import { SpreadMandala, SpreadSlot } from './workbench/SpreadField'
 import { DeckTray, WorkbenchCard } from './workbench/WorkbenchCards'
 import { FloatingArchiveMenu, FloatingSigilDock } from './workbench/SigilDock'
+import { TempleText } from './TempleText'
 
 type DragState = {
   cardId: number
@@ -247,7 +247,7 @@ export function RitualWorkbench({
           />
         </mesh>
 
-        <Text
+        <TempleText
           position={[0, 0.655, 0.035]}
           fontSize={0.026}
           color="#8f6742"
@@ -256,7 +256,7 @@ export function RitualWorkbench({
           maxWidth={1.8}
         >
           ☿  FORGE VECTOR  ☉  CONFIGURATION CURRENT  ♀
-        </Text>
+        </TempleText>
       </group>
 
       {/* Summoned, not permanent. The forge readout owns this space while the
@@ -494,7 +494,7 @@ export function RitualWorkbench({
         }}
       />
 
-      <Text
+      <TempleText
         position={[0, TABLE_Y + 0.052, 0.54]}
         rotation={[-Math.PI / 2, 0, 0]}
         fontSize={0.04}
@@ -504,7 +504,7 @@ export function RitualWorkbench({
         maxWidth={1.7}
       >
         {menuMode === 'forge' ? 'FORGE MENU OPEN' : menuMode === 'spread' ? 'SPREAD FIELD OPEN' : `${forgePhase.toUpperCase()} // ${hasDeck ? 'DECK ACTIVE' : 'ALTAR IDLE'}`}
-      </Text>
+      </TempleText>
     </group>
   )
 }

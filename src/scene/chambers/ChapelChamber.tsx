@@ -1,5 +1,4 @@
 import { useMemo, useRef, useState } from 'react'
-import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import {
@@ -11,6 +10,7 @@ import {
   type ChapterDraw,
 } from '../../tools/liber333'
 import type { ChamberProps } from './types'
+import { TempleText } from '../TempleText'
 
 /**
  * THE CHAPEL OF LIES — liber-333-grimoire
@@ -158,7 +158,7 @@ function SephiraLamp({
       </mesh>
 
       {lit ? (
-        <Text
+        <TempleText
           position={[0, -0.15, 0.01]}
           fontSize={0.055}
           color={sephira.color}
@@ -166,7 +166,7 @@ function SephiraLamp({
           anchorY="middle"
         >
           {sephira.name.toUpperCase()}
-        </Text>
+        </TempleText>
       ) : null}
     </group>
   )
@@ -271,7 +271,7 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
           />
         </mesh>
 
-        <Text
+        <TempleText
           position={[0, 0.115, 0.006]}
           fontSize={0.028}
           color="#e8dcff"
@@ -280,9 +280,9 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
           maxWidth={1.1}
         >
           {question}
-        </Text>
+        </TempleText>
 
-        <Text
+        <TempleText
           position={[0, 0.058, 0.006]}
           fontSize={0.019}
           color={CHAPEL_ACCENT}
@@ -290,15 +290,15 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
           anchorY="middle"
         >
           {`ENGLISH ORDINAL ${gematria}  ·  REDUCED ${theosophicReduction(gematria)}`}
-        </Text>
+        </TempleText>
 
         <group position={[-0.4, -0.02, 0.01]} {...press(() => {
           setQuestionIndex((i) => (i + 1) % questions.length)
           setDraws([])
         })}>
-          <Text fontSize={0.026} color="#9a8fb5" anchorX="center" anchorY="middle">
+          <TempleText fontSize={0.026} color="#9a8fb5" anchorX="center" anchorY="middle">
             QUESTION ▸
-          </Text>
+          </TempleText>
           <mesh position={[0, 0, 0.01]}>
             <planeGeometry args={[0.34, 0.09]} />
             <meshBasicMaterial color="#ffffff" transparent opacity={0.001} depthWrite={false} side={THREE.DoubleSide} />
@@ -309,9 +309,9 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
           setMode((m) => (m === 'single' ? 'triad' : 'single'))
           setDraws([])
         })}>
-          <Text fontSize={0.026} color="#9a8fb5" anchorX="center" anchorY="middle">
+          <TempleText fontSize={0.026} color="#9a8fb5" anchorX="center" anchorY="middle">
             {mode.toUpperCase()}
-          </Text>
+          </TempleText>
           <mesh position={[0, 0, 0.01]}>
             <planeGeometry args={[0.26, 0.09]} />
             <meshBasicMaterial color="#ffffff" transparent opacity={0.001} depthWrite={false} side={THREE.DoubleSide} />
@@ -319,16 +319,16 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
         </group>
 
         <group position={[0.4, -0.02, 0.01]} {...press(() => setDraws(drawChapters(question, mode)))}>
-          <Text fontSize={0.028} color="#ffffff" anchorX="center" anchorY="middle">
+          <TempleText fontSize={0.028} color="#ffffff" anchorX="center" anchorY="middle">
             CONSULT
-          </Text>
+          </TempleText>
           <mesh position={[0, 0, 0.01]}>
             <planeGeometry args={[0.32, 0.09]} />
             <meshBasicMaterial color="#ffffff" transparent opacity={0.001} depthWrite={false} side={THREE.DoubleSide} />
           </mesh>
         </group>
 
-        <Text
+        <TempleText
           position={[0, -0.115, 0.006]}
           fontSize={0.016}
           color="#5d5474"
@@ -338,7 +338,7 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
           {draws.length
             ? 'THE TREE ANSWERS'
             : 'THE SAME QUESTION ALWAYS DRAWS THE SAME CHAPTERS'}
-        </Text>
+        </TempleText>
       </group>
 
       {/* THE INSCRIPTIONS */}
@@ -368,7 +368,7 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
               />
             </mesh>
 
-            <Text
+            <TempleText
               position={[0, 0.185, 0.008]}
               fontSize={0.026}
               color={draw.sephira.color}
@@ -376,9 +376,9 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
               anchorY="middle"
             >
               {draw.position.toUpperCase()}
-            </Text>
+            </TempleText>
 
-            <Text
+            <TempleText
               position={[0, 0.06, 0.008]}
               fontSize={0.12}
               color="#ffffff"
@@ -386,9 +386,9 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
               anchorY="middle"
             >
               {String(draw.number)}
-            </Text>
+            </TempleText>
 
-            <Text
+            <TempleText
               position={[0, -0.06, 0.008]}
               fontSize={0.026}
               color="#cbbde8"
@@ -397,9 +397,9 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
               maxWidth={0.52}
             >
               {`CHAPTER ${draw.number}`}
-            </Text>
+            </TempleText>
 
-            <Text
+            <TempleText
               position={[0, -0.13, 0.008]}
               fontSize={0.022}
               color={draw.sephira.color}
@@ -408,9 +408,9 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
               maxWidth={0.54}
             >
               {draw.sephira.name}
-            </Text>
+            </TempleText>
 
-            <Text
+            <TempleText
               position={[0, -0.185, 0.008]}
               fontSize={0.017}
               color="#6b6082"
@@ -419,7 +419,7 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
               maxWidth={0.54}
             >
               {draw.sephira.title}
-            </Text>
+            </TempleText>
           </group>
         )
       })}

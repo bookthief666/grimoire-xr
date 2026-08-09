@@ -1,10 +1,10 @@
 import * as THREE from 'three'
 import { useEffect, useRef, useState } from 'react'
-import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import type { GrimoireCard } from '../../types/grimoire'
 import { TableBar } from './AltarHardware'
 import { TABLE_Y } from './shared'
+import { TempleText } from '../TempleText'
 
 function isUsableGeneratedCardImageUrl(value: string | undefined): value is string {
   if (!value) return false
@@ -65,7 +65,7 @@ function CardFaceArt({ imageUrl }: { imageUrl: string }) {
           <meshBasicMaterial color="#160807" side={THREE.DoubleSide} />
         </mesh>
 
-        <Text
+        <TempleText
           position={[0, 0, 0.045]}
           fontSize={0.024}
           color="#ff9a7a"
@@ -74,7 +74,7 @@ function CardFaceArt({ imageUrl }: { imageUrl: string }) {
           maxWidth={0.22}
         >
           IMAGE ERROR
-        </Text>
+        </TempleText>
       </group>
     )
   }
@@ -87,7 +87,7 @@ function CardFaceArt({ imageUrl }: { imageUrl: string }) {
           <meshBasicMaterial color="#120806" side={THREE.DoubleSide} />
         </mesh>
 
-        <Text
+        <TempleText
           position={[0, 0, 0.045]}
           fontSize={0.024}
           color="#d9b5ff"
@@ -96,7 +96,7 @@ function CardFaceArt({ imageUrl }: { imageUrl: string }) {
           maxWidth={0.22}
         >
           SEALING IMAGE
-        </Text>
+        </TempleText>
       </group>
     )
   }
@@ -302,7 +302,7 @@ export function WorkbenchCard({
         />
       </mesh>
 
-      <Text
+      <TempleText
         position={[0, -0.17, 0.035]}
         fontSize={0.032}
         color={selected ? '#fff1c6' : '#d8aa72'}
@@ -311,9 +311,9 @@ export function WorkbenchCard({
         maxWidth={0.24}
       >
         {card.name}
-      </Text>
+      </TempleText>
 
-      <Text
+      <TempleText
         position={[0, 0.2, 0.036]}
         fontSize={0.022}
         color={card.artPrompt ? '#d9b5ff' : '#7b5536'}
@@ -322,7 +322,7 @@ export function WorkbenchCard({
         maxWidth={0.26}
       >
         {card.imageStatus === 'ready' ? 'IMAGE SEALED' : card.artPrompt ? 'ART SEED' : 'NO IMAGE'}
-      </Text>
+      </TempleText>
     </group>
   )
 }
@@ -448,7 +448,7 @@ export function DeckTray({
           />
         </mesh>
 
-        <Text
+        <TempleText
           position={[-1.2, TABLE_Y + 0.158, 0.12]}
           rotation={[-Math.PI / 2, 0, 0]}
           fontSize={0.034}
@@ -458,10 +458,10 @@ export function DeckTray({
           maxWidth={0.34}
         >
           {active ? `${count} ONLINE` : 'UNFORGED'}
-        </Text>
+        </TempleText>
       </group>
 
-      <Text
+      <TempleText
         position={[-1.2, TABLE_Y + 0.09, 0.44]}
         rotation={[-Math.PI / 2, 0, 0]}
         fontSize={0.032}
@@ -471,9 +471,9 @@ export function DeckTray({
         maxWidth={0.72}
       >
         ARCANA MATRIX
-      </Text>
+      </TempleText>
 
-      <Text
+      <TempleText
         position={[-1.2, TABLE_Y + 0.066, -0.52]}
         rotation={[-Math.PI / 2, 0, 0]}
         fontSize={0.026}
@@ -483,7 +483,7 @@ export function DeckTray({
         maxWidth={0.72}
       >
         DECK MEMORY // SPREAD SOURCE
-      </Text>
+      </TempleText>
     </group>
   )
 }

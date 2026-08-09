@@ -1,8 +1,8 @@
 import { useMemo, useRef, type MutableRefObject } from 'react'
-import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { BabalonStarGlyph } from './ThelemicSigils'
+import { TempleText } from './TempleText'
 
 type Props = {
   ritualImpulseRef: MutableRefObject<number>
@@ -168,7 +168,7 @@ function ThelemicStarGate({ ritualImpulseRef, loading = false, oracleLoading = f
         />
       </group>
 
-      <Text visible={false}
+      <TempleText visible={false}
         position={[0, 1.43, 0.1]}
         fontSize={0.105}
         color="#f8f3df"
@@ -178,9 +178,9 @@ function ThelemicStarGate({ ritualImpulseRef, loading = false, oracleLoading = f
         raycast={noRaycast}
       >
         ASTRAL ENGINE OF THE WILL
-      </Text>
+      </TempleText>
 
-      <Text visible={false}
+      <TempleText visible={false}
         position={[0, -1.45, 0.1]}
         fontSize={0.075}
         color="#9a6bff"
@@ -190,10 +190,10 @@ function ThelemicStarGate({ ritualImpulseRef, loading = false, oracleLoading = f
         raycast={noRaycast}
       >
         XENOTHEURGIC · HERMETIC · THELEMIC
-      </Text>
+      </TempleText>
 
       {(loading || oracleLoading || hasActiveCard || hasOracleReading) ? (
-        <Text visible={false}
+        <TempleText visible={false}
           position={[0, -1.66, 0.12]}
           fontSize={0.065}
           color={oracleLoading || hasOracleReading ? '#d9b5ff' : '#ffd18a'}
@@ -209,7 +209,7 @@ function ThelemicStarGate({ ritualImpulseRef, loading = false, oracleLoading = f
               : hasOracleReading
                 ? 'READING INSCRIBED'
                 : 'ARCANUM FOCUSED'}
-        </Text>
+        </TempleText>
       ) : null}
     </group>
   )
@@ -265,7 +265,7 @@ function FloatingOrrery({ ritualImpulseRef, loading = false, oracleLoading = fal
       ].map(([glyph, r, color], i) => {
         const a = (i / 4) * Math.PI * 2
         return (
-          <Text visible={false}
+          <TempleText visible={false}
             key={glyph}
             position={[Math.cos(a) * Number(r), Math.sin(a) * 0.2, Math.sin(a) * Number(r)]}
             fontSize={0.13}
@@ -275,7 +275,7 @@ function FloatingOrrery({ ritualImpulseRef, loading = false, oracleLoading = fal
             raycast={noRaycast}
           >
             {glyph}
-          </Text>
+          </TempleText>
         )
       })}
     </group>
@@ -554,7 +554,7 @@ function RitualStateConduit({
         {['✶', '☉', '☽', '♀'].map((glyph, i) => {
           const a = (i / 4) * Math.PI * 2
           return (
-            <Text visible={false}
+            <TempleText visible={false}
               key={glyph}
               position={[Math.cos(a) * 0.48, Math.sin(a) * 0.1, Math.sin(a) * 0.48]}
               fontSize={0.075}
@@ -564,12 +564,12 @@ function RitualStateConduit({
               raycast={noRaycast}
             >
               {glyph}
-            </Text>
+            </TempleText>
           )
         })}
       </group>
 
-      <Text visible={false}
+      <TempleText visible={false}
         position={[0, 2.08, 0]}
         fontSize={0.065}
         color={active ? stateColor : '#7b5536'}
@@ -579,7 +579,7 @@ function RitualStateConduit({
         raycast={noRaycast}
       >
         {stateLabel}
-      </Text>
+      </TempleText>
     </group>
   )
 }
@@ -738,7 +738,7 @@ function DeckConstellation({
         opacity={active ? 0.22 : 0.075}
       />
 
-      <Text visible={false}
+      <TempleText visible={false}
         position={[0, -0.92, 0.06]}
         fontSize={0.062}
         color={active ? '#ffd18a' : '#7b5536'}
@@ -748,7 +748,7 @@ function DeckConstellation({
         raycast={noRaycast}
       >
         {label}
-      </Text>
+      </TempleText>
     </group>
   )
 }
@@ -771,7 +771,10 @@ function HumanScaleTempleLife({
   const oracleActive = oracleLoading || hasOracleReading
 
   const glyphs = useMemo(() => {
-    return ['✶', '☉', '☽', '♀', '☿', '♃', '♄', '⟁', '✦', '◌'].map((glyph, i) => {
+    // ◬ stands in for ⟁ (U+27C1): that codepoint is missing from the bundled
+    // font, and one uncovered glyph is enough to send troika back to the
+    // jsdelivr resolver at runtime, which is the dependency we are cutting.
+    return ['✶', '☉', '☽', '♀', '☿', '♃', '♄', '◬', '✦', '◌'].map((glyph, i) => {
       const angle = (i / 10) * Math.PI * 2
       return {
         glyph,
@@ -855,7 +858,7 @@ function HumanScaleTempleLife({
               />
             </mesh>
 
-            <Text visible={false}
+            <TempleText visible={false}
               position={[0, 0, 0.018]}
               fontSize={0.064}
               color={g.color}
@@ -864,7 +867,7 @@ function HumanScaleTempleLife({
               raycast={noRaycast}
             >
               {g.glyph}
-            </Text>
+            </TempleText>
           </group>
         ))}
       </group>
@@ -914,7 +917,7 @@ function HumanScaleTempleLife({
           opacity={active ? 0.34 : 0.13}
         />
 
-        <Text visible={false}
+        <TempleText visible={false}
           position={[0, 2.92, 0.08]}
           fontSize={0.072}
           color={oracleActive ? '#d9b5ff' : '#9f744b'}
@@ -924,7 +927,7 @@ function HumanScaleTempleLife({
           raycast={noRaycast}
         >
           ORACLE SANCTUM
-        </Text>
+        </TempleText>
       </group>
 
     </group>

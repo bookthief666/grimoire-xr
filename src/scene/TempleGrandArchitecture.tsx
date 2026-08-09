@@ -1,8 +1,8 @@
 import { useMemo, useRef, type MutableRefObject } from 'react'
-import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { UnicursalHexagramGlyph } from './ThelemicSigils'
+import { TempleText } from './TempleText'
 
 type Props = {
   ritualImpulseRef: MutableRefObject<number>
@@ -250,7 +250,7 @@ function TwistedPillar({
       })}
 
       {['☉', '☽', '♀', '☿', '♃', '♄'].map((glyph, index) => (
-        <Text
+        <TempleText
           key={`${side}-${glyph}`}
           position={[side === 'photon' ? -0.76 : 0.76, 3.3 - index * 1.12, 0.18]}
           rotation={[0, side === 'photon' ? 0.18 : -0.18, 0]}
@@ -262,7 +262,7 @@ function TwistedPillar({
           raycast={noRaycast}
         >
           {glyph}
-        </Text>
+        </TempleText>
       ))}
     </group>
   )
@@ -402,7 +402,7 @@ function HolographicThelemicAxis({
         />
       </group>
 
-      <Text
+      <TempleText
         visible={false}
         position={[0, -1.72, 0.08]}
         fontSize={0.08}
@@ -412,7 +412,7 @@ function HolographicThelemicAxis({
         raycast={noRaycast}
       >
         93 // ABRAHADABRA // 418
-      </Text>
+      </TempleText>
     </group>
   )
 }
