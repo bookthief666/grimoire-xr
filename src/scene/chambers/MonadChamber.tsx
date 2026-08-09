@@ -9,6 +9,7 @@ import {
 } from '../../tools/monas'
 import type { ChamberProps } from './types'
 import { TempleText } from '../TempleText'
+import { pressable } from '../pressable'
 
 /**
  * THE MONAD — monas-hieroglyphica
@@ -287,16 +288,6 @@ export function MonadInstrument({ morphRef, active }: ChamberProps) {
     }
   })
 
-  const press = (fn: () => void) => ({
-    onPointerDown: (event: { stopPropagation: () => void }) => {
-      event.stopPropagation()
-    },
-    onPointerUp: (event: { stopPropagation: () => void }) => {
-      event.stopPropagation()
-      fn()
-    },
-  })
-
   return (
     <group>
       <MonadGlyph phase={theorem.phase} morphRef={morphRef} />
@@ -361,7 +352,7 @@ export function MonadInstrument({ morphRef, active }: ChamberProps) {
 
         <TempleText
           position={[-0.53, -0.124, 0.006]}
-          fontSize={0.019}
+          fontSize={0.025}
           color="#6b7f96"
           anchorX="left"
           anchorY="top"
@@ -371,7 +362,7 @@ export function MonadInstrument({ morphRef, active }: ChamberProps) {
           {theorem.commentary}
         </TempleText>
 
-        <group position={[0.4, -0.19, 0.01]} {...press(() => setIndex((i) => (i + 1) % THEOREMS.length))}>
+        <group position={[0.4, -0.19, 0.01]} {...pressable(() => setIndex((i) => (i + 1) % THEOREMS.length))}>
           <TempleText fontSize={0.03} color="#ffffff" anchorX="center" anchorY="middle">
             ADVANCE ▸
           </TempleText>
@@ -387,7 +378,7 @@ export function MonadInstrument({ morphRef, active }: ChamberProps) {
           </mesh>
         </group>
 
-        <group position={[-0.36, -0.19, 0.01]} {...press(() => setIndex(0))}>
+        <group position={[-0.36, -0.19, 0.01]} {...pressable(() => setIndex(0))}>
           <TempleText fontSize={0.03} color="#7f93a8" anchorX="center" anchorY="middle">
             ◂ RESET
           </TempleText>

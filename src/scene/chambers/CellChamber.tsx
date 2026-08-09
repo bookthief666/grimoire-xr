@@ -13,6 +13,7 @@ import {
 import { USER_EYE_VR } from '../zones'
 import type { ChamberProps } from './types'
 import { TempleText } from '../TempleText'
+import { pressable } from '../pressable'
 
 /**
  * THE CELL — abulafia.exe
@@ -297,16 +298,6 @@ export function CellInstrument({ morphRef, active }: ChamberProps) {
 
   const current = sequence[display.step % sequence.length]
 
-  const press = (fn: () => void) => ({
-    onPointerDown: (event: { stopPropagation: () => void }) => {
-      event.stopPropagation()
-    },
-    onPointerUp: (event: { stopPropagation: () => void }) => {
-      event.stopPropagation()
-      fn()
-    },
-  })
-
   return (
     <group ref={groupRef} position={[0, 1.34, -0.95]}>
       {/* Breath ring. Its diameter is the metronome. */}
@@ -357,7 +348,7 @@ export function CellInstrument({ morphRef, active }: ChamberProps) {
 
       <TempleText
         position={[0, -0.235, 0]}
-        fontSize={0.024}
+        fontSize={0.025}
         color="#4d565e"
         anchorX="center"
         anchorY="middle"
@@ -367,7 +358,7 @@ export function CellInstrument({ morphRef, active }: ChamberProps) {
 
       {/* Controls, kept to the minimum the practice needs. */}
       <group position={[0, -0.34, 0.02]}>
-        <group position={[-0.2, 0, 0]} {...press(() => setRunning((r) => !r))}>
+        <group position={[-0.2, 0, 0]} {...pressable(() => setRunning((r) => !r))}>
           <TempleText fontSize={0.032} color="#c8ced4" anchorX="center" anchorY="middle">
             {running ? 'HOLD' : 'RESUME'}
           </TempleText>
@@ -385,7 +376,7 @@ export function CellInstrument({ morphRef, active }: ChamberProps) {
 
         <group
           position={[0.06, 0, 0]}
-          {...press(() => setManualStep((s) => (s + 1) % sequence.length))}
+          {...pressable(() => setManualStep((s) => (s + 1) % sequence.length))}
         >
           <TempleText fontSize={0.032} color="#c8ced4" anchorX="center" anchorY="middle">
             STEP
@@ -404,7 +395,7 @@ export function CellInstrument({ morphRef, active }: ChamberProps) {
 
         <group
           position={[0.29, 0, 0]}
-          {...press(() => {
+          {...pressable(() => {
             setNameIndex((i) => (i + 1) % NAMES.length)
             setManualStep(0)
           })}

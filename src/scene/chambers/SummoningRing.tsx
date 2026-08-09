@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { Chamber, ChamberId } from './types'
 import { TempleText } from '../TempleText'
+import { pressable } from '../pressable'
 
 /**
  * The one control that is always present in every chamber: four seals that
@@ -77,25 +78,7 @@ function Seal({
         event.stopPropagation()
         setHovered(false)
       }}
-      onPointerDown={(event) => {
-        event.stopPropagation()
-
-        const target = event.target as unknown as {
-          setPointerCapture?: (pointerId: number) => void
-        }
-
-        target.setPointerCapture?.(event.pointerId)
-      }}
-      onPointerUp={(event) => {
-        event.stopPropagation()
-
-        const target = event.target as unknown as {
-          releasePointerCapture?: (pointerId: number) => void
-        }
-
-        target.releasePointerCapture?.(event.pointerId)
-        if (!disabled) onSummon()
-      }}
+      {...pressable(onSummon, disabled)}
     >
       <mesh>
         <circleGeometry args={[0.062, 28]} />
@@ -171,7 +154,7 @@ function Seal({
           </TempleText>
           <TempleText
             position={[0, -0.142, 0.02]}
-            fontSize={0.017}
+            fontSize={0.025}
             color="#8b8b96"
             anchorX="center"
             anchorY="middle"

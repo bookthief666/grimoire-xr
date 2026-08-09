@@ -11,6 +11,7 @@ import {
 } from '../../tools/liber333'
 import type { ChamberProps } from './types'
 import { TempleText } from '../TempleText'
+import { pressable } from '../pressable'
 
 /**
  * THE CHAPEL OF LIES — liber-333-grimoire
@@ -225,16 +226,6 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
     )
   }, [litSephiroth])
 
-  const press = (fn: () => void) => ({
-    onPointerDown: (event: { stopPropagation: () => void }) => {
-      event.stopPropagation()
-    },
-    onPointerUp: (event: { stopPropagation: () => void }) => {
-      event.stopPropagation()
-      fn()
-    },
-  })
-
   return (
     <group>
       {/* THE TREE AS ARCHITECTURE */}
@@ -284,7 +275,7 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
 
         <TempleText
           position={[0, 0.058, 0.006]}
-          fontSize={0.019}
+          fontSize={0.025}
           color={CHAPEL_ACCENT}
           anchorX="center"
           anchorY="middle"
@@ -292,7 +283,7 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
           {`ENGLISH ORDINAL ${gematria}  ·  REDUCED ${theosophicReduction(gematria)}`}
         </TempleText>
 
-        <group position={[-0.4, -0.02, 0.01]} {...press(() => {
+        <group position={[-0.4, -0.02, 0.01]} {...pressable(() => {
           setQuestionIndex((i) => (i + 1) % questions.length)
           setDraws([])
         })}>
@@ -305,7 +296,7 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
           </mesh>
         </group>
 
-        <group position={[0, -0.02, 0.01]} {...press(() => {
+        <group position={[0, -0.02, 0.01]} {...pressable(() => {
           setMode((m) => (m === 'single' ? 'triad' : 'single'))
           setDraws([])
         })}>
@@ -318,7 +309,7 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
           </mesh>
         </group>
 
-        <group position={[0.4, -0.02, 0.01]} {...press(() => setDraws(drawChapters(question, mode)))}>
+        <group position={[0.4, -0.02, 0.01]} {...pressable(() => setDraws(drawChapters(question, mode)))}>
           <TempleText fontSize={0.028} color="#ffffff" anchorX="center" anchorY="middle">
             CONSULT
           </TempleText>
@@ -330,7 +321,7 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
 
         <TempleText
           position={[0, -0.115, 0.006]}
-          fontSize={0.016}
+          fontSize={0.025}
           color="#5d5474"
           anchorX="center"
           anchorY="middle"
@@ -401,7 +392,7 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
 
             <TempleText
               position={[0, -0.13, 0.008]}
-              fontSize={0.022}
+              fontSize={0.025}
               color={draw.sephira.color}
               anchorX="center"
               anchorY="middle"
@@ -412,7 +403,7 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
 
             <TempleText
               position={[0, -0.185, 0.008]}
-              fontSize={0.017}
+              fontSize={0.025}
               color="#6b6082"
               anchorX="center"
               anchorY="middle"
