@@ -70,15 +70,24 @@ export function isOverhead(y: number) {
 }
 
 /**
+ * True when a point sits at floor level. The floor is a bounding surface of the
+ * room, not workspace — a sigil underfoot is no more "in the way" than the
+ * ceiling is, so it gets the same exemption as canopy.
+ */
+export function isUnderfoot(y: number) {
+  return y < 0.4
+}
+
+/**
  * Which zone a world point falls in, measured in the VR frame.
  *
- * Radial distance alone mis-classifies anything above the user: the ceiling
- * crown at [0, 3.4, 0] is only 1.8m away and would otherwise land in `content`,
- * which is nonsense for a ceiling. Points clearing `OVERHEAD_CLEARANCE` are
- * therefore always `ambient` — they are canopy, and canopy cannot be in the way.
+ * Radial distance alone mis-classifies anything above or below the user: the
+ * ceiling crown at [0, 3.4, 0] is only 1.8m away and would otherwise land in
+ * `content`, which is nonsense for a ceiling. Ceiling and floor are the room's
+ * bounding surfaces, so both are always `ambient` — they cannot be in the way.
  */
 export function zoneOf(x: number, y: number, z: number): ZoneName {
-  if (isOverhead(y)) return 'ambient'
+  if (isOverhead(y) || isUnderfoot(y)) return 'ambient'
 
   const d = distanceFromUser(x, y, z)
 

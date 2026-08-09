@@ -30,6 +30,10 @@ import { TempleGrandArchitecture } from './TempleGrandArchitecture'
 import { InWorldRitualConsole } from './InWorldRitualConsole'
 import { RitualWorkbench } from './RitualWorkbench'
 import { BabalonStarGlyph } from './ThelemicSigils'
+import { CHAMBERS } from './chambers/registry'
+import { useChamberDirector } from './chambers/ChamberDirector'
+import { SummoningRing } from './chambers/SummoningRing'
+import type { Chamber, ChamberProps } from './chambers/types'
 import type { ArtStyleFamily } from '../constants/artStyles'
 
 function isUsableGeneratedCardImageUrl(value: string | undefined): value is string {
@@ -51,6 +55,21 @@ type ManifestState = {
   spawnPosition: [number, number, number]
   spawnRotationY: number
   activationId: number
+}
+
+/** Mounts whichever non-Sanctum chamber is currently presented. */
+function ActiveChamber({
+  chamber,
+  ...props
+}: ChamberProps & { chamber: Chamber }) {
+  const { Architecture, Instrument } = chamber
+
+  return (
+    <>
+      {Architecture ? <Architecture {...props} /> : null}
+      {Instrument ? <Instrument {...props} /> : null}
+    </>
+  )
 }
 
 const SHOW_LEGACY_VR_CONSOLE = false
@@ -1219,12 +1238,36 @@ export function RitualChamberScene({
     onAltarLanding()
   }
 
+  // Which room the temple is currently presenting. The Sanctum is the existing
+  // temple; the others replace it entirely during a morph.
+  const director = useChamberDirector(CHAMBERS, 'sanctum')
+  const inSanctum = director.chamber.id === 'sanctum'
+
+  const chamberProps = {
+    morphRef: director.morphRef,
+    ritualImpulseRef,
+    active: !director.inTransition,
+  }
+
   const shouldShowOraclePanels =
     showInWorldPanels &&
     (Boolean(dossier) || Boolean(focusedCard) || Boolean(oracleReading))
 
   return (
     <group>
+      {/* The summoning ring is the one control present in every chamber. */}
+      <SummoningRing
+        chambers={CHAMBERS}
+        activeId={director.requested}
+        disabled={director.inTransition}
+        onSummon={director.summon}
+      />
+
+      {/* Non-Sanctum chambers replace the temple wholesale. */}
+      {!inSanctum ? <ActiveChamber chamber={director.chamber} {...chamberProps} /> : null}
+
+      {inSanctum ? (
+      <>
       <TempleAtmosphere
         ritualImpulseRef={ritualImpulseRef}
         hasActiveCard={Boolean(focusedCard)}
@@ -1363,10 +1406,8 @@ export function RitualChamberScene({
           oracleReading={oracleReading ?? null}
         />
       ) : null}
-
-      
-
-      
+      </>
+      ) : null}
     </group>
   )
 }
