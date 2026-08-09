@@ -152,7 +152,6 @@ function AxisMarker({
 }
 
 export function CellArchitecture({ morphRef, active }: ChamberProps) {
-  const shellRef = useRef<THREE.Mesh>(null)
   const floorRef = useRef<THREE.MeshBasicMaterial>(null)
   const [step, setStep] = useState(0)
 
@@ -160,11 +159,6 @@ export function CellArchitecture({ morphRef, active }: ChamberProps) {
   // instrument stay locked to the same breath without prop-drilling.
   useFrame(({ clock }) => {
     const m = morphRef.current
-
-    if (shellRef.current) {
-      const s = 0.6 + m * 0.4
-      shellRef.current.scale.setScalar(s)
-    }
 
     if (floorRef.current) {
       floorRef.current.opacity = 0.16 * m
@@ -190,13 +184,9 @@ export function CellArchitecture({ morphRef, active }: ChamberProps) {
 
   return (
     <group>
-      {/* Sealed black shell. No stars, no depth cues - the Cell is a closed box. */}
-      {/* Tall enough to contain the up-axis marker at y 4.3; a shorter shell
-          would occlude it behind the ceiling face. */}
-      <mesh ref={shellRef}>
-        <boxGeometry args={[9, 9.6, 9]} />
-        <meshBasicMaterial color="#000000" side={THREE.BackSide} />
-      </mesh>
+      {/* No chamber shell. The rotunda (floor, colonnade, dome) is now the
+          room, shared by every chamber. A local shell here would sit inside the
+          colonnade at radius 6.4 and occlude it entirely. */}
 
       <ambientLight color="#0d1416" intensity={0.35} />
       <pointLight position={[0, 2.4, 0]} color={CELL_ACCENT} intensity={2.2} distance={6} />

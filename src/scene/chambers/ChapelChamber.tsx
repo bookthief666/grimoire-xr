@@ -173,19 +173,12 @@ function SephiraLamp({
   )
 }
 
-export function ChapelArchitecture({ morphRef }: ChamberProps) {
-  const shellRef = useRef<THREE.Mesh>(null)
-
-  useFrame(() => {
-    if (shellRef.current) shellRef.current.scale.setScalar(0.55 + morphRef.current * 0.45)
-  })
-
+export function ChapelArchitecture() {
   return (
     <group>
-      <mesh ref={shellRef}>
-        <sphereGeometry args={[14, 28, 16]} />
-        <meshBasicMaterial color="#04030a" side={THREE.BackSide} />
-      </mesh>
+      {/* No chamber shell. The rotunda (floor, colonnade, dome) is now the
+          room, shared by every chamber. A local shell here would sit inside the
+          colonnade at radius 6.4 and occlude it entirely. */}
 
       <ambientLight color="#120e1e" intensity={0.45} />
       <pointLight position={[0, 2.2, -2.4]} color={CHAPEL_ACCENT} intensity={4} distance={9} />

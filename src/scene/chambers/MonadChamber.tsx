@@ -211,13 +211,11 @@ function MonadGlyph({
 }
 
 export function MonadArchitecture({ morphRef }: ChamberProps) {
-  const shellRef = useRef<THREE.Mesh>(null)
   const ringsRef = useRef<THREE.Group>(null)
 
   useFrame(() => {
     const m = morphRef.current
 
-    if (shellRef.current) shellRef.current.scale.setScalar(0.5 + m * 0.5)
     if (ringsRef.current) {
       ringsRef.current.rotation.y += 0.0004
       ringsRef.current.scale.setScalar(0.7 + m * 0.3)
@@ -226,10 +224,9 @@ export function MonadArchitecture({ morphRef }: ChamberProps) {
 
   return (
     <group>
-      <mesh ref={shellRef}>
-        <sphereGeometry args={[13, 28, 16]} />
-        <meshBasicMaterial color="#020305" side={THREE.BackSide} />
-      </mesh>
+      {/* No chamber shell. The rotunda (floor, colonnade, dome) is now the
+          room, shared by every chamber. A local shell here would sit inside the
+          colonnade at radius 6.4 and occlude it entirely. */}
 
       <ambientLight color="#141a22" intensity={0.5} />
       <pointLight position={[0, 2.6, -0.6]} color={MONAD_ACCENT} intensity={3.2} distance={7} />

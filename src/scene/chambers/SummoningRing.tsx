@@ -43,6 +43,7 @@ function Seal({
   const [hovered, setHovered] = useState(false)
   const haloRef = useRef<THREE.MeshBasicMaterial>(null)
   const groupRef = useRef<THREE.Group>(null)
+  const coronaRef = useRef<THREE.Mesh>(null)
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime()
@@ -54,6 +55,10 @@ function Seal({
     if (haloRef.current) {
       const base = active ? 0.34 : hovered ? 0.26 : 0.09
       haloRef.current.opacity = base + breath * (active ? 0.16 : 0.05)
+    }
+
+    if (coronaRef.current) {
+      coronaRef.current.rotation.z = t * 0.35
     }
 
     if (groupRef.current) {
@@ -80,31 +85,12 @@ function Seal({
       }}
       {...pressable(onSummon, disabled)}
     >
-      <mesh>
-        <circleGeometry args={[0.062, 28]} />
-        <meshBasicMaterial
-          color="#05060a"
-          transparent
-          opacity={0.9}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh position={[0, 0, 0.002]}>
-        <ringGeometry args={[0.064, 0.072, 36]} />
-        <meshBasicMaterial
-          color={chamber.accent}
-          transparent
-          opacity={active ? 0.95 : hovered ? 0.7 : 0.4}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      {/* Fake glow: a low-opacity additive disc, no postprocessing. */}
-      <mesh position={[0, 0, 0.004]}>
-        <circleGeometry args={[0.15, 28]} />
+      {/* Halo sits behind the disc, not in front, and is tightened to stay
+          inside the seal spacing. At radius 0.15 against 0.19 spacing adjacent
+          halos physically intersected, which is why the row read as a smear of
+          coloured blobs rather than four distinct sigils. */}
+      <mesh position={[0, 0, -0.002]}>
+        <circleGeometry args={[0.082, 28]} />
         <meshBasicMaterial
           ref={haloRef}
           color={chamber.accent}
@@ -116,13 +102,48 @@ function Seal({
         />
       </mesh>
 
+      {/* Obsidian disc the sigil is cut into. Opaque, so the seal reads as a
+          solid object rather than a glow hanging in space. */}
+      <mesh>
+        <circleGeometry args={[0.058, 32]} />
+        <meshBasicMaterial color="#04050b" side={THREE.DoubleSide} />
+      </mesh>
+
+      {/* Hairline bezel. Thin and bright reads as engraved metal; thick and
+          soft reads as a cartoon button. */}
+      <mesh position={[0, 0, 0.002]}>
+        <ringGeometry args={[0.058, 0.0625, 48]} />
+        <meshBasicMaterial
+          color={chamber.accent}
+          transparent
+          opacity={active ? 1 : hovered ? 0.85 : 0.55}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      {/* Inner engraved circle, so the glyph sits in a recess. */}
+      <mesh position={[0, 0, 0.003]}>
+        <ringGeometry args={[0.044, 0.0455, 40]} />
+        <meshBasicMaterial
+          color={chamber.accent}
+          transparent
+          opacity={active ? 0.55 : 0.24}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      {/* Corona: only the summoned chamber wears it, and it turns. */}
       {active ? (
-        <mesh position={[0, 0, 0.006]}>
-          <ringGeometry args={[0.086, 0.09, 36]} />
+        <mesh ref={coronaRef} position={[0, 0, 0.004]}>
+          <ringGeometry args={[0.069, 0.0735, 6]} />
           <meshBasicMaterial
             color={chamber.accent}
             transparent
-            opacity={0.5}
+            opacity={0.8}
             depthWrite={false}
             blending={THREE.AdditiveBlending}
             side={THREE.DoubleSide}
@@ -192,7 +213,7 @@ export function SummoningRing({
   disabled: boolean
   onSummon: (id: ChamberId) => void
 }) {
-  const spacing = 0.19
+  const spacing = 0.24
   const start = -((chambers.length - 1) * spacing) / 2
 
   return (

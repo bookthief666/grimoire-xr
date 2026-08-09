@@ -34,6 +34,8 @@ import { CHAMBERS } from './chambers/registry'
 import { useChamberDirector } from './chambers/ChamberDirector'
 import { SummoningRing } from './chambers/SummoningRing'
 import { RotundaFloor } from './rotunda/RotundaFloor'
+import { RotundaColonnade } from './rotunda/RotundaColonnade'
+import { RotundaDome } from './rotunda/RotundaDome'
 import { CHAMBER_HUE, NEON } from '../theme/neon'
 import { MorphGroup } from './chambers/MorphGroup'
 import type { Chamber, ChamberProps } from './chambers/types'
@@ -1266,6 +1268,8 @@ export function RitualChamberScene({
           Rendered outside MorphGroup so the ground stays put while rooms
           dissolve and reform on top of it. */}
       <RotundaFloor accent={CHAMBER_HUE[director.chamber.id] ?? NEON.cyan} />
+      <RotundaColonnade accent={CHAMBER_HUE[director.chamber.id] ?? NEON.cyan} />
+      <RotundaDome accent={CHAMBER_HUE[director.chamber.id] ?? NEON.cyan} />
 
       <SummoningRing
         chambers={CHAMBERS}
