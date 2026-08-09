@@ -1,4 +1,10 @@
-import { useMemo, useRef, type MutableRefObject } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  type MutableRefObject,
+} from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { BabalonStarGlyph } from './ThelemicSigils'
@@ -585,6 +591,98 @@ function RitualStateConduit({
 }
 
 
+type ConstellationCard = {
+  index: number
+  isMajor: boolean
+  x: number
+  y: number
+  z: number
+  rot: number
+  delay: number
+}
+
+/**
+ * One instanced draw call for a set of identically-shaped constellation cards.
+ *
+ * The 78 arcana used to be ~100 individual meshes (56 minor planes, plus a plane
+ * and a ring for each of the 22 majors) - ~100 draw calls for pure backdrop.
+ *
+ * Per-card brightness is carried by instance colour rather than per-mesh
+ * opacity. Instances share a single material so opacity cannot vary between
+ * them, but these cards blend additively, where the result is colour x opacity.
+ * Folding the opacity into the colour and leaving material opacity at 1
+ * reproduces the original look exactly while collapsing to one call.
+ */
+function ConstellationLayer({
+  cards,
+  size,
+  zOffset,
+  ring,
+  colorFor,
+}: {
+  cards: ConstellationCard[]
+  size: [number, number]
+  zOffset: number
+  ring?: [number, number, number]
+  colorFor: (card: ConstellationCard) => { color: string; opacity: number }
+}) {
+  const meshRef = useRef<THREE.InstancedMesh>(null)
+  const dummy = useMemo(() => new THREE.Object3D(), [])
+  const scratch = useMemo(() => new THREE.Color(), [])
+
+  // Positions never change, so the matrices are written once.
+  useEffect(() => {
+    const mesh = meshRef.current
+    if (!mesh) return
+
+    cards.forEach((card, i) => {
+      dummy.position.set(card.x, card.y, card.z + zOffset)
+      dummy.rotation.set(0, card.rot, 0)
+      dummy.scale.setScalar(1)
+      dummy.updateMatrix()
+      mesh.setMatrixAt(i, dummy.matrix)
+    })
+
+    mesh.instanceMatrix.needsUpdate = true
+  }, [cards, dummy, zOffset])
+
+  // Brightness follows ritual state, so colours are rewritten when it changes.
+  useEffect(() => {
+    const mesh = meshRef.current
+    if (!mesh) return
+
+    cards.forEach((card, i) => {
+      const { color, opacity } = colorFor(card)
+      scratch.set(color).multiplyScalar(opacity)
+      mesh.setColorAt(i, scratch)
+    })
+
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
+  }, [cards, colorFor, scratch])
+
+  return (
+    <instancedMesh
+      ref={meshRef}
+      args={[undefined, undefined, cards.length]}
+      raycast={noRaycast}
+      frustumCulled={false}
+    >
+      {ring ? (
+        <ringGeometry args={ring} />
+      ) : (
+        <planeGeometry args={size} />
+      )}
+      <meshBasicMaterial
+        transparent
+        opacity={1}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        side={THREE.DoubleSide}
+      />
+    </instancedMesh>
+  )
+}
+
 function DeckConstellation({
   ritualImpulseRef,
   loading = false,
@@ -622,6 +720,32 @@ function DeckConstellation({
     })
   }, [])
 
+  const minorCards = useMemo(() => cards.filter((c) => !c.isMajor), [cards])
+  const majorCards = useMemo(() => cards.filter((c) => c.isMajor), [cards])
+
+  const oracleTinted = oracleLoading || hasOracleReading
+
+  const minorColor = useCallback(
+    (card: ConstellationCard) => ({
+      color: oracleTinted ? '#9a6bff' : '#b8860b',
+      opacity: active || card.index % 7 === 0 ? 0.08 : 0.025,
+    }),
+    [active, oracleTinted],
+  )
+
+  const majorColor = useCallback(
+    () => ({
+      color: loading ? '#ffffff' : hasDeck ? '#f8f3df' : '#d8e8ff',
+      opacity: active ? 0.14 : 0.04,
+    }),
+    [active, hasDeck, loading],
+  )
+
+  const majorRingColor = useCallback(
+    () => ({ color: '#ffd18a', opacity: active ? 0.7 : 0.25 }),
+    [active],
+  )
+
   useFrame(({ clock }, delta) => {
     const t = clock.getElapsedTime()
     const impulse = ritualImpulseRef.current
@@ -654,70 +778,29 @@ function DeckConstellation({
   return (
     <group ref={rootRef} position={[0, 2.0, -8.0]} raycast={noRaycast}>
       <group ref={minorRef} raycast={noRaycast}>
-        {cards
-          .filter((card) => !card.isMajor)
-          .map((card) => {
-            const awakened = active || card.index % 7 === 0
-            const opacity = awakened ? 0.08 : 0.025
-            return (
-              <mesh
-                key={card.index}
-                position={[card.x, card.y, card.z]}
-                rotation={[0, card.rot, 0]}
-                raycast={noRaycast}
-              >
-                <planeGeometry args={[0.055, 0.09]} />
-                <meshBasicMaterial
-                  color={oracleLoading || hasOracleReading ? '#9a6bff' : '#b8860b'}
-                  transparent
-                  opacity={opacity}
-                  depthWrite={false}
-                  blending={THREE.AdditiveBlending}
-                  side={THREE.DoubleSide}
-                />
-              </mesh>
-            )
-          })}
+        <ConstellationLayer
+          cards={minorCards}
+          size={[0.055, 0.09]}
+          zOffset={0}
+          colorFor={minorColor}
+        />
       </group>
 
       <group ref={majorRef} raycast={noRaycast}>
-        {cards
-          .filter((card) => card.isMajor)
-          .map((card) => {
-            const opacity = active ? 0.14 : 0.04
-            return (
-              <group
-                key={card.index}
-                position={[card.x, card.y, card.z + 0.035]}
-                rotation={[0, card.rot, 0]}
-                raycast={noRaycast}
-              >
-                <mesh raycast={noRaycast}>
-                  <planeGeometry args={[0.075, 0.12]} />
-                  <meshBasicMaterial
-                    color={loading ? '#ffffff' : hasDeck ? '#f8f3df' : '#d8e8ff'}
-                    transparent
-                    opacity={opacity}
-                    depthWrite={false}
-                    blending={THREE.AdditiveBlending}
-                    side={THREE.DoubleSide}
-                  />
-                </mesh>
+        <ConstellationLayer
+          cards={majorCards}
+          size={[0.075, 0.12]}
+          zOffset={0.035}
+          colorFor={majorColor}
+        />
 
-                <mesh position={[0, 0, 0.008]} raycast={noRaycast}>
-                  <ringGeometry args={[0.018, 0.024, 12]} />
-                  <meshBasicMaterial
-                    color="#ffd18a"
-                    transparent
-                    opacity={active ? 0.7 : 0.25}
-                    depthWrite={false}
-                    blending={THREE.AdditiveBlending}
-                    side={THREE.DoubleSide}
-                  />
-                </mesh>
-              </group>
-            )
-          })}
+        <ConstellationLayer
+          cards={majorCards}
+          size={[0, 0]}
+          ring={[0.018, 0.024, 12]}
+          zOffset={0.043}
+          colorFor={majorRingColor}
+        />
       </group>
 
       <HoloRing

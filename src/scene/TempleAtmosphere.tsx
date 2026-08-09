@@ -4,6 +4,10 @@ import * as THREE from 'three'
 import { BabalonStarGlyph } from './ThelemicSigils'
 import { TempleText } from './TempleText'
 
+/** Decoration must never intercept pointer rays. Matches the same helper in
+ *  TempleXenotheurgy and TempleGrandArchitecture. */
+const noRaycast = () => null
+
 type TempleAtmosphereProps = {
   ritualImpulseRef: MutableRefObject<number>
   hasActiveCard: boolean
@@ -70,20 +74,8 @@ function CosmicVoid() {
     })
   }, [])
 
-  const starRefs = useRef<(THREE.Mesh | null)[]>([])
-
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime()
-
-    for (let i = 0; i < starRefs.current.length; i += 1) {
-      const star = starRefs.current[i]
-      const data = starData[i]
-      if (!star) continue
-
-      const pulse = 0.72 + Math.sin(t * 0.55 + data.phase) * 0.28
-      star.scale.setScalar(data.size * (1 + pulse * 0.55))
-    }
-  })
+  const warm = useMemo(() => starData.filter((s) => s.warm), [starData])
+  const cool = useMemo(() => starData.filter((s) => !s.warm), [starData])
 
   return (
     <group>
@@ -97,25 +89,78 @@ function CosmicVoid() {
         />
       </mesh>
 
-      {starData.map((star, index) => (
-        <mesh
-          key={star.id}
-          ref={(el) => {
-            starRefs.current[index] = el
-          }}
-          position={star.position}
-        >
-          <sphereGeometry args={[star.size, 5, 5]} />
-          <meshBasicMaterial
-            color={star.warm ? '#f8f3df' : '#d8e8ff'}
-            transparent
-            opacity={star.warm ? 0.52 : 0.42}
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-          />
-        </mesh>
-      ))}
+      {/* 78 stars used to be 78 separate meshes, each with its own geometry -
+          78 draw calls for decoration nobody can interact with. Two instanced
+          groups (warm and cool) render the whole field in two calls. They are
+          split by colour because instances share one material, and per-instance
+          opacity is not expressible without a custom shader.
+
+          This also fixes a long-standing bug: the geometry radius was star.size
+          AND the frame loop scaled by star.size again, so the effective radius
+          was size squared - around 0.0002 world units. The stars have been
+          invisible. A unit sphere scaled once renders them at their intended
+          size. */}
+      <StarField stars={cool} color="#d8e8ff" opacity={0.42} />
+      <StarField stars={warm} color="#f8f3df" opacity={0.52} />
     </group>
+  )
+}
+
+type StarDatum = {
+  id: number
+  position: [number, number, number]
+  size: number
+  phase: number
+  warm: boolean
+}
+
+function StarField({
+  stars,
+  color,
+  opacity,
+}: {
+  stars: StarDatum[]
+  color: string
+  opacity: number
+}) {
+  const meshRef = useRef<THREE.InstancedMesh>(null)
+  const dummy = useMemo(() => new THREE.Object3D(), [])
+
+  useFrame(({ clock }) => {
+    const mesh = meshRef.current
+    if (!mesh) return
+
+    const t = clock.getElapsedTime()
+
+    for (let i = 0; i < stars.length; i += 1) {
+      const s = stars[i]
+      const pulse = 0.72 + Math.sin(t * 0.55 + s.phase) * 0.28
+
+      dummy.position.set(s.position[0], s.position[1], s.position[2])
+      dummy.scale.setScalar(s.size * (1 + pulse * 0.55))
+      dummy.updateMatrix()
+      mesh.setMatrixAt(i, dummy.matrix)
+    }
+
+    mesh.instanceMatrix.needsUpdate = true
+  })
+
+  return (
+    <instancedMesh
+      ref={meshRef}
+      args={[undefined, undefined, stars.length]}
+      raycast={noRaycast}
+      frustumCulled={false}
+    >
+      <sphereGeometry args={[1, 5, 5]} />
+      <meshBasicMaterial
+        color={color}
+        transparent
+        opacity={opacity}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+      />
+    </instancedMesh>
   )
 }
 
