@@ -1,9 +1,77 @@
 import { Line } from '@react-three/drei'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { TempleText } from './TempleText'
 
 type Vec3 = [number, number, number]
+
+/**
+ * A ring of identical discs, drawn in one call instead of `count` of them.
+ *
+ * These glyphs are used twelve times across five scene files, and each use was
+ * issuing a separate draw call per petal. That matters more than it sounds:
+ * profiling showed the temple is draw-call bound rather than geometry bound —
+ * 774 calls against only ~99k triangles, with 42% of calls drawing a single
+ * quad. Two triangles is not worth a state change and a draw.
+ */
+function PetalRing({
+  count,
+  orbit,
+  petal,
+  z,
+  color,
+  opacity,
+  segments = 14,
+  angleOffset = -Math.PI / 2,
+}: {
+  count: number
+  orbit: number
+  petal: number
+  z: number
+  color: string
+  opacity: number
+  segments?: number
+  angleOffset?: number
+}) {
+  const meshRef = useRef<THREE.InstancedMesh>(null)
+  const dummy = useMemo(() => new THREE.Object3D(), [])
+
+  // Positions depend only on props, so the matrices are written once per change
+  // rather than every frame.
+  useEffect(() => {
+    const mesh = meshRef.current
+    if (!mesh) return
+
+    for (let i = 0; i < count; i += 1) {
+      const angle = angleOffset + (i * Math.PI * 2) / count
+      dummy.position.set(Math.cos(angle) * orbit, Math.sin(angle) * orbit, z)
+      dummy.rotation.set(0, 0, 0)
+      dummy.scale.setScalar(1)
+      dummy.updateMatrix()
+      mesh.setMatrixAt(i, dummy.matrix)
+    }
+
+    mesh.instanceMatrix.needsUpdate = true
+  }, [angleOffset, count, dummy, orbit, z])
+
+  return (
+    <instancedMesh
+      ref={meshRef}
+      args={[undefined, undefined, count]}
+      frustumCulled={false}
+    >
+      <circleGeometry args={[petal, segments]} />
+      <meshBasicMaterial
+        color={color}
+        transparent
+        opacity={opacity}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        side={THREE.DoubleSide}
+      />
+    </instancedMesh>
+  )
+}
 
 type UnicursalHexagramGlyphProps = {
   radius?: number
@@ -71,31 +139,16 @@ export function UnicursalHexagramGlyph({
       />
 
       {withRose ? (
-        <group>
-          {Array.from({ length: 5 }, (_, index) => {
-            const angle = (index / 5) * Math.PI * 2
-            return (
-              <mesh
-                key={index}
-                position={[
-                  Math.cos(angle) * radius * 0.105,
-                  Math.sin(angle) * radius * 0.105,
-                  0.004,
-                ]}
-              >
-                <circleGeometry args={[radius * 0.04, 16]} />
-                <meshBasicMaterial
-                  color={color}
-                  transparent
-                  opacity={opacity * 0.42}
-                  depthWrite={false}
-                  blending={THREE.AdditiveBlending}
-                  side={THREE.DoubleSide}
-                />
-              </mesh>
-            )
-          })}
-        </group>
+        <PetalRing
+          count={5}
+          orbit={radius * 0.105}
+          petal={radius * 0.04}
+          z={0.004}
+          color={color}
+          opacity={opacity * 0.42}
+          segments={16}
+          angleOffset={0}
+        />
       ) : null}
     </group>
   )
@@ -184,31 +237,14 @@ export function BabalonStarGlyph({
       />
 
       {withRose ? (
-        <group>
-          {Array.from({ length: 7 }, (_, index) => {
-            const angle = -Math.PI / 2 + (index * Math.PI * 2) / 7
-            return (
-              <mesh
-                key={index}
-                position={[
-                  Math.cos(angle) * radius * 0.17,
-                  Math.sin(angle) * radius * 0.17,
-                  0.008,
-                ]}
-              >
-                <circleGeometry args={[radius * 0.028, 14]} />
-                <meshBasicMaterial
-                  color={color}
-                  transparent
-                  opacity={opacity * 0.46}
-                  depthWrite={false}
-                  blending={THREE.AdditiveBlending}
-                  side={THREE.DoubleSide}
-                />
-              </mesh>
-            )
-          })}
-        </group>
+        <PetalRing
+          count={7}
+          orbit={radius * 0.17}
+          petal={radius * 0.028}
+          z={0.008}
+          color={color}
+          opacity={opacity * 0.46}
+        />
       ) : null}
 
       {withLetters ? (
