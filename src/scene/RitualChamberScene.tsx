@@ -33,6 +33,8 @@ import { BabalonStarGlyph } from './ThelemicSigils'
 import { CHAMBERS } from './chambers/registry'
 import { useChamberDirector } from './chambers/ChamberDirector'
 import { SummoningRing } from './chambers/SummoningRing'
+import { RotundaFloor } from './rotunda/RotundaFloor'
+import { CHAMBER_HUE, NEON } from '../theme/neon'
 import { MorphGroup } from './chambers/MorphGroup'
 import type { Chamber, ChamberProps } from './chambers/types'
 import type { ArtStyleFamily } from '../constants/artStyles'
@@ -74,6 +76,7 @@ function ActiveChamber({
   )
 }
 
+const SHOW_LEGACY_TEMPLE_FLOOR = false
 const SHOW_LEGACY_VR_CONSOLE = false
 const SHOW_LEGACY_CARD_ARC = false
 
@@ -1258,6 +1261,12 @@ export function RitualChamberScene({
   return (
     <group>
       {/* The summoning ring is the one control present in every chamber. */}
+      {/* The rotunda floor is shared by every chamber - it is the ground the
+          whole temple stands on, and it re-tints to the summoned chamber's hue.
+          Rendered outside MorphGroup so the ground stays put while rooms
+          dissolve and reform on top of it. */}
+      <RotundaFloor accent={CHAMBER_HUE[director.chamber.id] ?? NEON.cyan} />
+
       <SummoningRing
         chambers={CHAMBERS}
         activeId={director.requested}
@@ -1295,7 +1304,10 @@ export function RitualChamberScene({
       />
 
 
-      <TempleFloor />
+      {/* The old TempleFloor is superseded by RotundaFloor, which is shared by
+          every chamber rather than being Sanctum-only. Both drew a disc at y=0
+          with rings at y 0.004-0.006, so rendering both z-fights. */}
+      {SHOW_LEGACY_TEMPLE_FLOOR ? <TempleFloor /> : null}
       <LateralWalls />
       <RearShrine ritualImpulseRef={ritualImpulseRef} />
       <RearArch />
