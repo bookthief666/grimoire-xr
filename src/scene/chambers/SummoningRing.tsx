@@ -14,9 +14,16 @@ import type { Chamber, ChamberId } from './types'
  * FloatingSigilButton; bare onClick is unreliable against XR controller rays.
  */
 
-const RING_Y = 1.02
-/** Tuned so the seals sit at 0.74m — inside the CONTROL zone, hand-reach. */
-const RING_Z = -0.46
+/**
+ * Below and in front of the workbench's own sigil dock, not level with it.
+ *
+ * At y 1.02 / z -0.46 the two overlapped by 14cm vertically across 77cm of
+ * width, with the dock 7cm nearer the user — so the dock silently intercepted
+ * every ray aimed at a chamber seal. Dropping the ring to its own band leaves a
+ * clear 2cm gap above it and puts the seals at 0.80m, inside CONTROL.
+ */
+const RING_Y = 0.86
+const RING_Z = -0.3
 const RING_TILT = -0.42
 
 function Seal({

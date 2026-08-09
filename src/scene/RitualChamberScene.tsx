@@ -33,6 +33,7 @@ import { BabalonStarGlyph } from './ThelemicSigils'
 import { CHAMBERS } from './chambers/registry'
 import { useChamberDirector } from './chambers/ChamberDirector'
 import { SummoningRing } from './chambers/SummoningRing'
+import { MorphGroup } from './chambers/MorphGroup'
 import type { Chamber, ChamberProps } from './chambers/types'
 import type { ArtStyleFamily } from '../constants/artStyles'
 
@@ -1267,7 +1268,7 @@ export function RitualChamberScene({
       {!inSanctum ? <ActiveChamber chamber={director.chamber} {...chamberProps} /> : null}
 
       {inSanctum ? (
-      <>
+      <MorphGroup morphRef={director.morphRef}>
       <TempleAtmosphere
         ritualImpulseRef={ritualImpulseRef}
         hasActiveCard={Boolean(focusedCard)}
@@ -1406,7 +1407,7 @@ export function RitualChamberScene({
           oracleReading={oracleReading ?? null}
         />
       ) : null}
-      </>
+      </MorphGroup>
       ) : null}
     </group>
   )

@@ -36,10 +36,15 @@ export const USER_EYE_FLAT: readonly [number, number, number] = [0, 1.6, 3]
 export const ZONES = {
   /** Nothing, ever. Too close to converge on comfortably. */
   reserved: { near: 0.0, far: 0.35 },
-  /** Tool seals and quick actions — hand-reach distance. */
-  control: { near: 0.35, far: 0.75 },
+  /**
+   * Tool seals and quick actions — hand-reach distance. The far bound is 0.85
+   * rather than a rounder 0.75 because comfortable seated reach genuinely
+   * extends that far, and two control clusters (the workbench sigil dock at
+   * 0.67 and the summoning ring at 0.80) have to coexist without stacking.
+   */
+  control: { near: 0.35, far: 0.85 },
   /** The altar surface: cards, dials, the working instrument. (Altar ≈ 0.84m.) */
-  work: { near: 0.75, far: 1.5 },
+  work: { near: 0.85, far: 1.5 },
   /** Readings and tablets. Interactive only for pagination. */
   content: { near: 1.5, far: 2.5 },
   /** Architecture and atmosphere. Never interactive, never occluding. */
