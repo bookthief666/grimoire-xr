@@ -33,8 +33,8 @@ import { TempleText } from '../TempleText'
 export const CHAPEL_ACCENT = '#9a6bff'
 
 /** Tree units → world. The Tree stands behind and above the altar. */
-const TREE_SCALE = 0.72
-const TREE_ORIGIN: [number, number, number] = [0, 0.55, -3.15]
+const TREE_SCALE = 1.25
+const TREE_ORIGIN: [number, number, number] = [0, 0.62, -4.1]
 
 function treeToWorld(pos: readonly [number, number]): [number, number, number] {
   return [
@@ -260,7 +260,7 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
       </group>
 
       {/* THE ORACLE DESK */}
-      <group position={[0, 1.16, -0.86]} rotation={[-0.36, 0, 0]}>
+      <group position={[0, 1.28, -0.98]} rotation={[-0.3, 0, 0]}>
         <mesh>
           <planeGeometry args={[1.2, 0.34]} />
           <meshBasicMaterial
@@ -345,7 +345,7 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
       {draws.map((draw, i) => {
         const spread = draws.length === 1 ? 0 : (i - 1) * 0.66
         return (
-          <group key={draw.position} position={[spread, 1.74, -1.62]}>
+          <group key={draw.position} position={[spread, 1.86, -1.9]}>
             <mesh>
               <planeGeometry args={[0.6, 0.5]} />
               <meshBasicMaterial

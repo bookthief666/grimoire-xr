@@ -2,11 +2,12 @@ import { useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import {
-  BREATH_CYCLE_SECONDS,
   NAMES,
   VOWELS,
   breathAt,
   buildSequence,
+  stepIndexAt,
+  vowelForStep,
   type Axis,
 } from '../../tools/abulafia'
 import { USER_EYE_VR } from '../zones'
@@ -169,11 +170,13 @@ export function CellArchitecture({ morphRef, active }: ChamberProps) {
     }
 
     if (!active) return
-    const cycle = Math.floor(clock.getElapsedTime() / BREATH_CYCLE_SECONDS)
-    setStep((prev) => (prev === cycle ? prev : cycle))
+    // Same raw clock and same derivation as the instrument, so the axis that
+    // lights is always the one the displayed permutation is asking you to face.
+    const next = stepIndexAt(clock.getElapsedTime())
+    setStep((prev) => (prev === next ? prev : next))
   })
 
-  const activeVowel = VOWELS[step % VOWELS.length]
+  const activeVowel = vowelForStep(step)
 
   const grid = useMemo(() => {
     const lines: Array<[number, number, number, number]> = []
@@ -243,7 +246,6 @@ export function CellInstrument({ morphRef, active }: ChamberProps) {
   const [running, setRunning] = useState(true)
   const [manualStep, setManualStep] = useState(0)
 
-  const startRef = useRef(0)
   const groupRef = useRef<THREE.Group>(null)
   const breathRef = useRef<THREE.Mesh>(null)
   const breathMatRef = useRef<THREE.MeshBasicMaterial>(null)
@@ -262,8 +264,11 @@ export function CellInstrument({ morphRef, active }: ChamberProps) {
 
     if (!active) return
 
-    if (startRef.current === 0) startRef.current = clock.getElapsedTime()
-    const elapsed = clock.getElapsedTime() - startRef.current
+    // Raw clock, with no per-component offset. An earlier version started its
+    // own timer here, which put the instrument on a different breath count from
+    // the architecture: the Name asked for one axis while a different one lit
+    // on the wall. Both sides now read the same clock.
+    const elapsed = clock.getElapsedTime()
     const breath = breathAt(elapsed)
 
     // Inhale swells the ring, exhale releases it. This is the metronome the
@@ -279,7 +284,7 @@ export function CellInstrument({ morphRef, active }: ChamberProps) {
       breathMatRef.current.opacity = (0.2 + swell * 0.45) * m
     }
 
-    const stepIndex = running ? breath.cycle % sequence.length : manualStep
+    const stepIndex = running ? stepIndexAt(elapsed, sequence.length) : manualStep
 
     if (
       display.step !== stepIndex ||

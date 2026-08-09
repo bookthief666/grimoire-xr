@@ -26,7 +26,7 @@ import { TempleText } from '../TempleText'
 
 export const MONAD_ACCENT = '#d8e8ff'
 
-const GLYPH_ORIGIN: [number, number, number] = [0, 1.42, -0.92]
+const GLYPH_ORIGIN: [number, number, number] = [0, 1.86, -1.15]
 
 /** A straight segment drawn as a thin additive plane. */
 function Segment({
@@ -303,7 +303,7 @@ export function MonadInstrument({ morphRef, active }: ChamberProps) {
 
       {/* The lectern: Dee's Latin beside the working English, per the source
           project's principle of never showing one without the other. */}
-      <group ref={lecternRef} position={[0, 1.03, -0.78]} rotation={[-0.42, 0, 0]}>
+      <group ref={lecternRef} position={[0, 1.30, -0.95]} rotation={[-0.34, 0, 0]}>
         <mesh>
           <planeGeometry args={[1.12, 0.44]} />
           <meshBasicMaterial
@@ -405,7 +405,7 @@ export function MonadInstrument({ morphRef, active }: ChamberProps) {
       </group>
 
       {/* Phase pips: how far the construction has come. */}
-      <group position={[0, 0.82, -0.7]}>
+      <group position={[0, 1.02, -0.86]}>
         {GLYPH_PHASES.map((p, i) => (
           <mesh key={p} position={[(i - (GLYPH_PHASES.length - 1) / 2) * 0.062, 0, 0]}>
             <circleGeometry args={[0.011, 16]} />

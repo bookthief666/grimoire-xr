@@ -167,8 +167,29 @@ export function buildSequence(tokens: readonly NameToken[]): PermutationStep[] {
   return permute(tokens).map((perm, index) => ({
     index,
     tokens: perm,
-    vowel: VOWELS[index % VOWELS.length],
+    vowel: vowelForStep(index),
     latin: perm.map((t) => t.latin).join(''),
     hebrew: perm.map((t) => t.hebrew).join(''),
   }))
+}
+
+/** Every Name here is four letters, so every sequence is 4! steps long. */
+export const SEQUENCE_LENGTH = 24
+
+/**
+ * Which step of the practice a given elapsed time falls on.
+ *
+ * This exists so the room and the instrument cannot disagree. They are separate
+ * components with no shared state, and when each derived the step from its own
+ * clock offset they drifted apart — the Name displayed one vowel while a
+ * different axis lit up on the wall, which defeats the whole point of the
+ * chamber. Both now call this with the same raw elapsed time.
+ */
+export function stepIndexAt(elapsedSeconds: number, sequenceLength = SEQUENCE_LENGTH) {
+  return breathAt(elapsedSeconds).cycle % Math.max(1, sequenceLength)
+}
+
+/** The vowel — and therefore the axis to face — for a step of the sequence. */
+export function vowelForStep(index: number): Vowel {
+  return VOWELS[index % VOWELS.length]
 }
