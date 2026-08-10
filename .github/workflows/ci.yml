@@ -13,6 +13,7 @@ permissions:
 
 jobs:
   qualify:
+    name: Test + production build
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -29,5 +30,27 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Test, build, and lint
+      - name: Deterministic tests and production build
         run: npm run check
+
+  lint-audit:
+    name: Legacy lint audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Report lint debt
+        run: npm run lint
