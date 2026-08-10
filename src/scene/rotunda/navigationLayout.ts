@@ -3,9 +3,9 @@ export const ROTUNDA_NAV = {
   stationRadius: 6.05,
   stationY: 1.62,
   stationStepRadians: Math.PI / 6,
-  selectorY: 0.86,
+  selectorY: 0.9,
   selectorZ: -0.28,
-  selectorSpacing: 0.24,
+  selectorSpacing: 0.2,
 } as const
 
 export type StationPose = {
