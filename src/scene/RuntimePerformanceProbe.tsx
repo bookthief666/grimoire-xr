@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useXR } from '@react-three/xr'
 import {
   buildPerformanceReport,
+  detectMultiviewExtension,
   installWebGLDrawCounter,
   performanceHudEnabled,
   performanceProbeEnabled,
@@ -31,13 +32,25 @@ function hudBorderColor(state: GrimoirePerformanceReport['frameBudgetState']) {
 function updateHud(element: HTMLDivElement, report: GrimoirePerformanceReport) {
   const averageFps = report.averageFrameMs > 0 ? 1000 / report.averageFrameMs : 0
   element.style.borderColor = hudBorderColor(report.frameBudgetState)
+
+  // The view count is shown on the same line as the totals so a screenshot can
+  // never be mistaken for a different view count later. A flat capture and a
+  // stereo capture are not comparable numbers, and the HUD has to say which.
+  const viewLabel = report.stereo
+    ? `STEREO ${report.viewCount} VIEWS`
+    : 'MONO 1 VIEW'
+
   element.textContent = [
     'GRIMOIRE XR QA',
-    `${report.chamberId.toUpperCase()} · ${report.mode.toUpperCase()}`,
+    `${report.chamberId.toUpperCase()} · ${report.mode.toUpperCase()} · ${viewLabel}`,
     `AVG ${report.averageFrameMs.toFixed(2)} ms · ${averageFps.toFixed(1)} fps`,
     `WORST ${report.worstFrameMs.toFixed(2)} ms`,
     `DRAWS ${report.averageDrawCalls.toFixed(1)} avg · ${report.worstDrawCalls} worst`,
+    `PER VIEW ${report.averageDrawCallsPerView.toFixed(1)} · ${report.drawBudgetState.toUpperCase()}`,
     `72 HZ ${report.frameBudgetState.toUpperCase()}`,
+    report.multiviewExtension
+      ? `MULTIVIEW ADVERTISED (${report.multiviewExtension})`
+      : 'MULTIVIEW NOT ADVERTISED',
     report.drawCounterSupported ? 'DRAW COUNTER OK' : 'DRAW COUNTER UNSUPPORTED',
   ].join('\n')
 }
@@ -59,22 +72,39 @@ export function PerformanceProbe({ chamberId, inTransition }: PerformanceProbePr
   const counterRef = useRef<DrawCallCounter | null>(null)
   const frameTimesRef = useRef<number[]>([])
   const drawCallsRef = useRef<number[]>([])
+  const viewCountsRef = useRef<number[]>([])
   const elapsedRef = useRef(0)
   const chamberRef = useRef(chamberId)
   const warmedRef = useRef(false)
   const hudRef = useRef<HTMLDivElement | null>(null)
+  const multiviewRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (!enabled) return undefined
 
-    const counter = installWebGLDrawCounter(gl.getContext())
+    const context = gl.getContext()
+    const counter = installWebGLDrawCounter(context)
     counterRef.current = counter
+    multiviewRef.current = detectMultiviewExtension(context)
 
     return () => {
       counter.dispose()
       counterRef.current = null
     }
   }, [enabled, gl])
+
+  /**
+   * How many views the renderer actually submitted geometry for.
+   *
+   * Three's XR camera is an ArrayCamera whose `cameras` array holds one entry
+   * per active view, so this is the renderer's own answer rather than an
+   * assumption about the headset. Outside a session there is exactly one view.
+   */
+  const readViewCount = () => {
+    if (!gl.xr?.isPresenting) return 1
+    const cameras = gl.xr.getCamera()?.cameras
+    return cameras && cameras.length > 0 ? cameras.length : 1
+  }
 
   useEffect(() => {
     if (!enabled || !hudEnabled || typeof document === 'undefined') return undefined
@@ -121,6 +151,7 @@ export function PerformanceProbe({ chamberId, inTransition }: PerformanceProbePr
       chamberRef.current = chamberId
       frameTimesRef.current = []
       drawCallsRef.current = []
+      viewCountsRef.current = []
       elapsedRef.current = 0
       warmedRef.current = false
       if (hudRef.current) {
@@ -140,9 +171,17 @@ export function PerformanceProbe({ chamberId, inTransition }: PerformanceProbePr
 
     frameTimesRef.current.push(delta * 1000)
     drawCallsRef.current.push(previousFrameDrawCalls)
+    viewCountsRef.current.push(readViewCount())
     elapsedRef.current += delta
 
     if (elapsedRef.current < QUEST_PERFORMANCE_BUDGET.sampleWindowSeconds) return
+
+    // Take the highest view count seen in the window. If a session started or
+    // ended mid-window the sample is already mixed, and dividing by the larger
+    // figure understates per-view cost rather than flattering it.
+    const viewCount = viewCountsRef.current.length
+      ? Math.max(...viewCountsRef.current)
+      : 1
 
     const report = buildPerformanceReport({
       chamberId,
@@ -150,6 +189,9 @@ export function PerformanceProbe({ chamberId, inTransition }: PerformanceProbePr
       frameTimes: frameTimesRef.current,
       drawCalls: drawCallsRef.current,
       drawCounterSupported: counter?.supported ?? false,
+      viewCount,
+      presenting: gl.xr?.isPresenting ?? false,
+      multiviewExtension: multiviewRef.current,
     })
 
     window.__GRIMOIRE_XR_PERF__ = report
@@ -158,6 +200,7 @@ export function PerformanceProbe({ chamberId, inTransition }: PerformanceProbePr
 
     frameTimesRef.current = []
     drawCallsRef.current = []
+    viewCountsRef.current = []
     elapsedRef.current = 0
   })
 

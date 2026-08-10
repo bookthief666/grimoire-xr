@@ -1,4 +1,9 @@
-import { QUEST_PERFORMANCE_BUDGET, summarizeFrameTimes } from './performance.ts'
+import {
+  QUEST_PERFORMANCE_BUDGET,
+  classifyDrawCalls,
+  summarizeFrameTimes,
+  type FrameBudgetState,
+} from './performance.ts'
 
 export type DrawCallCounter = {
   supported: boolean
@@ -6,8 +11,18 @@ export type DrawCallCounter = {
   dispose: () => void
 }
 
+/**
+ * Extensions that would let a device render both eyes in one draw. Advertised
+ * support is necessary but NOT sufficient: Three must also choose to use it.
+ * That is exactly why the report carries the empirical `drawCallsPerView`
+ * alongside this flag — if multiview were truly active, per-view draws would
+ * not scale with `viewCount`, and the two figures would disagree. Trust the
+ * measurement over the capability string.
+ */
+const MULTIVIEW_EXTENSIONS = ['OCULUS_multiview', 'OVR_multiview2'] as const
+
 export type GrimoirePerformanceReport = {
-  version: 1
+  version: 2
   chamberId: string
   mode: string
   capturedAt: string
@@ -15,13 +30,37 @@ export type GrimoirePerformanceReport = {
   sampleCount: number
   averageFrameMs: number
   worstFrameMs: number
-  frameBudgetState: 'healthy' | 'warning' | 'over-budget'
+  frameBudgetState: FrameBudgetState
   averageDrawCalls: number
   worstDrawCalls: number
   drawCounterSupported: boolean
+
+  /**
+   * Stereo truth. Every performance figure this project recorded before v2 was
+   * captured in a flat browser at one view, and none of them said so. A total
+   * draw count is not comparable across view counts, so a report that omits
+   * this is not interpretable as a 72 Hz predictor.
+   */
+  viewCount: number
+  stereo: boolean
+  presenting: boolean
+  averageDrawCallsPerView: number
+  worstDrawCallsPerView: number
+  drawBudgetState: FrameBudgetState
+  multiviewExtension: string | null
 }
 
 type WebGLContext = WebGLRenderingContext | WebGL2RenderingContext
+
+/** First advertised multiview extension, or null. See MULTIVIEW_EXTENSIONS. */
+export function detectMultiviewExtension(context: WebGLContext): string | null {
+  try {
+    const supported = context.getSupportedExtensions() ?? []
+    return MULTIVIEW_EXTENSIONS.find((name) => supported.includes(name)) ?? null
+  } catch {
+    return null
+  }
+}
 
 function safeAverage(values: readonly number[]) {
   if (values.length === 0) return 0
@@ -106,17 +145,32 @@ export function buildPerformanceReport({
   frameTimes,
   drawCalls,
   drawCounterSupported,
+  viewCount = 1,
+  presenting = false,
+  multiviewExtension = null,
 }: {
   chamberId: string
   mode: string
   frameTimes: readonly number[]
   drawCalls: readonly number[]
   drawCounterSupported: boolean
+  viewCount?: number
+  presenting?: boolean
+  multiviewExtension?: string | null
 }): GrimoirePerformanceReport {
   const frameSummary = summarizeFrameTimes(frameTimes)
 
+  // Guard the divisor rather than trusting the caller: a session that ends
+  // mid-window can report zero views, and a NaN in a QA figure is worse than
+  // a conservative one.
+  const views = Number.isFinite(viewCount) && viewCount >= 1 ? Math.floor(viewCount) : 1
+
+  const averageDrawCalls = safeAverage(drawCalls)
+  const worstDrawCalls = drawCalls.length ? Math.max(...drawCalls) : 0
+  const averageDrawCallsPerView = averageDrawCalls / views
+
   return {
-    version: 1,
+    version: 2,
     chamberId,
     mode,
     capturedAt: new Date().toISOString(),
@@ -125,9 +179,16 @@ export function buildPerformanceReport({
     averageFrameMs: frameSummary.averageFrameMs,
     worstFrameMs: frameSummary.worstFrameMs,
     frameBudgetState: frameSummary.state,
-    averageDrawCalls: safeAverage(drawCalls),
-    worstDrawCalls: drawCalls.length ? Math.max(...drawCalls) : 0,
+    averageDrawCalls,
+    worstDrawCalls,
     drawCounterSupported,
+    viewCount: views,
+    stereo: views > 1,
+    presenting,
+    averageDrawCallsPerView,
+    worstDrawCallsPerView: worstDrawCalls / views,
+    drawBudgetState: classifyDrawCalls(averageDrawCallsPerView),
+    multiviewExtension,
   }
 }
 

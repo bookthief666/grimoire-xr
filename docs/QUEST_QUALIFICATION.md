@@ -128,6 +128,39 @@ Block promotion when:
 - memory growth is obvious over repeated Sanctum ↔ chamber cycles;
 - direct draw-call instrumentation is unsupported and no equivalent profiler evidence is captured.
 
+## Stereo is the difference between a number and a prediction
+
+**Every performance figure recorded for this project before probe report v2 was
+captured at one view, and none of them said so.** All Fold 6 evidence came from
+a flat phone browser; the headless and desktop captures were equally mono. That
+makes them real measurements of the wrong thing for a 72 Hz XR contract.
+
+In an immersive session the renderer submits geometry once per eye unless a
+multiview path is genuinely active. A chamber measured at 427 draws flat should
+be expected near 854 submitted draws in stereo — worse than the 827-draw Sanctum
+that already measured 17.17 ms / 58.2 fps and failed the 13.9 ms budget. No flat
+capture, on any device, can settle this.
+
+The v2 report therefore records, per five-second window:
+
+- `viewCount` — taken from Three's XR `ArrayCamera.cameras.length`, the
+  renderer's own answer, not an assumption about the headset;
+- `stereo` / `presenting` — whether this capture is comparable to a flat one;
+- `averageDrawCallsPerView` / `worstDrawCallsPerView` — total ÷ views;
+- `drawBudgetState` — per-view classification against `QUEST_DRAW_BUDGET`;
+- `multiviewExtension` — the advertised extension name, or `null`.
+
+Read `multiviewExtension` as a capability claim, not a behaviour. An extension
+being advertised does not mean Three used it. The empirical check is whether
+draws scale with `viewCount`: if per-view draws hold roughly steady between a
+flat and a stereo capture of the same chamber, the second eye is costing a full
+submission. If per-view draws roughly halve in stereo, multiview is genuinely
+active. **Record both captures for at least one chamber so this can be decided
+rather than assumed.**
+
+Do not compare a v1 figure against a v2 figure without first confirming both
+were mono. Do not carry any pre-v2 number into a 72 Hz argument.
+
 ## Stability and soak capture
 
 The canonical functional gate remains a minimum ten-minute session with no
