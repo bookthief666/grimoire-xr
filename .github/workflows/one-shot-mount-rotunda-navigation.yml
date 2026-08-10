@@ -1,0 +1,95 @@
+name: One-shot mount rotunda navigation
+
+on:
+  push:
+    branches:
+      - agent/neon-rotunda-stations
+
+permissions:
+  contents: write
+
+jobs:
+  mount-navigation:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout visual branch
+        uses: actions/checkout@v6
+        with:
+          ref: agent/neon-rotunda-stations
+
+      - name: Use Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Replace seal rail with station bays and altar console
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/scene/RitualChamberScene.tsx')
+          text = path.read_text()
+
+          old_import = "import { SummoningRing } from './chambers/SummoningRing'"
+          new_import = "import { RotundaStationBays } from './rotunda/RotundaStationBays'\nimport { RotundaAltarPlinth } from './rotunda/RotundaAltarPlinth'"
+          if text.count(old_import) != 1:
+              raise SystemExit('Expected exactly one SummoningRing import')
+          text = text.replace(old_import, new_import, 1)
+
+          old_block = """      <RotundaFloor accent={CHAMBER_HUE[director.chamber.id] ?? NEON.cyan} />
+      <RotundaColonnade accent={CHAMBER_HUE[director.chamber.id] ?? NEON.cyan} />
+      <RotundaDome accent={CHAMBER_HUE[director.chamber.id] ?? NEON.cyan} />
+
+      <SummoningRing
+        chambers={CHAMBERS}
+        activeId={director.requested}
+        disabled={director.inTransition}
+        onSummon={director.summon}
+      />"""
+          new_block = """      <RotundaFloor accent={CHAMBER_HUE[director.chamber.id] ?? NEON.cyan} />
+      <RotundaColonnade accent={CHAMBER_HUE[director.chamber.id] ?? NEON.cyan} />
+      <RotundaDome accent={CHAMBER_HUE[director.chamber.id] ?? NEON.cyan} />
+      <RotundaStationBays
+        chambers={CHAMBERS}
+        activeId={director.requested}
+      />
+      <RotundaAltarPlinth
+        chambers={CHAMBERS}
+        activeId={director.requested}
+        disabled={director.inTransition}
+        onSummon={director.summon}
+      />"""
+          if text.count(old_block) != 1:
+              raise SystemExit('Expected exactly one shared rotunda + SummoningRing block')
+          path.write_text(text.replace(old_block, new_block, 1))
+          PY
+
+      - name: Refuse unrelated source edits
+        run: |
+          changed="$(git diff --name-only)"
+          test "$changed" = "src/scene/RitualChamberScene.tsx" || {
+            echo "Unexpected changed files:"
+            printf '%s\n' "$changed"
+            exit 1
+          }
+
+      - name: Install
+        run: npm ci
+
+      - name: Qualify integration
+        run: |
+          npm test
+          npm run build
+          npm run lint
+
+      - name: Commit qualified integration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/scene/RitualChamberScene.tsx
+          git commit -m "feat: mount rotunda stations and altar navigation"
+          git push origin HEAD:agent/neon-rotunda-stations
