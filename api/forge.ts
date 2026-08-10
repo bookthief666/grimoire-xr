@@ -30,6 +30,10 @@ function logForge(stage: string, startTime: number, extra?: unknown) {
   }
 }
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error)
+}
+
 function stripJsonSchemaNoise(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(stripJsonSchemaNoise)
 
@@ -740,9 +744,9 @@ export default async function handler(
   try {
     body = await readJsonBody(request)
     logForge('Body parsed successfully', startTime)
-  } catch (error: any) {
+  } catch (error) {
     logForge('Body parse failed', startTime, {
-      message: error?.message || String(error),
+      message: errorMessage(error),
     })
 
     return sendJson(response, 400, {
@@ -783,9 +787,9 @@ export default async function handler(
       ok: true,
       deck,
     })
-  } catch (error: any) {
+  } catch (error) {
     logForge('Forge process failed', startTime, {
-      message: error?.message || String(error),
+      message: errorMessage(error),
     })
 
     return sendJson(response, 502, {
