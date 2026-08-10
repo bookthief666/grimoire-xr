@@ -9,14 +9,16 @@ main
   └─ claude/temple-foundation-hub
        └─ agent/react-xr-hardening-v2
             └─ agent/neon-rotunda-stations
-                 └─ codex/electric-rotunda-instruments   ← published draft PR #27
+                 └─ codex/electric-rotunda-instruments   ← draft PR #27
+                      └─ agent/xr-truthful-measurement-and-bay-instancing   ← draft PR #28
+                           └─ codex/quad-draw-consolidation
 ```
 
 `main` has not been used as the direct development target for this hardening work.
 
-The Electric Rotunda slice is published as draft PR #27. Its initial visual
-commit, `aa011d1f993518dd6bedc3c9f3d494155ef34539`, is one commit ahead of the
-exact parent head and zero commits behind it.
+The current optimization branch is stacked from exact PR #28 head
+`07b6303f320f8ff345bc4b57c22a61f48d3e6a1b`. No work in this stack targets or
+modifies `main` directly.
 
 The older `claude/temple-visual-uplift-Y2JMb` branch is historical ancestry. It is not the active integration target and should not be force-renamed, rebased over, or used to replace the tested foundation.
 
@@ -139,7 +141,14 @@ For desktop XR-path testing, `?emulate=1&perf=1` may be used. Real Quest qualifi
 
 The production build still emits large lazy XR/emulation/room chunks from the current `@react-three/xr` dependency. That warning has not been hidden by raising Vite's chunk threshold. Do not change bundling or XR dependencies solely to silence the warning; measure initial-load and headset impact first.
 
-The Electric Rotunda local flat-browser smoke records 427 direct draws for idle Sanctum and 288 for Cell after retiring the remaining duplicated Sanctum room layer. The in-app browser is cadence-limited near 30 fps, so its frame time is not qualification evidence. These draw counts are a local comparison point only; Fold and Quest captures remain separate requirements.
+The first Electric Rotunda flat-browser smoke recorded 427 direct draws for
+idle Sanctum and 288 for Cell. Later probe-v2 measurement at exact PR #28 head,
+matched at 877 × 834, recorded 369 Sanctum, 214 Cell, 178 Monad at its point
+phase, 329 Monad completed, and 245 Chapel draws per mono view. Consolidating
+the measured workbench and Monad segment clusters reduced Sanctum to 267 and
+completed Monad to 187; unchanged chamber states retained their matched counts.
+These are local comparison points only. See `DRAW_CALL_CONSOLIDATION.md` for
+method and deltas. Fold and Quest captures remain separate requirements.
 
 See `QUEST_QUALIFICATION.md` for the required capture sequence.
 

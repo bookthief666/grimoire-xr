@@ -1,8 +1,9 @@
 import * as THREE from 'three'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import type { GrimoireCard } from '../../types/grimoire'
-import { TableBar } from './AltarHardware'
+import { MergedTableBars } from './AltarHardware'
+import type { TableBarSpec } from './AltarHardware'
 import { TABLE_Y } from './shared'
 import { TempleText } from '../TempleText'
 import { pressable } from '../pressable'
@@ -355,6 +356,20 @@ export function DeckTray({ count, active }: { count: number; active: boolean }) 
   const haloRef = useRef<THREE.MeshBasicMaterial>(null)
   const innerRef = useRef<THREE.MeshBasicMaterial>(null)
   const stackRef = useRef<THREE.Group>(null)
+  const tickBars = useMemo<TableBarSpec[]>(() => (
+    Array.from({ length: 12 }, (_, index) => {
+      const angle = (index / 12) * Math.PI * 2
+      const inner = 0.31
+      const outer = index % 3 === 0 ? 0.43 : 0.39
+      return {
+        a: [-1.2 + Math.cos(angle) * inner, -0.04 + Math.sin(angle) * inner],
+        b: [-1.2 + Math.cos(angle) * outer, -0.04 + Math.sin(angle) * outer],
+        color: index % 3 === 0 ? '#ffcf7c' : '#8a35ff',
+        opacity: active ? 0.38 : 0.14,
+        width: index % 3 === 0 ? 0.012 : 0.007,
+      }
+    })
+  ), [active])
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime()
@@ -409,21 +424,7 @@ export function DeckTray({ count, active }: { count: number; active: boolean }) 
         />
       </mesh>
 
-      {Array.from({ length: 12 }, (_, index) => {
-        const angle = (index / 12) * Math.PI * 2
-        const inner = 0.31
-        const outer = index % 3 === 0 ? 0.43 : 0.39
-        return (
-          <TableBar
-            key={index}
-            a={[-1.2 + Math.cos(angle) * inner, -0.04 + Math.sin(angle) * inner]}
-            b={[-1.2 + Math.cos(angle) * outer, -0.04 + Math.sin(angle) * outer]}
-            color={index % 3 === 0 ? '#ffcf7c' : '#8a35ff'}
-            opacity={active ? 0.38 : 0.14}
-            width={index % 3 === 0 ? 0.012 : 0.007}
-          />
-        )
-      })}
+      <MergedTableBars bars={tickBars} />
 
       <group ref={stackRef}>
         {Array.from({ length: active ? 9 : 5 }, (_, index) => (

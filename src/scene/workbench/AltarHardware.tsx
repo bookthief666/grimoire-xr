@@ -1,11 +1,56 @@
 import * as THREE from 'three'
-import { useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { UnicursalHexagramGlyph } from '../ThelemicSigils'
 import type { ErosField } from '../../types/grimoire'
 import { TABLE_Y } from './shared'
 import type { ForgeEnergy, Vec2 } from './shared'
 import { TempleText } from '../TempleText'
+import {
+  buildMergedPlanarSegments,
+  type PlanarSegment,
+} from '../geometry/mergedPlanarSegments'
+
+export type TableBarSpec = {
+  a: Vec2
+  b: Vec2
+  color?: string
+  opacity?: number
+  width?: number
+  yOffset?: number
+}
+
+export function MergedTableBars({ bars }: { bars: readonly TableBarSpec[] }) {
+  const geometry = useMemo(
+    () => buildMergedPlanarSegments(
+      bars.map((bar): PlanarSegment => ({
+        from: bar.a,
+        to: bar.b,
+        width: bar.width ?? 0.018,
+        depth: TABLE_Y + (bar.yOffset ?? 0.012),
+        color: bar.color ?? '#ff9a00',
+        intensity: bar.opacity ?? 0.72,
+      })),
+      'xz',
+    ),
+    [bars],
+  )
+
+  useEffect(() => () => geometry.dispose(), [geometry])
+
+  return (
+    <mesh geometry={geometry}>
+      <meshBasicMaterial
+        vertexColors
+        transparent
+        opacity={1}
+        depthWrite={false}
+        blending={THREE.AdditiveBlending}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  )
+}
 
 export function TableBar({
   a,
@@ -65,81 +110,34 @@ export function AltarChromeHardware({
             ? 0.24
             : 0.12
 
-  return (
-    <group>
-      <mesh position={[0, TABLE_Y + 0.018, 0.878]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[3.22, 0.032]} />
-        <meshBasicMaterial
-          color="#d8e8ff"
-          transparent
-          opacity={energized ? 0.18 : 0.105}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
+  const bars = useMemo<TableBarSpec[]>(() => [
+    {
+      a: [-1.61, 0.878], b: [1.61, 0.878], width: 0.032,
+      yOffset: 0.018, color: '#d8e8ff', opacity: energized ? 0.18 : 0.105,
+    },
+    {
+      a: [-1.61, -0.878], b: [1.61, -0.878], width: 0.024,
+      yOffset: 0.018, color: '#f8f3df', opacity: energized ? 0.13 : 0.075,
+    },
+    {
+      a: [1.6, -0.88], b: [1.6, 0.88], width: 0.026,
+      yOffset: 0.018, color: '#d8e8ff', opacity: energized ? 0.14 : 0.08,
+    },
+    {
+      a: [-1.6, -0.88], b: [-1.6, 0.88], width: 0.026,
+      yOffset: 0.018, color: '#d8e8ff', opacity: energized ? 0.14 : 0.08,
+    },
+    {
+      a: [-0.63, 0.54], b: [0.63, 0.54], width: 0.018,
+      yOffset: 0.021, color: railColor, opacity: seamOpacity,
+    },
+    {
+      a: [-0.63, -0.54], b: [0.63, -0.54], width: 0.014,
+      yOffset: 0.021, color: '#f8f3df', opacity: seamOpacity * 0.58,
+    },
+  ], [energized, railColor, seamOpacity])
 
-      <mesh position={[0, TABLE_Y + 0.018, -0.878]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[3.22, 0.024]} />
-        <meshBasicMaterial
-          color="#f8f3df"
-          transparent
-          opacity={energized ? 0.13 : 0.075}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh position={[1.6, TABLE_Y + 0.018, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[0.026, 1.76]} />
-        <meshBasicMaterial
-          color="#d8e8ff"
-          transparent
-          opacity={energized ? 0.14 : 0.08}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh position={[-1.6, TABLE_Y + 0.018, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[0.026, 1.76]} />
-        <meshBasicMaterial
-          color="#d8e8ff"
-          transparent
-          opacity={energized ? 0.14 : 0.08}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh position={[0, TABLE_Y + 0.021, 0.54]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[1.26, 0.018]} />
-        <meshBasicMaterial
-          color={railColor}
-          transparent
-          opacity={seamOpacity}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh position={[0, TABLE_Y + 0.021, -0.54]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[1.26, 0.014]} />
-        <meshBasicMaterial
-          color="#f8f3df"
-          transparent
-          opacity={seamOpacity * 0.58}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-    </group>
-  )
+  return <MergedTableBars bars={bars} />
 }
 
 export function TableHexagram({
@@ -250,6 +248,21 @@ export function AltarAstrolabeRings({
     energy === 'oracle' ? 1.35 :
     1
 
+  const tickBars = useMemo<TableBarSpec[]>(() => (
+    Array.from({ length: 12 }, (_, index) => {
+      const angle = (index / 12) * Math.PI * 2
+      const inner = 0.74
+      const outer = index % 3 === 0 ? 0.86 : 0.81
+      return {
+        a: [Math.cos(angle) * inner, Math.sin(angle) * inner],
+        b: [Math.cos(angle) * outer, Math.sin(angle) * outer],
+        color: index % 3 === 0 ? erosAccent : '#b8860b',
+        opacity: active ? 0.38 : 0.2,
+        width: index % 3 === 0 ? 0.014 : 0.008,
+      }
+    })
+  ), [active, erosAccent])
+
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime()
 
@@ -307,22 +320,7 @@ export function AltarAstrolabeRings({
         />
       </mesh>
 
-      {Array.from({ length: 12 }, (_, i) => {
-        const angle = (i / 12) * Math.PI * 2
-        const r1 = 0.74
-        const r2 = i % 3 === 0 ? 0.86 : 0.81
-
-        return (
-          <TableBar
-            key={i}
-            a={[Math.cos(angle) * r1, Math.sin(angle) * r1]}
-            b={[Math.cos(angle) * r2, Math.sin(angle) * r2]}
-            color={i % 3 === 0 ? erosAccent : '#b8860b'}
-            opacity={active ? 0.38 : 0.2}
-            width={i % 3 === 0 ? 0.014 : 0.008}
-          />
-        )
-      })}
+      <MergedTableBars bars={tickBars} />
 
       <TempleText
         position={[0, TABLE_Y + 0.05, 0.72]}

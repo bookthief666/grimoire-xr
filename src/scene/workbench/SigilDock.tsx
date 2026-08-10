@@ -1,9 +1,10 @@
 import * as THREE from 'three'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { FloatingMenuButton } from './WorkbenchControls'
 import { TABLE_Y, formatArchiveTime } from './shared'
 import type { WorkbenchMode } from './shared'
 import { TempleText } from '../TempleText'
+import { buildMergedPlanarSegments } from '../geometry/mergedPlanarSegments'
 
 function FloatingSigilButton({
   sigil,
@@ -32,6 +33,33 @@ function FloatingSigilButton({
   const accent = danger ? '#ff3d5a' : active ? '#f8f3df' : '#d8e8ff'
   const plaque = danger ? '#210609' : '#05070b'
   const glyphColor = disabled ? '#5e5048' : '#f8f3df'
+  const accentGeometry = useMemo(
+    () => buildMergedPlanarSegments([
+      {
+        from: [-0.145, 0.074], to: [0.145, 0.074], width: 0.008, depth: 0.01,
+        color: accent, intensity: disabled ? 0.08 : armed ? 0.54 : 0.22,
+      },
+      {
+        from: [-0.115, -0.074], to: [0.115, -0.074], width: 0.006, depth: 0.01,
+        color: accent, intensity: disabled ? 0.06 : armed ? 0.34 : 0.14,
+      },
+      {
+        from: [-0.148, -0.06], to: [-0.148, 0.06], width: 0.01, depth: 0.012,
+        color: accent, intensity: disabled ? 0.08 : armed ? 0.46 : 0.18,
+      },
+      {
+        from: [0.148, -0.06], to: [0.148, 0.06], width: 0.01, depth: 0.012,
+        color: accent, intensity: disabled ? 0.08 : armed ? 0.46 : 0.18,
+      },
+      {
+        from: [-0.17, 0], to: [0.17, 0], width: 0.19, depth: 0.018,
+        color: accent, intensity: disabled ? 0.012 : armed ? 0.105 : 0.032,
+      },
+    ], 'xy'),
+    [accent, armed, disabled],
+  )
+
+  useEffect(() => () => accentGeometry.dispose(), [accentGeometry])
 
   const trigger = () => {
     if (!disabled) onClick()
@@ -91,60 +119,11 @@ function FloatingSigilButton({
         />
       </mesh>
 
-      <mesh position={[0, 0.074, 0.01]}>
-        <planeGeometry args={[0.29, 0.008]} />
+      <mesh geometry={accentGeometry}>
         <meshBasicMaterial
-          color={accent}
+          vertexColors
           transparent
-          opacity={disabled ? 0.08 : armed ? 0.54 : 0.22}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh position={[0, -0.074, 0.01]}>
-        <planeGeometry args={[0.23, 0.006]} />
-        <meshBasicMaterial
-          color={accent}
-          transparent
-          opacity={disabled ? 0.06 : armed ? 0.34 : 0.14}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh position={[-0.148, 0, 0.012]}>
-        <planeGeometry args={[0.01, 0.12]} />
-        <meshBasicMaterial
-          color={accent}
-          transparent
-          opacity={disabled ? 0.08 : armed ? 0.46 : 0.18}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh position={[0.148, 0, 0.012]}>
-        <planeGeometry args={[0.01, 0.12]} />
-        <meshBasicMaterial
-          color={accent}
-          transparent
-          opacity={disabled ? 0.08 : armed ? 0.46 : 0.18}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh position={[0, 0, 0.018]}>
-        <planeGeometry args={[0.34, 0.19]} />
-        <meshBasicMaterial
-          color={accent}
-          transparent
-          opacity={disabled ? 0.012 : armed ? 0.105 : 0.032}
+          opacity={1}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}
