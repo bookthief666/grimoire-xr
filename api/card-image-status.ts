@@ -10,6 +10,20 @@ type NodeApiResponse = {
   json: (body: unknown) => void
 }
 
+type ComfyImage = {
+  filename: string
+  subfolder?: string
+  type?: string
+}
+
+type ComfyOutput = {
+  images?: ComfyImage[]
+}
+
+type ComfyHistoryEntry = {
+  outputs?: Record<string, ComfyOutput>
+}
+
 function comfyHeaders() {
   const headers: Record<string, string> = {}
 
@@ -61,7 +75,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       })
     }
 
-    const history = await historyResponse.json() as Record<string, any>
+    const history = await historyResponse.json() as Record<string, ComfyHistoryEntry>
     const entry = history[promptId]
 
     if (!entry?.outputs) {
@@ -72,7 +86,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       })
     }
 
-    const outputs = Object.values(entry.outputs) as Array<{ images?: Array<{ filename: string; subfolder?: string; type?: string }> }>
+    const outputs = Object.values(entry.outputs)
 
     for (const output of outputs) {
       const image = output.images?.[0]

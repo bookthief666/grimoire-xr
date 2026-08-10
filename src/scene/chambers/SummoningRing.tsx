@@ -4,6 +4,7 @@ import * as THREE from 'three'
 import type { Chamber, ChamberId } from './types'
 import { TempleText } from '../TempleText'
 import { pressable } from '../pressable'
+import { PerformanceProbe } from '../PerformanceProbe'
 import { provenanceLabel } from '../../tools/provenance'
 
 const RING_Y = 0.86
@@ -195,6 +196,8 @@ export function SummoningRing({
 
   return (
     <group>
+      <PerformanceProbe chamberId={activeId} inTransition={disabled} />
+
       <mesh position={[0, RING_Y, RING_Z - 0.004]} rotation={[RING_TILT, 0, 0]}>
         <planeGeometry args={[chambers.length * spacing + 0.06, 0.004]} />
         <meshBasicMaterial

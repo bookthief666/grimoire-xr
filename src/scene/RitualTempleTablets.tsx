@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import type { GrimoireCard, OracleReading, SubjectDossier } from '../types/grimoire'
@@ -21,6 +21,11 @@ type RitualTempleTabletsProps = {
   dossier?: SubjectDossier | null
   focusedCard?: GrimoireCard | null
   oracleReading?: OracleReading | null
+}
+
+type PageState = {
+  signature: string
+  index: number
 }
 
 function asRecord(value: unknown): UnknownRecord {
@@ -349,14 +354,14 @@ function TabletButton({
 function TempleTablet({ data }: { data: TabletData }) {
   const groupRef = useRef<THREE.Group>(null)
   const frameMat = useRef<THREE.MeshBasicMaterial>(null)
-  const [pageIndex, setPageIndex] = useState(0)
+  const [pageState, setPageState] = useState<PageState>({ signature: '', index: 0 })
 
   const pages = useMemo(() => paginateText(data.body), [data.body])
-  const page = pages[Math.min(pageIndex, pages.length - 1)] ?? ''
-
-  useEffect(() => {
-    setPageIndex(0)
-  }, [data.title, data.body])
+  const pageSignature = `${data.title}\u0000${data.body}`
+  const pageIndex = pageState.signature === pageSignature
+    ? Math.min(pageState.index, pages.length - 1)
+    : 0
+  const page = pages[pageIndex] ?? ''
 
   useFrame(({ clock }) => {
     if (!groupRef.current) return
@@ -368,11 +373,17 @@ function TempleTablet({ data }: { data: TabletData }) {
   })
 
   const previous = () => {
-    setPageIndex((current) => (current <= 0 ? pages.length - 1 : current - 1))
+    setPageState({
+      signature: pageSignature,
+      index: pageIndex <= 0 ? pages.length - 1 : pageIndex - 1,
+    })
   }
 
   const next = () => {
-    setPageIndex((current) => (current + 1) % pages.length)
+    setPageState({
+      signature: pageSignature,
+      index: (pageIndex + 1) % pages.length,
+    })
   }
 
   return (

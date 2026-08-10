@@ -13,6 +13,13 @@ type NodeApiResponse = {
   json: (body: unknown) => void
 }
 
+type ComfyNode = {
+  class_type?: string
+  inputs?: Record<string, unknown>
+}
+
+type ComfyWorkflow = Record<string, ComfyNode>
+
 function readString(value: unknown, fallback = '') {
   return typeof value === 'string' && value.trim() ? value.trim() : fallback
 }
@@ -66,7 +73,7 @@ function comfyHeaders() {
   return headers
 }
 
-function injectWorkflow(workflow: Record<string, any>, body: Record<string, unknown>) {
+function injectWorkflow(workflow: ComfyWorkflow, body: Record<string, unknown>) {
   const positivePrompt = buildPositivePrompt(body)
   const negativePrompt = buildNegativePrompt()
   const checkpoint = chooseCheckpoint(body)
@@ -74,39 +81,44 @@ function injectWorkflow(workflow: Record<string, any>, body: Record<string, unkn
   const kSamplerEntry = Object.entries(workflow).find(([, node]) => node.class_type === 'KSampler')
   const kSampler = kSamplerEntry?.[1]
 
-  const positiveNodeId = Array.isArray(kSampler?.inputs?.positive) ? String(kSampler.inputs.positive[0]) : ''
-  const negativeNodeId = Array.isArray(kSampler?.inputs?.negative) ? String(kSampler.inputs.negative[0]) : ''
+  const positiveInput = kSampler?.inputs?.positive
+  const negativeInput = kSampler?.inputs?.negative
+  const positiveNodeId = Array.isArray(positiveInput) ? String(positiveInput[0]) : ''
+  const negativeNodeId = Array.isArray(negativeInput) ? String(negativeInput[0]) : ''
 
   for (const [nodeId, node] of Object.entries(workflow)) {
-    if (node.class_type === 'CheckpointLoaderSimple' && node.inputs?.ckpt_name !== undefined) {
-      node.inputs.ckpt_name = checkpoint
+    const inputs = node.inputs
+    if (!inputs) continue
+
+    if (node.class_type === 'CheckpointLoaderSimple' && inputs.ckpt_name !== undefined) {
+      inputs.ckpt_name = checkpoint
     }
 
-    if (node.class_type === 'CLIPTextEncode' && node.inputs?.text !== undefined) {
-      if (nodeId === positiveNodeId) node.inputs.text = positivePrompt
-      else if (nodeId === negativeNodeId) node.inputs.text = negativePrompt
+    if (node.class_type === 'CLIPTextEncode' && inputs.text !== undefined) {
+      if (nodeId === positiveNodeId) inputs.text = positivePrompt
+      else if (nodeId === negativeNodeId) inputs.text = negativePrompt
     }
 
     if (node.class_type === 'EmptyLatentImage') {
-      if (node.inputs?.width !== undefined) node.inputs.width = 768
-      if (node.inputs?.height !== undefined) node.inputs.height = 1152
-      if (node.inputs?.batch_size !== undefined) node.inputs.batch_size = 1
+      if (inputs.width !== undefined) inputs.width = 768
+      if (inputs.height !== undefined) inputs.height = 1152
+      if (inputs.batch_size !== undefined) inputs.batch_size = 1
     }
 
     if (node.class_type === 'KSampler') {
-      if (node.inputs?.steps !== undefined) node.inputs.steps = 24
-      if (node.inputs?.cfg !== undefined) node.inputs.cfg = 6.5
-      if (node.inputs?.sampler_name !== undefined) node.inputs.sampler_name = 'euler'
-      if (node.inputs?.scheduler !== undefined) node.inputs.scheduler = 'normal'
-      if (node.inputs?.seed !== undefined) {
-        node.inputs.seed = Math.floor(Math.random() * 2147483647)
+      if (inputs.steps !== undefined) inputs.steps = 24
+      if (inputs.cfg !== undefined) inputs.cfg = 6.5
+      if (inputs.sampler_name !== undefined) inputs.sampler_name = 'euler'
+      if (inputs.scheduler !== undefined) inputs.scheduler = 'normal'
+      if (inputs.seed !== undefined) {
+        inputs.seed = Math.floor(Math.random() * 2147483647)
       }
     }
 
-    if (node.class_type === 'SaveImage' && node.inputs?.filename_prefix !== undefined) {
+    if (node.class_type === 'SaveImage' && inputs.filename_prefix !== undefined) {
       const deckId = readString(body.deckId, 'deck').replace(/[^a-zA-Z0-9_-]/g, '_')
       const cardId = String(body.cardId ?? 'card').replace(/[^a-zA-Z0-9_-]/g, '_')
-      node.inputs.filename_prefix = `grimoire_${deckId}_${cardId}`
+      inputs.filename_prefix = `grimoire_${deckId}_${cardId}`
     }
   }
 
@@ -126,7 +138,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
   try {
     const workflowPath = join(process.cwd(), 'api/comfy/workflow_api.json')
     const workflow = injectWorkflow(
-      JSON.parse(readFileSync(workflowPath, 'utf8')),
+      JSON.parse(readFileSync(workflowPath, 'utf8')) as ComfyWorkflow,
       body,
     )
 

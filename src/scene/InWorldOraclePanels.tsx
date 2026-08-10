@@ -20,6 +20,11 @@ type DragState = {
   startOffset: Vec3
 }
 
+type PageState = {
+  signature: string
+  index: number
+}
+
 const DEFAULT_PANEL_OFFSETS: Record<PanelKind, Vec3> = {
   dossier: [-1.18, 0.02, -0.18],
   card: [0, 0.12, -0.24],
@@ -55,7 +60,6 @@ function clampPanelOffset([x, y, z]: Vec3): Vec3 {
     clamp(z, -1.55, 0.82),
   ]
 }
-
 
 function clampPanelScale(value: number) {
   return clamp(value, 0.72, 1.34)
@@ -117,7 +121,6 @@ function writeStoredPanelOffsets(offsets: Record<PanelKind, Vec3>) {
     // Non-critical: VR layout should still work without persistence.
   }
 }
-
 
 function readStoredPanelScales(): Record<PanelKind, number> {
   const defaults = cloneDefaultScales()
@@ -720,7 +723,6 @@ function DragHeader({
   )
 }
 
-
 function ActiveDragSurface({
   dragging,
   onDragMove,
@@ -789,15 +791,14 @@ function PanelShell({
   onSmaller: () => void
   onLarger: () => void
 }) {
-  const [pageIndex, setPageIndex] = useState(0)
+  const [pageState, setPageState] = useState<PageState>({ signature: '', index: 0 })
   const groupRef = useRef<THREE.Group>(null)
   const pageSignature = pages.join('\u0000')
   const safePages = pages.length ? pages : ['No text available.']
-  const currentPage = safePages[Math.min(pageIndex, safePages.length - 1)] ?? ''
-
-  useEffect(() => {
-    setPageIndex(0)
-  }, [pageSignature])
+  const pageIndex = pageState.signature === pageSignature
+    ? Math.min(pageState.index, safePages.length - 1)
+    : 0
+  const currentPage = safePages[pageIndex] ?? ''
 
   useFrame(({ clock }) => {
     if (!groupRef.current || dragging) return
@@ -806,13 +807,17 @@ function PanelShell({
   })
 
   const goPrevious = () => {
-    setPageIndex((current) =>
-      current <= 0 ? safePages.length - 1 : current - 1,
-    )
+    setPageState({
+      signature: pageSignature,
+      index: pageIndex <= 0 ? safePages.length - 1 : pageIndex - 1,
+    })
   }
 
   const goNext = () => {
-    setPageIndex((current) => (current + 1) % safePages.length)
+    setPageState({
+      signature: pageSignature,
+      index: (pageIndex + 1) % safePages.length,
+    })
   }
 
   return (
@@ -1018,7 +1023,6 @@ export function InWorldOraclePanels({
     }))
     resetPanelScale(kind)
   }
-
 
   const scalePanel = (kind: PanelKind, delta: number) => {
     setPanelScales((current) => ({

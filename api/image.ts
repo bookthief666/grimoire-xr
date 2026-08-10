@@ -20,7 +20,7 @@ export default async function handler(req: Request) {
       }),
       { status: 200 }
     )
-  } catch (err) {
+  } catch {
     return new Response(
       JSON.stringify({ error: "Image generation failed" }),
       { status: 500 }

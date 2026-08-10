@@ -3,6 +3,10 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { BabalonStarGlyph } from './ThelemicSigils'
 import { TempleText } from './TempleText'
+import {
+  buildCosmicStarField,
+  type DeterministicStarDatum,
+} from './deterministicField'
 
 /** Decoration must never intercept pointer rays. Matches the same helper in
  *  TempleXenotheurgy and TempleGrandArchitecture. */
@@ -15,6 +19,10 @@ type TempleAtmosphereProps = {
 }
 
 type Point2 = [number, number]
+
+const STAR_DATA = buildCosmicStarField()
+const COOL_STARS = STAR_DATA.filter((star) => !star.warm)
+const WARM_STARS = STAR_DATA.filter((star) => star.warm)
 
 function GlyphPlaneLine({
   a,
@@ -55,28 +63,6 @@ function GlyphPlaneLine({
 }
 
 function CosmicVoid() {
-  const starData = useMemo(() => {
-    return Array.from({ length: 78 }, (_, index) => {
-      const theta = Math.random() * Math.PI * 2
-      const y = 0.2 + Math.random() * 9.0
-      const radius = 10 + Math.random() * 28
-      return {
-        id: index,
-        position: [
-          Math.cos(theta) * radius,
-          y,
-          Math.sin(theta) * radius - 18,
-        ] as [number, number, number],
-        size: 0.012 + Math.random() * 0.026,
-        phase: Math.random() * Math.PI * 2,
-        warm: index % 9 === 0,
-      }
-    })
-  }, [])
-
-  const warm = useMemo(() => starData.filter((s) => s.warm), [starData])
-  const cool = useMemo(() => starData.filter((s) => !s.warm), [starData])
-
   return (
     <group>
       <mesh position={[0, 2.4, -16]}>
@@ -95,23 +81,13 @@ function CosmicVoid() {
           split by colour because instances share one material, and per-instance
           opacity is not expressible without a custom shader.
 
-          This also fixes a long-standing bug: the geometry radius was star.size
-          AND the frame loop scaled by star.size again, so the effective radius
-          was size squared - around 0.0002 world units. The stars have been
-          invisible. A unit sphere scaled once renders them at their intended
-          size. */}
-      <StarField stars={cool} color="#d8e8ff" opacity={0.42} />
-      <StarField stars={warm} color="#f8f3df" opacity={0.52} />
+          The distribution is deterministic and module-scoped. Remounting the
+          atmosphere cannot reshuffle the sky around the XR origin, and React
+          render never calls Math.random(). */}
+      <StarField stars={COOL_STARS} color="#d8e8ff" opacity={0.42} />
+      <StarField stars={WARM_STARS} color="#f8f3df" opacity={0.52} />
     </group>
   )
-}
-
-type StarDatum = {
-  id: number
-  position: [number, number, number]
-  size: number
-  phase: number
-  warm: boolean
 }
 
 function StarField({
@@ -119,7 +95,7 @@ function StarField({
   color,
   opacity,
 }: {
-  stars: StarDatum[]
+  stars: DeterministicStarDatum[]
   color: string
   opacity: number
 }) {

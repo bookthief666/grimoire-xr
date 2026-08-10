@@ -12,7 +12,14 @@ import {
 } from './constants/ritualOptions'
 import './index.css'
 
-const xrStore = createXRStore()
+function xrEmulationEnabled() {
+  if (typeof window === 'undefined') return false
+  return new URLSearchParams(window.location.search).get('emulate') === '1'
+}
+
+const xrStore = createXRStore({
+  emulate: xrEmulationEnabled() ? 'metaQuest3' : false,
+})
 
 function flatPanelDebugEnabled() {
   if (typeof window === 'undefined') return false

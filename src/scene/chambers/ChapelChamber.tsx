@@ -16,26 +16,36 @@ import { pressable } from '../pressable'
 /**
  * THE CHAPEL OF LIES — liber-333-grimoire
  *
- * Companion to Crowley's *Book of Lies*: 94 chapters attributed across the Tree
- * of Life, drawn deterministically from the English Ordinal gematria of the
- * question.
+ * Companion instrument to Crowley's *Book of Lies*: the real 94-chapter corpus
+ * is paired here with an application-authored, deterministic Tree-of-Life map.
+ * The mapping is an experimental Grimoire XR correspondence, not a claim that
+ * Crowley historically attributed these chapters to these Sephiroth.
  *
  * Rather than putting a Tree diagram on a panel, here **the Tree is the room** —
  * ten sephiroth hang as lamps at architectural scale behind the altar, the
  * twenty-two paths are lit channels between them, and the sephira a drawn
- * chapter belongs to ignites. A Triad raises three inscriptions:
+ * chapter maps to ignites. A Triad raises three inscriptions:
  * Thesis, Antithesis, Synthesis.
  *
  * Only the deterministic half is ported. The source project's server-owned
- * interpretation prompt is out of scope, so the Chapel runs offline: it draws and
- * attributes chapters, it does not invent their commentary.
+ * interpretation prompt is out of scope, so the Chapel runs offline: it draws
+ * chapters and applies the explicitly experimental map; it does not invent
+ * historical commentary.
  */
 
 export const CHAPEL_ACCENT = '#9a6bff'
 
-/** Tree units → world. The Tree stands behind and above the altar. */
+/**
+ * Tree units → world.
+ *
+ * Keep the lowest lamp above the oracle-desk sightline. The previous origin put
+ * Yesod/Malkuth behind the near desk in the flat verification camera; lifting
+ * the whole Tree preserves its symmetry and keeps the instrument readable from
+ * the fixed XR origin without moving individual Sephiroth out of topology.
+ */
 const TREE_SCALE = 1.25
-const TREE_ORIGIN: [number, number, number] = [0, 0.62, -4.1]
+const TREE_ORIGIN: [number, number, number] = [0, 1.15, -4.1]
+const ORACLE_DESK_POSITION: [number, number, number] = [0, 0.92, -0.98]
 
 function treeToWorld(pos: readonly [number, number]): [number, number, number] {
   return [
@@ -243,8 +253,8 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
         ))}
       </group>
 
-      {/* THE ORACLE DESK */}
-      <group position={[0, 1.28, -0.98]} rotation={[-0.3, 0, 0]}>
+      {/* THE ORACLE DESK — deliberately below the Tree's lowest lamp. */}
+      <group position={ORACLE_DESK_POSITION} rotation={[-0.3, 0, 0]}>
         <mesh>
           <planeGeometry args={[1.2, 0.34]} />
           <meshBasicMaterial

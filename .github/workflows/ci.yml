@@ -5,7 +5,6 @@ on:
     branches:
       - main
       - claude/temple-foundation-hub
-      - agent/foundation-hardening
   pull_request:
 
 permissions:
@@ -19,10 +18,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Use Node 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -33,18 +32,17 @@ jobs:
       - name: Deterministic tests and production build
         run: npm run check
 
-  lint-audit:
-    name: Legacy lint audit
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    continue-on-error: true
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Use Node 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -52,5 +50,29 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Report lint debt
+      - name: Enforce lint
         run: npm run lint
+
+  dependency-audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Use Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Production dependency audit
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Full dependency audit
+        run: npm audit --audit-level=high

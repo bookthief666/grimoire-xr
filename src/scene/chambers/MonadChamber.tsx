@@ -16,6 +16,9 @@ import { pressable } from '../pressable'
 export const MONAD_ACCENT = '#d8e8ff'
 
 const GLYPH_ORIGIN: [number, number, number] = [0, 1.86, -1.15]
+const LECTERN_WIDTH = 1.34
+const LECTERN_HEIGHT = 0.84
+const LECTERN_TEXT_WIDTH = 1.2
 
 function Segment({
   from,
@@ -212,92 +215,95 @@ export function MonadInstrument({ morphRef, active }: ChamberProps) {
     <group>
       <MonadGlyph phase={phase.phase} morphRef={morphRef} />
 
-      <group ref={lecternRef} position={[0, 1.3, -0.95]} rotation={[-0.34, 0, 0]}>
+      <group ref={lecternRef} position={[0, 1.36, -0.95]} rotation={[-0.3, 0, 0]}>
         <mesh>
-          <planeGeometry args={[1.24, 0.56]} />
+          <planeGeometry args={[LECTERN_WIDTH, LECTERN_HEIGHT]} />
           <meshBasicMaterial color="#03060a" transparent opacity={0.9} side={THREE.DoubleSide} />
         </mesh>
 
         <TempleText
-          position={[-0.58, 0.225, 0.006]}
-          fontSize={0.025}
+          position={[-0.62, 0.35, 0.006]}
+          fontSize={0.024}
           color={MONAD_ACCENT}
           anchorX="left"
           anchorY="middle"
+          maxWidth={LECTERN_TEXT_WIDTH}
         >
           {`${provenanceLabel(MONAS_PROVENANCE)} · PHASE ${index + 1}/${THEOREMS.length}`}
         </TempleText>
 
         <TempleText
-          position={[-0.58, 0.17, 0.006]}
+          position={[-0.62, 0.29, 0.006]}
           fontSize={0.032}
           color="#ffffff"
           anchorX="left"
           anchorY="middle"
+          maxWidth={LECTERN_TEXT_WIDTH}
         >
           {phase.title.toUpperCase()}
         </TempleText>
 
         <TempleText
-          position={[-0.58, 0.105, 0.006]}
-          fontSize={0.024}
+          position={[-0.62, 0.23, 0.006]}
+          fontSize={0.022}
           color="#77889b"
           anchorX="left"
           anchorY="top"
-          maxWidth={1.12}
+          maxWidth={LECTERN_TEXT_WIDTH}
+          lineHeight={1.25}
         >
           {MONAS_PROVENANCE.claim}
         </TempleText>
 
         <TempleText
-          position={[-0.58, -0.01, 0.006]}
-          fontSize={0.026}
+          position={[-0.62, 0.08, 0.006]}
+          fontSize={0.024}
           color="#f2f6fb"
           anchorX="left"
           anchorY="top"
-          maxWidth={1.12}
+          maxWidth={LECTERN_TEXT_WIDTH}
           lineHeight={1.28}
         >
           {phase.english}
         </TempleText>
 
         <TempleText
-          position={[-0.58, -0.13, 0.006]}
-          fontSize={0.023}
+          position={[-0.62, -0.09, 0.006]}
+          fontSize={0.021}
           color="#6b7f96"
           anchorX="left"
           anchorY="top"
-          maxWidth={1.12}
-          lineHeight={1.32}
+          maxWidth={LECTERN_TEXT_WIDTH}
+          lineHeight={1.3}
         >
           {phase.commentary}
         </TempleText>
 
         <group
-          position={[0.42, -0.235, 0.01]}
+          position={[0.44, -0.35, 0.01]}
           {...pressable(() => setIndex((current) => (current + 1) % THEOREMS.length))}
         >
-          <TempleText fontSize={0.03} color="#ffffff" anchorX="center" anchorY="middle">
+          <TempleText fontSize={0.029} color="#ffffff" anchorX="center" anchorY="middle">
             ADVANCE ▸
           </TempleText>
           <mesh position={[0, 0, 0.01]}>
-            <planeGeometry args={[0.34, 0.1]} />
+            <planeGeometry args={[0.38, 0.11]} />
             <meshBasicMaterial color="#ffffff" transparent opacity={0.001} depthWrite={false} side={THREE.DoubleSide} />
           </mesh>
         </group>
 
-        <group position={[-0.42, -0.235, 0.01]} {...pressable(() => setIndex(0))}>
-          <TempleText fontSize={0.03} color="#7f93a8" anchorX="center" anchorY="middle">
+        <group position={[-0.44, -0.35, 0.01]} {...pressable(() => setIndex(0))}>
+          <TempleText fontSize={0.029} color="#7f93a8" anchorX="center" anchorY="middle">
             ◂ RESET
           </TempleText>
           <mesh position={[0, 0, 0.01]}>
-            <planeGeometry args={[0.3, 0.1]} />
+            <planeGeometry args={[0.34, 0.11]} />
             <meshBasicMaterial color="#ffffff" transparent opacity={0.001} depthWrite={false} side={THREE.DoubleSide} />
           </mesh>
         </group>
       </group>
 
-      <group position={[0, 1.0, -0.86]}>
+      <group position={[0, 0.92, -0.86]}>
         {GLYPH_PHASES.map((glyphPhase, phaseIndex) => (
           <mesh
             key={glyphPhase}
