@@ -47,7 +47,6 @@ function isRenderableGeneratedImageUrl(value: string | undefined) {
   )
 }
 
-
 const ARCHIVE_VERSION = 1
 const ARCHIVE_KEY = 'grimoire-xr:last-ritual'
 
@@ -268,7 +267,6 @@ function deleteArchive() {
   }
 }
 
-
 function stripArchiveImagePayloads(deck: GrimoireDeck): GrimoireDeck {
   return {
     ...deck,
@@ -317,37 +315,47 @@ function createArchivePayload({
 }
 
 export function useGrimoireEngine(): GrimoireEngine {
-  const [subject, setSubjectState] = useState('')
-  const [tradition, setTraditionState] = useState<Tradition>('thelemic')
-  const [tarotSystem, setTarotSystemState] = useState<TarotSystem>(DEFAULT_TAROT_SYSTEM)
-  const [tone, setToneState] = useState<Tone>('oracular')
-  const [techLevel, setTechLevelState] = useState<TechLevel>('adept')
-  const [visualStyle, setVisualStyleState] = useState<VisualStyle>('Hierophantic')
-  const [artStyleFamily, setArtStyleFamilyState] = useState<ArtStyleFamily>(DEFAULT_ART_STYLE_FAMILY)
-  const [artStyle, setArtStyleState] = useState<ArtStyle>(DEFAULT_ART_STYLE)
-  const [erosField, setErosFieldState] = useState<ErosField>('Veiled')
-  const [erosLevel, setErosLevelState] = useState<ErosLevel>(DEFAULT_EROS_LEVEL)
-  const [intent, setIntentState] = useState('')
+  const [initialArchive] = useState<PersistedRitualArchive | null>(() => readMostRecentArchive())
+  const initialConfig = initialArchive?.ritualConfig
+  const initialArtStyle = initialConfig?.artStyle ?? DEFAULT_ART_STYLE
 
-  const [forgePhase, setForgePhase] = useState<ForgePhase>('idle')
-  const [deck, setDeck] = useState<GrimoireDeck | null>(null)
-  const [dossier, setDossier] = useState<SubjectDossier | null>(null)
-  const [selection, setSelection] = useState<RitualSelection>(INITIAL_SELECTION)
+  const [subject, setSubjectState] = useState(initialConfig?.subject ?? '')
+  const [tradition, setTraditionState] = useState<Tradition>(initialConfig?.tradition ?? 'thelemic')
+  const [tarotSystem, setTarotSystemState] = useState<TarotSystem>(initialConfig?.tarotSystem ?? DEFAULT_TAROT_SYSTEM)
+  const [tone, setToneState] = useState<Tone>(initialConfig?.tone ?? 'oracular')
+  const [techLevel, setTechLevelState] = useState<TechLevel>(initialConfig?.techLevel ?? 'adept')
+  const [visualStyle, setVisualStyleState] = useState<VisualStyle>(initialConfig?.visualStyle ?? 'Hierophantic')
+  const [artStyleFamily, setArtStyleFamilyState] = useState<ArtStyleFamily>(
+    initialArchive ? getArtStyle(initialArtStyle).family : DEFAULT_ART_STYLE_FAMILY,
+  )
+  const [artStyle, setArtStyleState] = useState<ArtStyle>(initialArtStyle)
+  const [erosField, setErosFieldState] = useState<ErosField>(initialConfig?.erosField ?? 'Veiled')
+  const [erosLevel, setErosLevelState] = useState<ErosLevel>(initialConfig?.erosLevel ?? DEFAULT_EROS_LEVEL)
+  const [intent, setIntentState] = useState(initialConfig?.intent ?? '')
+
+  const [forgePhase, setForgePhase] = useState<ForgePhase>(initialArchive ? 'ready' : 'idle')
+  const [deck, setDeck] = useState<GrimoireDeck | null>(initialArchive?.deck ?? null)
+  const [dossier, setDossier] = useState<SubjectDossier | null>(initialArchive?.dossier ?? null)
+  const [selection, setSelection] = useState<RitualSelection>(initialArchive?.selection ?? INITIAL_SELECTION)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const [archivePlaceholder, setArchivePlaceholder] = useState<string | null>(null)
-  const [hasSavedRitual, setHasSavedRitual] = useState(false)
-  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null)
-  const [forgedConfig, setForgedConfig] = useState<RitualConfig | null>(null)
+  const [archivePlaceholder, setArchivePlaceholder] = useState<string | null>(
+    initialArchive ? 'Loaded the most recent archived ritual.' : null,
+  )
+  const [hasSavedRitual, setHasSavedRitual] = useState(Boolean(initialArchive))
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(initialArchive?.savedAt ?? null)
+  const [forgedConfig, setForgedConfig] = useState<RitualConfig | null>(initialConfig ?? null)
 
   const [oracleQuestion, setOracleQuestionState] = useState('')
   const [oracleReading, setOracleReading] = useState<OracleReading | null>(null)
   const [oracleLoading, setOracleLoading] = useState(false)
   const [oracleError, setOracleError] = useState<string | null>(null)
-  const [oraclePlaceholder, setOraclePlaceholder] = useState<string | null>(null)
+  const [oraclePlaceholder, setOraclePlaceholder] = useState<string | null>(
+    initialArchive ? 'Archived ritual loaded. Oracle memory is fresh.' : null,
+  )
 
-  const cards = deck?.cards ?? []
+  const cards = useMemo(() => deck?.cards ?? [], [deck])
 
   const focusedCard = useMemo(
     () => cards.find((card) => card.id === selection.focusedCardId) ?? null,
@@ -410,18 +418,6 @@ export function useGrimoireEngine(): GrimoireEngine {
   }
 
   useEffect(() => {
-    const archive = readMostRecentArchive()
-
-    if (archive) {
-      applyArchive(archive)
-      return
-    }
-
-    setHasSavedRitual(false)
-    setLastSavedAt(null)
-  }, [])
-
-  useEffect(() => {
     if (!deck || !dossier || loading) return
 
     const ritualConfig = forgedConfig ?? currentInputConfig
@@ -432,12 +428,19 @@ export function useGrimoireEngine(): GrimoireEngine {
     })
 
     const didSave = writeArchive(payload)
+    if (!didSave) return
 
-    if (didSave) {
+    // Archive persistence is an external-system effect. Report its successful
+    // completion on the next task rather than synchronously cascading a second
+    // React render from the effect body. Cleanup collapses rapid selection/deck
+    // changes so only the most recent persisted snapshot updates the UI status.
+    const statusTimer = window.setTimeout(() => {
       setHasSavedRitual(true)
       setLastSavedAt(payload.savedAt)
       setArchivePlaceholder('Saved active ritual to local archive.')
-    }
+    }, 0)
+
+    return () => window.clearTimeout(statusTimer)
   }, [deck, dossier, selection, forgedConfig, currentInputConfig, loading])
 
   const setSubject = (nextSubject: string) => {
