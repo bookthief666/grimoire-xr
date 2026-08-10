@@ -9,10 +9,14 @@ main
   └─ claude/temple-foundation-hub
        └─ agent/react-xr-hardening-v2
             └─ agent/neon-rotunda-stations
-                 └─ codex/electric-rotunda-instruments   ← active local slice
+                 └─ codex/electric-rotunda-instruments   ← published draft PR #27
 ```
 
 `main` has not been used as the direct development target for this hardening work.
+
+The Electric Rotunda slice is published as draft PR #27. Its initial visual
+commit, `aa011d1f993518dd6bedc3c9f3d494155ef34539`, is one commit ahead of the
+exact parent head and zero commits behind it.
 
 The older `claude/temple-visual-uplift-Y2JMb` branch is historical ancestry. It is not the active integration target and should not be force-renamed, rebased over, or used to replace the tested foundation.
 
@@ -141,7 +145,7 @@ See `QUEST_QUALIFICATION.md` for the required capture sequence.
 
 ## Current retained parent evidence
 
-The qualified visual parent is `agent/neon-rotunda-stations` at `6898c1fdb638a0e788e745ba73a8a19cbef7617a` (draft PR #25). The active Electric Rotunda slice is stacked from that exact commit and has passed locally:
+The qualified visual parent is `agent/neon-rotunda-stations` at `6898c1fdb638a0e788e745ba73a8a19cbef7617a` (draft PR #25). The published Electric Rotunda slice is stacked from that exact commit. GitHub Actions run #95 passed test/build, lint, and both dependency-audit jobs for its initial visual commit. The corresponding Vercel preview reached Ready/DEPLOYED. Local verification also passed:
 
 - Test + production build;
 - blocking lint;
@@ -149,20 +153,21 @@ The qualified visual parent is `agent/neon-rotunda-stations` at `6898c1fdb638a0e
 - blocking full dependency audit;
 - flat visual/chamber-switch smoke.
 
-Fold re-capture, real backend image-generation smoke, Vercel preview, and Quest immersive qualification are still external/device gates; they must not be inferred from this local evidence.
+Vercel Ready establishes that the preview deployed; it does not establish WebXR correctness, real backend image generation, or target-device performance. Fold re-capture, real backend image-generation smoke, and Quest immersive qualification are still external/device gates.
 
 ## What is still genuinely unverified
 
 No repository-side automated evidence can replace the following target-device checks:
 
 - entering a real `immersive-vr` Quest session;
-- verifying the assumed XR origin / eye-height geometry on hardware;
+- morph comfort and fixed-origin / eye-height stability on hardware; the current architecture deliberately has no locomotion;
 - controller-ray pointer capture and small-ray-drift behavior;
 - bespoke card/panel drag capture and cancellation behavior;
 - readable scale and sightlines through headset optics;
 - Monad lectern and Chapel lower-Tree layout at real headset scale;
 - sustained standalone Quest performance for every chamber;
 - repeated chamber cycles for memory/resource growth;
+- the canonical ten-minute no-context-loss check and extended 30-minute thermal/resource soak;
 - enter/exit XR lifecycle stability;
 - explicit card-art generation and retry UX with the real network/backend path.
 

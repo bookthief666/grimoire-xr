@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
+import type { Ref } from 'react'
 import * as THREE from 'three'
 import { PATHS, SEPHIROTH } from '../../tools/liber333'
 import type { ChamberPreviewArtifact } from '../chambers/types'
@@ -180,30 +180,17 @@ export function StationPreviewArtifact({
   kind,
   accent,
   active,
-  phaseOffset,
+  animationRef,
+  fieldMaterialRef,
 }: {
   kind: ChamberPreviewArtifact
   accent: string
   active: boolean
-  phaseOffset: number
+  animationRef: Ref<THREE.Group>
+  fieldMaterialRef: Ref<THREE.MeshBasicMaterial>
 }) {
-  const artifactRef = useRef<THREE.Group>(null)
-  const fieldRef = useRef<THREE.MeshBasicMaterial>(null)
-
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime()
-    const pulse = 0.5 + Math.sin(t * 0.72 + phaseOffset) * 0.5
-    if (artifactRef.current) {
-      artifactRef.current.rotation.z = Math.sin(t * 0.16 + phaseOffset) * 0.035
-      artifactRef.current.scale.setScalar(1 + pulse * (active ? 0.04 : 0.015))
-    }
-    if (fieldRef.current) {
-      fieldRef.current.opacity = (active ? 0.13 : 0.045) + pulse * (active ? 0.07 : 0.02)
-    }
-  })
-
   return (
-    <group ref={artifactRef} raycast={noRaycast}>
+    <group ref={animationRef} raycast={noRaycast}>
       <mesh position={[0, 0, -0.025]} raycast={noRaycast}>
         <circleGeometry args={[0.47, 36]} />
         <meshBasicMaterial color="#030710" />
@@ -211,7 +198,7 @@ export function StationPreviewArtifact({
       <mesh position={[0, 0, -0.035]} raycast={noRaycast}>
         <ringGeometry args={[0.42, 0.5, 40]} />
         <meshBasicMaterial
-          ref={fieldRef}
+          ref={fieldMaterialRef}
           color={accent}
           transparent
           opacity={active ? 0.13 : 0.045}

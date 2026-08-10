@@ -27,6 +27,11 @@ The four real instruments are the only labelled bays. Registry metadata currentl
 
 No fictional future instruments were added. Empty colonnade space remains architectural only.
 
+All four previews remain mounted so the rotunda reads continuously while its
+instrument changes. They share one frame subscription for their low-amplitude
+pulse instead of registering one callback per bay. Their sustained Quest cost is
+still a measurement requirement, not an inferred optimization result.
+
 ## Legacy and partial surfaces audited
 
 These are compatibility or A/B surfaces, not additional instruments:

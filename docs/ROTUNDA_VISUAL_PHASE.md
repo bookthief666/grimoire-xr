@@ -93,6 +93,7 @@ The compression pass must preserve:
 - no postprocessing bloom;
 - one low-cost floor reflection echo under the altar, not a rendered reflection pass;
 - no raycasting on ambient wall bays;
+- one shared frame subscription animates all four mounted preview artifacts;
 - keep the existing `?perf=1` probe active;
 - `?perf=1&hud=1` adds a DOM-only QA overlay for Fold screenshots without adding WebGL draw calls;
 - no shadow-map pass in the Rotunda-native Sanctum atmosphere;
@@ -100,7 +101,7 @@ The compression pass must preserve:
 
 ## Current verification
 
-The station-bay / altar implementation and the Rotunda-native Sanctum component replacements are required to pass the normal PR gates:
+For the published initial visual commit `aa011d1f993518dd6bedc3c9f3d494155ef34539`, GitHub Actions run #95 passed the normal PR gates and the Vercel preview reached Ready/DEPLOYED:
 
 - deterministic tests;
 - TypeScript/Vite production build;
@@ -108,7 +109,7 @@ The station-bay / altar implementation and the Rotunda-native Sanctum component 
 - production/full dependency audit;
 - Vercel preview deployment.
 
-The station-layout tests additionally verify that wall bays remain ambient while all four altar selectors remain in `ZONES.control` and out of the central forward sightline.
+Ready confirms deployment only; it is not WebXR or backend-image-generation evidence. The station-layout tests additionally verify that wall bays remain ambient while all four altar selectors remain in `ZONES.control` and out of the central forward sightline. A dependency-light registry contract now verifies the unique solar forge, permutation axis, Monas construction, and chapter Tree preview identities without treating that test as visual QA.
 
 ## Next visual evidence
 

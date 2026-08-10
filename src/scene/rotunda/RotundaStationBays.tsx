@@ -1,3 +1,5 @@
+import { useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { NEON } from '../../theme/neon'
 import { provenanceLabel } from '../../tools/provenance'
@@ -24,11 +26,15 @@ function StationBay({
   active,
   index,
   count,
+  setAnimationRef,
+  setFieldMaterialRef,
 }: {
   chamber: Chamber
   active: boolean
   index: number
   count: number
+  setAnimationRef: (node: THREE.Group | null) => void
+  setFieldMaterialRef: (node: THREE.MeshBasicMaterial | null) => void
 }) {
   const pose = stationPose(index, count)
 
@@ -105,7 +111,8 @@ function StationBay({
           kind={chamber.previewArtifact}
           accent={chamber.accent}
           active={active}
-          phaseOffset={index * 1.37}
+          animationRef={setAnimationRef}
+          fieldMaterialRef={setFieldMaterialRef}
         />
       </group>
 
@@ -149,6 +156,32 @@ export function RotundaStationBays({
   chambers: readonly Chamber[]
   activeId: ChamberId
 }) {
+  const animationRefs = useRef<Array<THREE.Group | null>>([])
+  const fieldMaterialRefs = useRef<Array<THREE.MeshBasicMaterial | null>>([])
+
+  // One shared frame subscription animates every ambient preview. The four bays
+  // stay mounted for architectural continuity without registering four separate
+  // useFrame callbacks.
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime()
+
+    chambers.forEach((chamber, index) => {
+      const phaseOffset = index * 1.37
+      const pulse = 0.5 + Math.sin(t * 0.72 + phaseOffset) * 0.5
+      const active = chamber.id === activeId
+      const artifact = animationRefs.current[index]
+      const field = fieldMaterialRefs.current[index]
+
+      if (artifact) {
+        artifact.rotation.z = Math.sin(t * 0.16 + phaseOffset) * 0.035
+        artifact.scale.setScalar(1 + pulse * (active ? 0.04 : 0.015))
+      }
+      if (field) {
+        field.opacity = (active ? 0.13 : 0.045) + pulse * (active ? 0.07 : 0.02)
+      }
+    })
+  })
+
   return (
     <group raycast={noRaycast}>
       {chambers.map((chamber, index) => (
@@ -158,6 +191,12 @@ export function RotundaStationBays({
           active={chamber.id === activeId}
           index={index}
           count={chambers.length}
+          setAnimationRef={(node) => {
+            animationRefs.current[index] = node
+          }}
+          setFieldMaterialRef={(node) => {
+            fieldMaterialRefs.current[index] = node
+          }}
         />
       ))}
     </group>
