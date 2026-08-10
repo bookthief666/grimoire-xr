@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/neon-rotunda-stations
+  pull_request:
+    branches:
+      - agent/neon-rotunda-stations
 
 permissions:
   contents: write
@@ -41,8 +44,8 @@ jobs:
           text = text.replace(old_import, new_import, 1)
 
           old_flags = """const SHOW_LEGACY_TEMPLE_FLOOR = false
-          const SHOW_LEGACY_VR_CONSOLE = false
-          const SHOW_LEGACY_CARD_ARC = false""".replace('          ', '')
+const SHOW_LEGACY_VR_CONSOLE = false
+const SHOW_LEGACY_CARD_ARC = false"""
           new_flags = old_flags + "\nconst SHOW_LEGACY_SANCTUM_ARCHITECTURE = legacySanctumEnabled()"
           if text.count(old_flags) != 1:
               raise SystemExit('Expected exactly one legacy flag block')
