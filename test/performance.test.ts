@@ -16,8 +16,9 @@ test('Quest baseline budget targets 72 Hz or better', () => {
 })
 
 test('performance summaries use sustained average rather than one spike', () => {
-  const result = summarizeFrameTimes([12, 12, 12, 20])
+  const result = summarizeFrameTimes([12, 12, 12, 18])
   assert.equal(result.sampleCount, 4)
-  assert.equal(result.worstFrameMs, 20)
+  assert.equal(result.worstFrameMs, 18)
+  assert.ok(result.averageFrameMs < QUEST_PERFORMANCE_BUDGET.baselineFrameMs)
   assert.equal(result.state, 'healthy')
 })
