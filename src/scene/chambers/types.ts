@@ -7,7 +7,17 @@ import type { SourceProvenance } from '../../tools/provenance'
  * There is no locomotion in the current architecture. Changing rooms means the
  * temple reconfigures around a stationary practitioner through ChamberDirector.
  */
-export type ChamberId = 'sanctum' | 'cell' | 'monad' | 'chapel'
+/**
+ * Every chamber the temple can present, as runtime data.
+ *
+ * `ChamberId` is derived from this rather than declared beside it so the list
+ * has exactly one source of truth. It lives here, in a module with no runtime
+ * imports, so deterministic tests can assert coverage over the real set without
+ * loading React/Three chamber components.
+ */
+export const CHAMBER_IDS = ['sanctum', 'cell', 'monad', 'chapel'] as const
+
+export type ChamberId = (typeof CHAMBER_IDS)[number]
 
 export type ChamberProps = {
   /** Materialisation, 0 → 1. Read inside useFrame; do not mirror per frame in React state. */

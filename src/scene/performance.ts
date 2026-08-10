@@ -9,7 +9,34 @@ export const QUEST_PERFORMANCE_BUDGET = Object.freeze({
   sampleWindowSeconds: 5,
 })
 
+/**
+ * Draw-call guidance, per view.
+ *
+ * These numbers are this project's own working convention, carried forward from
+ * the standalone-Quest rule of thumb used throughout the Rotunda work. They are
+ * NOT a measured device limit, and they are not a gate. Frame time is the gate.
+ * Draw counts exist to tell you *why* a frame time moved, which is the question
+ * a millisecond figure alone can never answer.
+ *
+ * They are expressed per view on purpose. In an immersive session the renderer
+ * submits geometry once per eye unless multiview is genuinely active, so a raw
+ * total silently doubles the moment you put the headset on and stops being
+ * comparable to any flat-browser figure ever recorded.
+ */
+export const QUEST_DRAW_BUDGET = Object.freeze({
+  perViewTarget: 200,
+  perViewWarning: 350,
+})
+
 export type FrameBudgetState = 'healthy' | 'warning' | 'over-budget'
+
+/** Same three-state vocabulary as frame time, applied to per-view draw counts. */
+export function classifyDrawCalls(perViewDrawCalls: number): FrameBudgetState {
+  if (!Number.isFinite(perViewDrawCalls) || perViewDrawCalls < 0) return 'over-budget'
+  if (perViewDrawCalls <= QUEST_DRAW_BUDGET.perViewTarget) return 'healthy'
+  if (perViewDrawCalls <= QUEST_DRAW_BUDGET.perViewWarning) return 'warning'
+  return 'over-budget'
+}
 
 export function classifyFrameTime(milliseconds: number): FrameBudgetState {
   if (!Number.isFinite(milliseconds) || milliseconds < 0) return 'over-budget'
