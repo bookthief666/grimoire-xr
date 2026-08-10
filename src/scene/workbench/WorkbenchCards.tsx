@@ -6,6 +6,7 @@ import { TableBar } from './AltarHardware'
 import { TABLE_Y } from './shared'
 import { TempleText } from '../TempleText'
 import { pressable } from '../pressable'
+import { canRequestCardImage, cardImageActionLabel } from './imagePolicy'
 
 function isUsableGeneratedCardImageUrl(value: string | undefined): value is string {
   if (!value) return false
@@ -128,28 +129,16 @@ function ImageAction({
   requesting: boolean
   onGenerate: () => void
 }) {
-  const hasPrompt = Boolean(card.artPrompt)
-  const generating = requesting || card.imageStatus === 'generating'
-  const ready = card.imageStatus === 'ready' && Boolean(card.imageUrl)
-  const disabled = !hasPrompt || generating || ready
-
-  const label = ready
-    ? 'IMAGE SEALED'
-    : generating
-      ? 'GENERATING…'
+  const disabled = !canRequestCardImage(card, requesting)
+  const label = cardImageActionLabel(card, requesting)
+  const color =
+    card.imageStatus === 'ready' && card.imageUrl
+      ? '#9fffb7'
       : card.imageStatus === 'error'
-        ? 'RETRY ART'
-        : hasPrompt
-          ? 'GENERATE ART'
-          : 'NO ART SEED'
-
-  const color = ready
-    ? '#9fffb7'
-    : card.imageStatus === 'error'
-      ? '#ff9a7a'
-      : disabled
-        ? '#7b5536'
-        : '#d9b5ff'
+        ? '#ff9a7a'
+        : disabled
+          ? '#7b5536'
+          : '#d9b5ff'
 
   return (
     <group position={[0, 0.2, 0.05]} {...pressable(onGenerate, disabled)}>
@@ -235,14 +224,7 @@ export function WorkbenchCard({
   })
 
   const requestImage = () => {
-    if (
-      requestingImage ||
-      !card.artPrompt ||
-      card.imageStatus === 'ready' ||
-      card.imageStatus === 'generating'
-    ) {
-      return
-    }
+    if (!canRequestCardImage(card, requestingImage)) return
 
     setRequestingImage(true)
     const result = onGenerateImage(card.id)
