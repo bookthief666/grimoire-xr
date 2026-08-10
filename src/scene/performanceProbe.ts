@@ -131,6 +131,19 @@ export function buildPerformanceReport({
   }
 }
 
-export function performanceProbeEnabled(search = typeof window === 'undefined' ? '' : window.location.search) {
+export function performanceProbeEnabled(
+  search = typeof window === 'undefined' ? '' : window.location.search,
+) {
   return new URLSearchParams(search).get('perf') === '1'
+}
+
+/**
+ * The visual HUD is a separate opt-in from measurement so normal `?perf=1`
+ * captures remain screenshot-clean. `?perf=1&hud=1` enables both.
+ */
+export function performanceHudEnabled(
+  search = typeof window === 'undefined' ? '' : window.location.search,
+) {
+  const params = new URLSearchParams(search)
+  return params.get('perf') === '1' && params.get('hud') === '1'
 }
