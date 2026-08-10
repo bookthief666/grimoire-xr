@@ -1,16 +1,6 @@
-import { useMemo, useRef, type MutableRefObject } from 'react'
+import { useRef, type MutableRefObject } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { BabalonStarGlyph } from './ThelemicSigils'
-import { TempleText } from './TempleText'
-import {
-  buildCosmicStarField,
-  type DeterministicStarDatum,
-} from './deterministicField'
-
-/** Decoration must never intercept pointer rays. Matches the same helper in
- *  TempleXenotheurgy and TempleGrandArchitecture. */
-const noRaycast = () => null
 
 type TempleAtmosphereProps = {
   ritualImpulseRef: MutableRefObject<number>
@@ -18,480 +8,41 @@ type TempleAtmosphereProps = {
   hasOracleReading: boolean
 }
 
-type Point2 = [number, number]
-
-const STAR_DATA = buildCosmicStarField()
-const COOL_STARS = STAR_DATA.filter((star) => !star.warm)
-const WARM_STARS = STAR_DATA.filter((star) => star.warm)
-
-function GlyphPlaneLine({
-  a,
-  b,
-  z = -4.08,
-  color = '#ffb000',
-  opacity = 0.38,
-  width = 0.018,
-}: {
-  a: Point2
-  b: Point2
-  z?: number
-  color?: string
-  opacity?: number
-  width?: number
-}) {
-  const dx = b[0] - a[0]
-  const dy = b[1] - a[1]
-  const length = Math.hypot(dx, dy)
-  const angle = Math.atan2(dy, dx)
-
-  return (
-    <mesh
-      position={[(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, z]}
-      rotation={[0, 0, angle]}
-    >
-      <planeGeometry args={[length, width]} />
-      <meshBasicMaterial
-        color={color}
-        transparent
-        opacity={opacity}
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-        side={THREE.DoubleSide}
-      />
-    </mesh>
-  )
-}
-
-function CosmicVoid() {
-  return (
-    <group>
-      <mesh position={[0, 2.4, -16]}>
-        <sphereGeometry args={[64, 36, 18]} />
-        <meshBasicMaterial
-          color="#010103"
-          side={THREE.BackSide}
-          transparent
-          opacity={1}
-        />
-      </mesh>
-
-      {/* 78 stars used to be 78 separate meshes, each with its own geometry -
-          78 draw calls for decoration nobody can interact with. Two instanced
-          groups (warm and cool) render the whole field in two calls. They are
-          split by colour because instances share one material, and per-instance
-          opacity is not expressible without a custom shader.
-
-          The distribution is deterministic and module-scoped. Remounting the
-          atmosphere cannot reshuffle the sky around the XR origin, and React
-          render never calls Math.random(). */}
-      <StarField stars={COOL_STARS} color="#d8e8ff" opacity={0.42} />
-      <StarField stars={WARM_STARS} color="#f8f3df" opacity={0.52} />
-    </group>
-  )
-}
-
-function StarField({
-  stars,
-  color,
-  opacity,
-}: {
-  stars: DeterministicStarDatum[]
-  color: string
-  opacity: number
-}) {
-  const meshRef = useRef<THREE.InstancedMesh>(null)
-  const dummy = useMemo(() => new THREE.Object3D(), [])
-
-  useFrame(({ clock }) => {
-    const mesh = meshRef.current
-    if (!mesh) return
-
-    const t = clock.getElapsedTime()
-
-    for (let i = 0; i < stars.length; i += 1) {
-      const s = stars[i]
-      const pulse = 0.72 + Math.sin(t * 0.55 + s.phase) * 0.28
-
-      dummy.position.set(s.position[0], s.position[1], s.position[2])
-      dummy.scale.setScalar(s.size * (1 + pulse * 0.55))
-      dummy.updateMatrix()
-      mesh.setMatrixAt(i, dummy.matrix)
-    }
-
-    mesh.instanceMatrix.needsUpdate = true
-  })
-
-  return (
-    <instancedMesh
-      ref={meshRef}
-      args={[undefined, undefined, stars.length]}
-      raycast={noRaycast}
-      frustumCulled={false}
-    >
-      <sphereGeometry args={[1, 5, 5]} />
-      <meshBasicMaterial
-        color={color}
-        transparent
-        opacity={opacity}
-        depthWrite={false}
-        blending={THREE.AdditiveBlending}
-      />
-    </instancedMesh>
-  )
-}
-
-function HolographicFloorAura({
-  ritualImpulseRef,
-  hasOracleReading,
-}: {
-  ritualImpulseRef: MutableRefObject<number>
-  hasOracleReading: boolean
-}) {
-  const outerRef = useRef<THREE.MeshBasicMaterial>(null)
-  const middleRef = useRef<THREE.MeshBasicMaterial>(null)
-  const innerRef = useRef<THREE.MeshBasicMaterial>(null)
-  const crownRef = useRef<THREE.Group>(null)
-
-  useFrame(({ clock }, delta) => {
-    const t = clock.getElapsedTime()
-    const impulse = ritualImpulseRef.current
-    const oracleBoost = hasOracleReading ? 0.12 : 0
-
-    if (crownRef.current) {
-      crownRef.current.rotation.y += delta * (0.035 + impulse * 0.05)
-    }
-
-    if (outerRef.current) {
-      outerRef.current.opacity =
-        0.1 + Math.sin(t * 0.58) * 0.025 + impulse * 0.12 + oracleBoost
-    }
-
-    if (middleRef.current) {
-      middleRef.current.opacity =
-        0.13 + Math.sin(t * 0.74 + 1.2) * 0.032 + impulse * 0.14 + oracleBoost
-    }
-
-    if (innerRef.current) {
-      innerRef.current.opacity =
-        0.11 + Math.sin(t * 0.92 + 0.4) * 0.035 + impulse * 0.16 + oracleBoost
-    }
-  })
-
-  return (
-    <group>
-      <mesh position={[0, 0.018, -1.0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[2.85, 3.02, 72]} />
-        <meshBasicMaterial
-          ref={outerRef}
-          color="#d8e8ff"
-          transparent
-          opacity={0.1}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh position={[0, 0.021, -1.0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[2.08, 2.18, 72]} />
-        <meshBasicMaterial
-          ref={middleRef}
-          color="#b98cff"
-          transparent
-          opacity={0.13}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh position={[0, 0.024, -1.0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[1.0, 72]} />
-        <meshBasicMaterial
-          ref={innerRef}
-          color="#f8f3df"
-          transparent
-          opacity={0.09}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <group ref={crownRef} position={[0, 0.04, -1.0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <BabalonStarGlyph
-          radius={1.78}
-          color="#f8f3df"
-          opacity={0.24}
-          lineWidth={1.8}
-          withRose
-        />
-
-        <BabalonStarGlyph
-          radius={1.86}
-          color="#d8e8ff"
-          opacity={0.065}
-          lineWidth={3.0}
-          withCircle={false}
-          withRose={false}
-        />
-      </group>
-    </group>
-  )
-}
-
-function DistantAATrace({
+/**
+ * Sanctum-only reactive lighting for the shared Neon Rotunda.
+ *
+ * The old TempleAtmosphere predated the Rotunda and therefore duplicated the
+ * room itself: a second cosmic void, floor aura, distant Tree trace, orbiting
+ * seals and a shadow-casting key light. RotundaFloor + RotundaDome + station
+ * bays now own those spatial cues. Keeping them here made Sanctum uniquely
+ * expensive and visually double-exposed compared with the authored chambers.
+ *
+ * This component deliberately emits no geometry and no shadow pass. It keeps
+ * the ritual-state lighting response required by the Forge while letting the
+ * shared Rotunda be the single architectural environment.
+ */
+export function TempleAtmosphere({
   ritualImpulseRef,
   hasActiveCard,
   hasOracleReading,
-}: {
-  ritualImpulseRef: MutableRefObject<number>
-  hasActiveCard: boolean
-  hasOracleReading: boolean
-}) {
-  const sphereRefs = useRef<(THREE.MeshBasicMaterial | null)[]>([])
-
-  const nodes = useMemo(
-    () => [
-      [0, 3.0],
-      [-0.56, 2.55],
-      [0.56, 2.55],
-      [0, 2.2],
-      [-0.74, 1.72],
-      [0.74, 1.72],
-      [0, 1.34],
-      [-0.52, 0.9],
-      [0.52, 0.9],
-      [0, 0.45],
-    ] as Point2[],
-    [],
-  )
-
-  const paths = useMemo(
-    () => [
-      [0, 1], [0, 2], [1, 3], [2, 3], [1, 4], [2, 5],
-      [3, 4], [3, 5], [3, 6], [4, 6], [5, 6], [4, 7],
-      [5, 8], [6, 7], [6, 8], [7, 9], [8, 9], [6, 9],
-    ] as [number, number][],
-    [],
-  )
-
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime()
-    const impulse = ritualImpulseRef.current
-    const baseBoost = hasActiveCard ? 0.04 : 0
-    const oracleBoost = hasOracleReading ? 0.08 : 0
-
-    for (let i = 0; i < sphereRefs.current.length; i += 1) {
-      const mat = sphereRefs.current[i]
-      if (!mat) continue
-
-      mat.opacity =
-        0.12 +
-        Math.sin(t * 0.72 + i * 0.7) * 0.028 +
-        impulse * 0.1 +
-        baseBoost +
-        oracleBoost
-    }
-  })
-
-  return (
-    <group position={[0, -0.1, -8.8]} scale={1.55}>
-      {paths.map(([a, b], index) => (
-        <GlyphPlaneLine
-          key={`${a}-${b}-${index}`}
-          a={nodes[a]}
-          b={nodes[b]}
-          color={index % 3 === 0 ? '#f8f3df' : '#d8e8ff'}
-          opacity={0.085}
-          width={0.01}
-          z={-4.08}
-        />
-      ))}
-
-      {nodes.map(([x, y], index) => (
-        <mesh key={index} position={[x, y, -4.05]}>
-          <circleGeometry args={[0.06, 20]} />
-          <meshBasicMaterial
-            ref={(el) => {
-              sphereRefs.current[index] = el
-            }}
-            color={index === 0 ? '#ffffff' : index === 9 ? '#b98cff' : '#d8e8ff'}
-            transparent
-            opacity={0.13}
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
-      ))}
-
-      <TempleText
-        position={[0, 3.28, -4.02]}
-        anchorX="center"
-        anchorY="middle"
-        fontSize={0.06}
-        color="#d8e8ff"
-        fillOpacity={0.22}
-        maxWidth={1.8}
-      >
-        A∴A∴
-      </TempleText>
-    </group>
-  )
-}
-
-type SealDef = { label: string; symbol: string; color: string }
-
-// Ambient decoration must never enter the user's working sightline. The user
-// stands at roughly [0, 1.6, 3] looking down -Z and cannot move (there is no
-// locomotion), so the forward view at eye height is the one thing that has to
-// stay clear.
-//
-// These seals orbit, so the nearest point of the orbit is what matters:
-// nearest z = SIGIL_ORBIT_Z + SIGIL_ORBIT_RADIUS. Previously that was
-// -1.72 + 2.48 = +0.76 at y 1.74 - dead centre, at eye level, 2.24m from the
-// face, which made it the worst occluder in the scene. Pushing the orbit back
-// and lifting it above eye height keeps the nearest approach at z = -0.32 and
-// ~1.0m above the sightline, so it reads as atmosphere overhead instead.
-const SIGIL_ORBIT_Y = 2.62
-const SIGIL_ORBIT_Z = -2.6
-const SIGIL_ORBIT_RADIUS = 2.28
-
-function AmbientSigilSeal({ label, symbol, color }: SealDef) {
-  return (
-    <group>
-      <mesh position={[0, 0, -0.002]}>
-        <planeGeometry args={[0.44, 0.18]} />
-        <meshBasicMaterial
-          color="#080404"
-          transparent
-          opacity={0.52}
-          depthWrite={false}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh position={[0, 0, 0.006]}>
-        <planeGeometry args={[0.5, 0.012]} />
-        <meshBasicMaterial
-          color={color}
-          transparent
-          opacity={0.34}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <TempleText
-        position={[-0.16, 0.002, 0.026]}
-        fontSize={0.074}
-        color={color}
-        anchorX="center"
-        anchorY="middle"
-        fillOpacity={0.48}
-        maxWidth={0.22}
-      >
-        {symbol}
-      </TempleText>
-
-      <TempleText
-        position={[0.04, 0.002, 0.026]}
-        fontSize={0.026}
-        color={color}
-        anchorX="left"
-        anchorY="middle"
-        fillOpacity={0.55}
-        maxWidth={0.36}
-      >
-        {label}
-      </TempleText>
-    </group>
-  )
-}
-
-function FloatingSigils({
-  ritualImpulseRef,
-  hasOracleReading,
-}: {
-  ritualImpulseRef: MutableRefObject<number>
-  hasOracleReading: boolean
-}) {
-  const groupRef = useRef<THREE.Group>(null)
-
-  useFrame(({ clock }, delta) => {
-    const t = clock.getElapsedTime()
-    const impulse = ritualImpulseRef.current
-
-    if (!groupRef.current) return
-
-    groupRef.current.rotation.y += delta * (0.026 + impulse * 0.035)
-    groupRef.current.position.y = SIGIL_ORBIT_Y + Math.sin(t * 0.58) * 0.028
-  })
-
-  const seals: SealDef[] = hasOracleReading
-    ? [
-        { label: 'ORACLE', symbol: '☉', color: '#f8f3df' },
-        { label: 'AGAPE', symbol: '♀', color: '#d8e8ff' },
-        { label: 'ABRAHADABRA', symbol: '⌬', color: '#b98cff' },
-        { label: '93', symbol: '☽', color: '#f8f3df' },
-      ]
-    : [
-        { label: 'THELEMA', symbol: '93', color: '#f8f3df' },
-        { label: 'AGAPE', symbol: '☽', color: '#d8e8ff' },
-        { label: 'WILL', symbol: '⌬', color: '#f8f3df' },
-        { label: '93', symbol: '☉', color: '#d8e8ff' },
-      ]
-
-  return (
-    <group ref={groupRef} position={[0, SIGIL_ORBIT_Y, SIGIL_ORBIT_Z]}>
-      {seals.map((seal, index) => {
-        const angle = (index / seals.length) * Math.PI * 2
-        const radius = SIGIL_ORBIT_RADIUS
-        return (
-          <group
-            key={seal.label}
-            position={[
-              Math.cos(angle) * radius,
-              index % 2 === 0 ? 0.11 : -0.08,
-              Math.sin(angle) * radius,
-            ]}
-            rotation={[0, -angle + Math.PI / 2, 0]}
-          >
-            <AmbientSigilSeal
-              label={seal.label}
-              symbol={seal.symbol}
-              color={seal.color}
-            />
-          </group>
-        )
-      })}
-    </group>
-  )
-}
-
-function ReactiveLights({
-  ritualImpulseRef,
-  hasActiveCard,
-  hasOracleReading,
-}: {
-  ritualImpulseRef: MutableRefObject<number>
-  hasActiveCard: boolean
-  hasOracleReading: boolean
-}) {
+}: TempleAtmosphereProps) {
   const altarLightRef = useRef<THREE.PointLight>(null)
   const rearLightRef = useRef<THREE.PointLight>(null)
-  const lowKeyRef = useRef<THREE.DirectionalLight>(null)
+  const keyLightRef = useRef<THREE.DirectionalLight>(null)
 
   useFrame(({ clock }, delta) => {
     const t = clock.getElapsedTime()
     const impulse = ritualImpulseRef.current
-    const activeBoost = hasActiveCard ? 4 : 0
-    const oracleBoost = hasOracleReading ? 5.5 : 0
+    const activeBoost = hasActiveCard ? 1.8 : 0
+    const oracleBoost = hasOracleReading ? 2.6 : 0
 
     if (altarLightRef.current) {
-      const target = 6.6 + activeBoost + oracleBoost + impulse * 11 + Math.sin(t * 1.0) * 0.9
+      const target =
+        3.2 +
+        activeBoost +
+        oracleBoost +
+        impulse * 4.8 +
+        Math.sin(t * 0.9) * 0.34
       altarLightRef.current.intensity = THREE.MathUtils.lerp(
         altarLightRef.current.intensity,
         target,
@@ -500,81 +51,56 @@ function ReactiveLights({
     }
 
     if (rearLightRef.current) {
-      const target = 1.8 + oracleBoost * 0.45 + impulse * 5 + Math.sin(t * 0.6) * 0.5
+      const target =
+        0.9 +
+        oracleBoost * 0.34 +
+        impulse * 1.8 +
+        Math.sin(t * 0.5) * 0.16
       rearLightRef.current.intensity = THREE.MathUtils.lerp(
         rearLightRef.current.intensity,
         target,
-        delta * 2.5,
+        delta * 2.2,
       )
     }
 
-    if (lowKeyRef.current) {
-      lowKeyRef.current.intensity = THREE.MathUtils.lerp(
-        lowKeyRef.current.intensity,
-        2.4 + impulse * 1.4,
-        delta * 1.8,
+    if (keyLightRef.current) {
+      keyLightRef.current.intensity = THREE.MathUtils.lerp(
+        keyLightRef.current.intensity,
+        1.15 + impulse * 0.55,
+        delta * 1.7,
       )
     }
   })
 
   return (
     <group>
-      <ambientLight color="#070910" intensity={0.075} />
+      <ambientLight color="#08101c" intensity={0.11} />
 
+      {/* No castShadow: neon architecture is emissive/faked-light geometry and
+          a shadow-map pass only duplicates draw work on standalone XR. */}
       <directionalLight
-        ref={lowKeyRef}
-        position={[-5.5, 1.1, 1.8]}
-        color="#d8e8ff"
-        intensity={2.4}
-        castShadow
-        shadow-mapSize-width={512}
-        shadow-mapSize-height={512}
+        ref={keyLightRef}
+        position={[-4.5, 3.4, 2.2]}
+        color="#d8f6ff"
+        intensity={1.15}
       />
 
       <pointLight
         ref={altarLightRef}
-        position={[0, 1.1, -0.82]}
-        color={hasOracleReading ? '#f8f3df' : '#d8e8ff'}
-        intensity={6.6}
-        distance={4.6}
+        position={[0, 1.1, -0.72]}
+        color={hasOracleReading ? '#a855ff' : '#ffd23f'}
+        intensity={3.2}
+        distance={4.2}
+        decay={2}
       />
 
       <pointLight
         ref={rearLightRef}
-        position={[0, 4.6, -14.0]}
-        color="#b98cff"
-        intensity={1.8}
-        distance={14}
-      />
-    </group>
-  )
-}
-
-export function TempleAtmosphere({
-  ritualImpulseRef,
-  hasActiveCard,
-  hasOracleReading,
-}: TempleAtmosphereProps) {
-  return (
-    <group>
-      <CosmicVoid />
-      <ReactiveLights
-        ritualImpulseRef={ritualImpulseRef}
-        hasActiveCard={hasActiveCard}
-        hasOracleReading={hasOracleReading}
-      />
-      <HolographicFloorAura
-        ritualImpulseRef={ritualImpulseRef}
-        hasOracleReading={hasOracleReading}
-      />
-      <DistantAATrace
-        ritualImpulseRef={ritualImpulseRef}
-        hasActiveCard={hasActiveCard}
-        hasOracleReading={hasOracleReading}
-      />
-      <FloatingSigils
-        ritualImpulseRef={ritualImpulseRef}
-        hasOracleReading={hasOracleReading}
+        position={[0, 3.4, -4.4]}
+        color={hasOracleReading ? '#ff2bd6' : '#00e5ff'}
+        intensity={0.9}
+        distance={7.5}
+        decay={2}
       />
     </group>
   )
