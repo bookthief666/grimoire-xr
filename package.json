@@ -11,7 +11,8 @@
     "test": "node --experimental-strip-types --test test/*.test.ts",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "check": "npm run test && npm run build && npm run lint",
+    "check": "npm run test && npm run build",
+    "check:full": "npm run test && npm run build && npm run lint",
     "preview": "vite preview"
   },
   "dependencies": {
