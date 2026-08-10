@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import {
@@ -12,6 +12,10 @@ import { provenanceLabel } from '../../tools/provenance'
 import type { ChamberProps } from './types'
 import { TempleText } from '../TempleText'
 import { pressable } from '../pressable'
+import {
+  buildMergedPlanarSegments,
+  type PlanarSegment,
+} from '../geometry/mergedPlanarSegments'
 
 export const MONAD_ACCENT = '#d8e8ff'
 
@@ -32,63 +36,62 @@ const LECTERN_WIDTH = 1.34
 const LECTERN_HEIGHT = 0.84
 const LECTERN_TEXT_WIDTH = 1.2
 
-function Segment({
-  from,
-  to,
-  width = 0.008,
-  color = MONAD_ACCENT,
-  opacity = 0.9,
-}: {
-  from: [number, number]
-  to: [number, number]
-  width?: number
-  color?: string
-  opacity?: number
-}) {
-  const dx = to[0] - from[0]
-  const dy = to[1] - from[1]
-  const length = Math.hypot(dx, dy)
+function mergedCircleSegments(radius: number, opacity: number): PlanarSegment[] {
+  const points = Array.from({ length: 48 }, (_, index) => {
+    const angle = (index / 48) * Math.PI * 2
+    return [Math.cos(angle) * radius, Math.sin(angle) * radius] as const
+  })
+
+  return points.map((point, index) => ({
+    from: point,
+    to: points[(index + 1) % points.length],
+    width: 0.007,
+    color: MONAD_ACCENT,
+    intensity: opacity,
+  }))
+}
+
+const LINE_SEGMENTS: PlanarSegment[] = [
+  { from: [0, 0], to: [0, 0.34], width: 0.008, color: MONAD_ACCENT, intensity: 0.75 },
+]
+const CIRCLE_SEGMENTS = mergedCircleSegments(0.2, 0.62)
+const MOON_SEGMENTS: PlanarSegment[] = Array.from({ length: 24 }, (_, index) => {
+  const start = Math.PI * (0.08 + (index / 23) * 0.84)
+  const end = Math.PI * (0.08 + ((index + 1) / 23) * 0.84)
+  const radius = 0.17
+
+  return {
+    from: [Math.cos(start) * radius, Math.sin(start) * radius * 0.72],
+    to: [Math.cos(end) * radius, Math.sin(end) * radius * 0.72],
+    width: 0.009,
+    color: '#f4f8ff',
+    intensity: 0.88,
+  }
+})
+const CROSS_SEGMENTS: PlanarSegment[] = [
+  { from: [0, 0.16], to: [0, -0.17], width: 0.011, color: MONAD_ACCENT, intensity: 0.92 },
+  { from: [-0.13, 0.02], to: [0.13, 0.02], width: 0.011, color: MONAD_ACCENT, intensity: 0.92 },
+]
+
+function MergedTrace({ segments }: { segments: readonly PlanarSegment[] }) {
+  const geometry = useMemo(
+    () => buildMergedPlanarSegments(segments, 'xy'),
+    [segments],
+  )
+
+  useEffect(() => () => geometry.dispose(), [geometry])
 
   return (
-    <mesh
-      position={[(from[0] + to[0]) / 2, (from[1] + to[1]) / 2, 0]}
-      rotation={[0, 0, Math.atan2(dy, dx)]}
-    >
-      <planeGeometry args={[length, width]} />
+    <mesh geometry={geometry}>
       <meshBasicMaterial
-        color={color}
+        vertexColors
         transparent
-        opacity={opacity}
+        opacity={1}
         depthWrite={false}
         blending={THREE.AdditiveBlending}
         side={THREE.DoubleSide}
       />
     </mesh>
-  )
-}
-
-function CircleTrace({ radius, opacity }: { radius: number; opacity: number }) {
-  const points = useMemo(
-    () =>
-      Array.from({ length: 48 }, (_, index) => {
-        const angle = (index / 48) * Math.PI * 2
-        return [Math.cos(angle) * radius, Math.sin(angle) * radius] as [number, number]
-      }),
-    [radius],
-  )
-
-  return (
-    <>
-      {points.map((point, index) => (
-        <Segment
-          key={index}
-          from={point}
-          to={points[(index + 1) % points.length]}
-          width={0.007}
-          opacity={opacity}
-        />
-      ))}
-    </>
   )
 }
 
@@ -167,7 +170,7 @@ function MonadGlyph({
           layersRef.current[1] = node
         }}
       >
-        {show('line') ? <Segment from={[0, 0]} to={[0, 0.34]} opacity={0.75} /> : null}
+        {show('line') ? <MergedTrace segments={LINE_SEGMENTS} /> : null}
       </group>
 
       <group
@@ -175,7 +178,7 @@ function MonadGlyph({
           layersRef.current[2] = node
         }}
       >
-        {show('circle') ? <CircleTrace radius={0.2} opacity={0.62} /> : null}
+        {show('circle') ? <MergedTrace segments={CIRCLE_SEGMENTS} /> : null}
       </group>
 
       <group
@@ -204,21 +207,7 @@ function MonadGlyph({
       >
         {show('moon') ? (
           <group position={[0, 0.235, 0]}>
-            {Array.from({ length: 24 }, (_, index) => {
-              const a = Math.PI * (0.08 + (index / 23) * 0.84)
-              const b = Math.PI * (0.08 + ((index + 1) / 23) * 0.84)
-              const radius = 0.17
-              return (
-                <Segment
-                  key={index}
-                  from={[Math.cos(a) * radius, Math.sin(a) * radius * 0.72]}
-                  to={[Math.cos(b) * radius, Math.sin(b) * radius * 0.72]}
-                  width={0.009}
-                  opacity={0.88}
-                  color="#f4f8ff"
-                />
-              )
-            })}
+            <MergedTrace segments={MOON_SEGMENTS} />
           </group>
         ) : null}
       </group>
@@ -230,8 +219,7 @@ function MonadGlyph({
       >
         {show('cross') ? (
           <group position={[0, -0.33, 0]}>
-            <Segment from={[0, 0.16]} to={[0, -0.17]} width={0.011} opacity={0.92} />
-            <Segment from={[-0.13, 0.02]} to={[0.13, 0.02]} width={0.011} opacity={0.92} />
+            <MergedTrace segments={CROSS_SEGMENTS} />
           </group>
         ) : null}
       </group>
