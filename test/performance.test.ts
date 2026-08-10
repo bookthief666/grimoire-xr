@@ -8,6 +8,7 @@ import {
 } from '../src/scene/performance.ts'
 import {
   buildPerformanceReport,
+  performanceHudEnabled,
   performanceProbeEnabled,
 } from '../src/scene/performanceProbe.ts'
 
@@ -32,6 +33,13 @@ test('performance probe is explicit and cannot switch on accidentally', () => {
   assert.equal(performanceProbeEnabled('?perf=0'), false)
   assert.equal(performanceProbeEnabled('?perf=1'), true)
   assert.equal(performanceProbeEnabled('?debugPanels&perf=1'), true)
+})
+
+test('performance HUD requires both measurement and visual opt-in', () => {
+  assert.equal(performanceHudEnabled(''), false)
+  assert.equal(performanceHudEnabled('?hud=1'), false)
+  assert.equal(performanceHudEnabled('?perf=1'), false)
+  assert.equal(performanceHudEnabled('?perf=1&hud=1'), true)
 })
 
 test('performance report preserves chamber, frame, and draw-call evidence', () => {
