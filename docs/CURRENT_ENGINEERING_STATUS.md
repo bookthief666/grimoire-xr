@@ -18,7 +18,7 @@ The older `claude/temple-visual-uplift-Y2JMb` branch is historical ancestry. It 
 
 ### Explicit card-art generation
 
-Selecting/manfesting a forged card no longer starts the image backend. Card art is a separate explicit action with generating, retry, ready, and unavailable states. This is a product invariant and is regression-tested.
+Selecting/manifesting a forged card no longer starts the image backend. Card art is a separate explicit action with generating, retry, ready, and unavailable states. This is a product invariant and is regression-tested.
 
 ### Source integrity
 
@@ -42,6 +42,28 @@ Manifested-card state stores identity + transform rather than copying a stale ca
 
 Archive hydration is lazy initial state rather than a mount-time cascade of setters. Tablet and legacy-oracle pagination use content-scoped state rather than effect-driven resets.
 
+### Shared XR pointer lifecycle
+
+The shared `pressable()` interaction contract now treats pointer capture as best-effort cleanup rather than a failure point:
+
+- stale or already-released capture adapters cannot abort an otherwise valid activation;
+- pointer-up attempts capture cleanup before activation;
+- pointer-cancel releases capture;
+- a control that becomes disabled between pointer-down and pointer-up still releases capture without activating;
+- helper behavior is regression-tested.
+
+The bespoke drag implementations used by workbench cards and the optional draggable reading panels remain separate because drag semantics are more complex than a press. Their real controller-ray cancellation/drift behavior is a target-headset qualification item rather than an unverified rewrite.
+
+### Explicit XR development modes
+
+Normal development no longer ambiguously falls into `@react-three/xr`'s localhost emulator behavior when native WebXR is absent.
+
+- normal URL: flat/native behavior;
+- `?emulate=1`: explicitly enables the Meta Quest 3 IWER emulator for desktop XR-path testing;
+- real Quest qualification: native WebXR, **without** `emulate=1`.
+
+The emulator remains a development aid, not release evidence. See `XR_DEVELOPMENT_MODES.md`.
+
 ### Known chamber layout collisions
 
 - Monad lectern content and controls now occupy separate structural zones.
@@ -51,7 +73,7 @@ These fixes still require visual confirmation at the target headset scale before
 
 ### Lint
 
-The inherited Claude foundation baseline of 30 lint problems has been retired. Lint is now expected to be clean and is a blocking GitHub Actions job.
+The inherited Claude foundation baseline of 30 lint problems has been retired. Lint is now clean and is a blocking GitHub Actions job.
 
 ### Dependency security
 
@@ -64,7 +86,7 @@ npm audit --audit-level=high
 
 with zero reported vulnerabilities in CI. Both audits are now blocking qualification gates.
 
-The temporary write-capable workflow used to perform the one-time lockfile refresh was deleted immediately after the guarded update.
+The temporary write-capable workflow used to perform the one-time lockfile refresh was deleted immediately after the guarded update. No write-capable one-shot maintenance workflow remains in the retained branch state.
 
 ## Automated qualification
 
@@ -86,7 +108,8 @@ Current deterministic coverage includes:
 - explicit Forge/image policy;
 - Quest frame-budget helpers;
 - deterministic star/ember fields;
-- performance-probe activation/report contract.
+- performance-probe activation/report contract;
+- shared XR pointer-capture lifecycle and cancellation behavior.
 
 ## Performance evidence
 
@@ -104,9 +127,25 @@ to the URL. The probe remains dormant during normal use, resets around chamber m
 window.__GRIMOIRE_XR_PERF__
 ```
 
-It also logs `[GRIMOIRE PERF]` with chamber ID, XR/flat mode, average/worst frame time, budget classification, and average/worst direct WebGL draw calls.
+It also logs `[GRIMOIRE PERF]` with chamber ID, XR mode, average/worst frame time, budget classification, and average/worst direct WebGL draw calls.
+
+For desktop XR-path testing, `?emulate=1&perf=1` may be used. Real Quest qualification must use `?perf=1` without the emulator flag.
+
+The production build still emits large lazy XR/emulation/room chunks from the current `@react-three/xr` dependency. That warning has not been hidden by raising Vite's chunk threshold. Do not change bundling or XR dependencies solely to silence the warning; measure initial-load and headset impact first.
 
 See `QUEST_QUALIFICATION.md` for the required capture sequence.
+
+## Current retained branch evidence
+
+The retained PR head immediately before this documentation update was `df1f0d42f720f9ddf03f613d9d47b592fb3e847a` and passed:
+
+- Test + production build;
+- blocking lint;
+- blocking production dependency audit;
+- blocking full dependency audit;
+- Vercel deployment check.
+
+The final documentation-only head must retain the same gates before this status is treated as current.
 
 ## What is still genuinely unverified
 
@@ -115,6 +154,7 @@ No repository-side automated evidence can replace the following target-device ch
 - entering a real `immersive-vr` Quest session;
 - verifying the assumed XR origin / eye-height geometry on hardware;
 - controller-ray pointer capture and small-ray-drift behavior;
+- bespoke card/panel drag capture and cancellation behavior;
 - readable scale and sightlines through headset optics;
 - Monad lectern and Chapel lower-Tree layout at real headset scale;
 - sustained standalone Quest performance for every chamber;
@@ -122,16 +162,17 @@ No repository-side automated evidence can replace the following target-device ch
 - enter/exit XR lifecycle stability;
 - explicit card-art generation and retry UX with the real network/backend path.
 
-These remain promotion blockers. Do not relabel flat-browser, Fold, Vercel, headless Chromium, or CI evidence as real-headset verification.
+These remain promotion blockers. Do not relabel flat-browser, Fold, Vercel, emulator, headless Chromium, or CI evidence as real-headset verification.
 
 ## Next engineering order
 
-1. Keep automated gates green while the active hardening PR is reviewed.
+1. Keep automated gates green while the active hardening PR remains draft.
 2. Run flat-browser/Fold visual smoke on the current preview, especially Monad and Chapel.
 3. Use `?perf=1` to capture reproducible flat baseline reports for all chambers.
-4. Run the first real Quest immersive qualification using `QUEST_QUALIFICATION.md`.
-5. Optimize only from measured bottlenecks; do not reduce visual fidelity speculatively just to chase the old 748-draw proxy target.
-6. Promote the hardened foundation only after the real-device blockers have evidence.
+4. Optionally use `?emulate=1&perf=1` as an intermediate desktop XR-path smoke test, while keeping its evidence tier separate.
+5. Run the first real Quest immersive qualification using `QUEST_QUALIFICATION.md`.
+6. Optimize only from measured bottlenecks; do not reduce visual fidelity speculatively just to chase the old 748-draw proxy target.
+7. Promote the hardened foundation only after the real-device blockers have evidence.
 
 ## Rules for future agents
 
@@ -140,4 +181,5 @@ These remain promotion blockers. Do not relabel flat-browser, Fold, Vercel, head
 - Do not collapse source-critical content and AI/project interpretation into one undifferentiated text layer.
 - Do not weaken the 72 Hz performance contract to make a test pass.
 - Do not use `npm audit fix --force` as routine maintenance.
+- Do not treat desktop XR emulation as real-headset evidence.
 - Do not treat the historical `CLAUDE_*` handoff snapshot as newer than live code, CI, and this status document.
