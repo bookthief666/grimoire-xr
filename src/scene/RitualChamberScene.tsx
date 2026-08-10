@@ -41,6 +41,7 @@ import { MorphGroup } from './chambers/MorphGroup'
 import type { Chamber, ChamberProps } from './chambers/types'
 import type { ArtStyleFamily } from '../constants/artStyles'
 import { TempleText } from './TempleText'
+import { buildEmberField } from './deterministicField'
 
 function isUsableGeneratedCardImageUrl(value: string | undefined): value is string {
   if (!value) return false
@@ -54,13 +55,15 @@ function isUsableGeneratedCardImageUrl(value: string | undefined): value is stri
   )
 }
 
-
-
-type ManifestState = {
-  card: GrimoireCard
+type ManifestPlacement = {
+  cardId: number
   spawnPosition: [number, number, number]
   spawnRotationY: number
   activationId: number
+}
+
+type ManifestState = ManifestPlacement & {
+  card: GrimoireCard
 }
 
 /** Mounts whichever non-Sanctum chamber is currently presented. */
@@ -86,6 +89,8 @@ const SHOW_LEGACY_CARD_ARC = false
 // InWorldOraclePanels is the older draggable panel system kept for A/B in VR.
 const SHOW_TEMPLE_TABLETS = true
 const SHOW_LEGACY_ORACLE_PANELS = false
+
+const EMBER_DATA = buildEmberField()
 
 let ritualAudioCtx: AudioContext | null = null
 
@@ -597,27 +602,15 @@ function Embers({
 }) {
   const emberRefs = useRef<(THREE.Mesh | null)[]>([])
 
-  const emberData = useMemo(() => {
-    return Array.from({ length: 22 }, (_, i) => ({
-      x: (Math.random() - 0.5) * 5.2,
-      y: 0.15 + Math.random() * 2.8,
-      z: -0.6 - Math.random() * 4.4,
-      size: 0.012 + Math.random() * 0.03,
-      drift: 0.08 + Math.random() * 0.1,
-      sway: 0.15 + Math.random() * 0.3,
-      phase: Math.random() * Math.PI * 2 + i,
-    }))
-  }, [])
-
   useFrame(({ clock }, delta) => {
     const t = clock.getElapsedTime()
     const impulse = ritualImpulseRef.current
 
     for (let i = 0; i < emberRefs.current.length; i += 1) {
       const mesh = emberRefs.current[i]
-      const d = emberData[i]
+      const d = EMBER_DATA[i]
 
-      if (!mesh) continue
+      if (!mesh || !d) continue
 
       const speedBoost = 1 + impulse * 0.55
       mesh.position.y += d.drift * delta * speedBoost
@@ -636,7 +629,7 @@ function Embers({
 
   return (
     <group>
-      {emberData.map((d, i) => (
+      {EMBER_DATA.map((d, i) => (
         <mesh
           key={i}
           ref={(el) => {
@@ -685,6 +678,10 @@ function TempleFloor() {
   )
 }
 
+type TextureState = {
+  url: string
+  texture: THREE.Texture
+}
 
 function ChamberCardFaceArt({
   imageUrl,
@@ -697,14 +694,11 @@ function ChamberCardFaceArt({
   height: number
   label?: string
 }) {
-  const [texture, setTexture] = useState<THREE.Texture | null>(null)
-  const [failed, setFailed] = useState(false)
+  const [textureState, setTextureState] = useState<TextureState | null>(null)
+  const [failedUrl, setFailedUrl] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    setTexture(null)
-    setFailed(false)
-
     const loader = new THREE.TextureLoader()
     loader.setCrossOrigin('anonymous')
 
@@ -718,11 +712,15 @@ function ChamberCardFaceArt({
 
         loadedTexture.colorSpace = THREE.SRGBColorSpace
         loadedTexture.needsUpdate = true
-        setTexture(loadedTexture)
+
+        setTextureState((current) => {
+          current?.texture.dispose()
+          return { url: imageUrl, texture: loadedTexture }
+        })
       },
       undefined,
       () => {
-        if (!cancelled) setFailed(true)
+        if (!cancelled) setFailedUrl(imageUrl)
       },
     )
 
@@ -730,6 +728,9 @@ function ChamberCardFaceArt({
       cancelled = true
     }
   }, [imageUrl])
+
+  const texture = textureState?.url === imageUrl ? textureState.texture : null
+  const failed = failedUrl === imageUrl
 
   if (failed) {
     return (
@@ -1181,39 +1182,22 @@ export function RitualChamberScene({
   onCardActivate: (card: GrimoireCard) => void
   onAltarLanding: () => void
 }) {
-  const [manifest, setManifest] = useState<ManifestState | null>(null)
+  const [manifestPlacement, setManifestPlacement] = useState<ManifestPlacement | null>(null)
 
-  useEffect(() => {
-    if (!manifest) return
+  const manifest = useMemo<ManifestState | null>(() => {
+    if (!manifestPlacement || !altarCard) return null
 
-    const latestCard = cards.find((card) => card.id === manifest.card.id)
-    if (!latestCard) return
+    const latestCard = cards.find((card) => card.id === manifestPlacement.cardId)
+    if (!latestCard) return null
 
-    if (
-      latestCard.imageUrl === manifest.card.imageUrl &&
-      latestCard.imageStatus === manifest.card.imageStatus &&
-      latestCard.name === manifest.card.name
-    ) {
-      return
+    return {
+      ...manifestPlacement,
+      card: latestCard,
     }
-
-    setManifest((current) => {
-      if (!current || current.card.id !== latestCard.id) return current
-      return {
-        ...current,
-        card: latestCard,
-      }
-    })
-  }, [cards, manifest])
+  }, [altarCard, cards, manifestPlacement])
 
   const activationCounterRef = useRef(0)
   const ritualImpulseRef = useRef(0)
-
-  useEffect(() => {
-    if (!altarCard) {
-      setManifest(null)
-    }
-  }, [altarCard])
 
   useFrame((_, delta) => {
     ritualImpulseRef.current = THREE.MathUtils.lerp(
@@ -1232,15 +1216,15 @@ export function RitualChamberScene({
     activationCounterRef.current += 1
     onCardActivate(card)
 
-    setManifest({
-      card,
+    setManifestPlacement({
+      cardId: card.id,
       spawnPosition: position,
       spawnRotationY: rotY,
       activationId: activationCounterRef.current,
     })
   }
 
-  const handleLanding = (_activationId: number) => {
+  const handleLanding = () => {
     ritualImpulseRef.current = 1
     onAltarLanding()
   }
@@ -1307,7 +1291,6 @@ export function RitualChamberScene({
         hasOracleReading={hasOracleReading}
       />
 
-
       {/* The old TempleFloor is superseded by RotundaFloor, which is shared by
           every chamber rather than being Sanctum-only. Both drew a disc at y=0
           with rings at y 0.004-0.006, so rendering both z-fights. */}
@@ -1368,7 +1351,6 @@ export function RitualChamberScene({
       />
 
       {SHOW_LEGACY_VR_CONSOLE ? (
-
         <InWorldRitualConsole
           subject={subject}
           tradition={tradition}
@@ -1401,7 +1383,6 @@ export function RitualChamberScene({
       />
 
       {SHOW_LEGACY_CARD_ARC ? (
-
         <CardArc
           cards={cards}
           selectedId={selectedCardId}
