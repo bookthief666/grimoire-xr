@@ -71,6 +71,12 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Trace production advisory paths
+        run: |
+          npm explain protobufjs
+          npm explain @protobufjs/utf8
+          npm explain ws
+
       - name: Production dependency advisories
         continue-on-error: true
         run: npm audit --omit=dev --audit-level=high
