@@ -5,6 +5,8 @@ import type { GrimoireCard } from '../../types/grimoire'
 import { TableBar } from './AltarHardware'
 import { TABLE_Y } from './shared'
 import { TempleText } from '../TempleText'
+import { pressable } from '../pressable'
+import { canRequestCardImage, cardImageActionLabel } from './imagePolicy'
 
 function isUsableGeneratedCardImageUrl(value: string | undefined): value is string {
   if (!value) return false
@@ -18,15 +20,17 @@ function isUsableGeneratedCardImageUrl(value: string | undefined): value is stri
   )
 }
 
+type TextureState = {
+  url: string
+  texture: THREE.Texture
+}
+
 function CardFaceArt({ imageUrl }: { imageUrl: string }) {
-  const [texture, setTexture] = useState<THREE.Texture | null>(null)
-  const [failed, setFailed] = useState(false)
+  const [textureState, setTextureState] = useState<TextureState | null>(null)
+  const [failedUrl, setFailedUrl] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    setTexture(null)
-    setFailed(false)
-
     const loader = new THREE.TextureLoader()
 
     loader.load(
@@ -41,14 +45,14 @@ function CardFaceArt({ imageUrl }: { imageUrl: string }) {
         loadedTexture.flipY = false
         loadedTexture.needsUpdate = true
 
-        setTexture((currentTexture) => {
-          currentTexture?.dispose()
-          return loadedTexture
+        setTextureState((current) => {
+          current?.texture.dispose()
+          return { url: imageUrl, texture: loadedTexture }
         })
       },
       undefined,
       () => {
-        if (!cancelled) setFailed(true)
+        if (!cancelled) setFailedUrl(imageUrl)
       },
     )
 
@@ -57,6 +61,9 @@ function CardFaceArt({ imageUrl }: { imageUrl: string }) {
     }
   }, [imageUrl])
 
+  const texture = textureState?.url === imageUrl ? textureState.texture : null
+  const failed = failedUrl === imageUrl
+
   if (failed) {
     return (
       <group>
@@ -64,7 +71,6 @@ function CardFaceArt({ imageUrl }: { imageUrl: string }) {
           <planeGeometry args={[0.28, 0.45]} />
           <meshBasicMaterial color="#160807" side={THREE.DoubleSide} />
         </mesh>
-
         <TempleText
           position={[0, 0, 0.045]}
           fontSize={0.024}
@@ -86,7 +92,6 @@ function CardFaceArt({ imageUrl }: { imageUrl: string }) {
           <planeGeometry args={[0.28, 0.45]} />
           <meshBasicMaterial color="#120806" side={THREE.DoubleSide} />
         </mesh>
-
         <TempleText
           position={[0, 0, 0.045]}
           fontSize={0.024}
@@ -108,9 +113,65 @@ function CardFaceArt({ imageUrl }: { imageUrl: string }) {
         map={texture}
         transparent
         opacity={0.96}
+        toneMapped={false}
         side={THREE.DoubleSide}
       />
     </mesh>
+  )
+}
+
+function ImageAction({
+  card,
+  requesting,
+  onGenerate,
+}: {
+  card: GrimoireCard
+  requesting: boolean
+  onGenerate: () => void
+}) {
+  const disabled = !canRequestCardImage(card, requesting)
+  const label = cardImageActionLabel(card, requesting)
+  const color =
+    card.imageStatus === 'ready' && card.imageUrl
+      ? '#9fffb7'
+      : card.imageStatus === 'error'
+        ? '#ff9a7a'
+        : disabled
+          ? '#7b5536'
+          : '#d9b5ff'
+
+  return (
+    <group position={[0, 0.2, 0.05]} {...pressable(onGenerate, disabled)}>
+      <mesh position={[0, 0, -0.004]}>
+        <planeGeometry args={[0.28, 0.085]} />
+        <meshBasicMaterial
+          color={disabled ? '#0b0605' : '#24102c'}
+          transparent
+          opacity={disabled ? 0.2 : 0.68}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+      <TempleText
+        fontSize={0.021}
+        color={color}
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={0.25}
+      >
+        {label}
+      </TempleText>
+      <mesh position={[0, 0, 0.02]}>
+        <planeGeometry args={[0.34, 0.14]} />
+        <meshBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.001}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+    </group>
   )
 }
 
@@ -136,19 +197,21 @@ export function WorkbenchCard({
   onDragEnd: () => void
 }) {
   const [hovered, setHovered] = useState(false)
+  const [requestingImage, setRequestingImage] = useState(false)
   const pointerDownPointRef = useRef<THREE.Vector3 | null>(null)
-  const hasMovedRef = useRef(false)
   const cardGlowMaterialRef = useRef<THREE.MeshBasicMaterial>(null)
   const sigilRingMaterialRef = useRef<THREE.MeshBasicMaterial>(null)
   const y = TABLE_Y + (selected || hovered ? 0.13 : 0.07)
   const cardGlowOpacity = selected ? 0.34 : hovered ? 0.22 : 0.085
   const cardGlowScale = selected ? 1.18 : hovered ? 1.1 : 1
+
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime()
     const pulse = 0.5 + Math.sin(t * 2.4 + card.id * 0.73) * 0.5
 
     if (cardGlowMaterialRef.current) {
-      cardGlowMaterialRef.current.opacity = cardGlowOpacity + pulse * (selected ? 0.09 : hovered ? 0.045 : 0.015)
+      cardGlowMaterialRef.current.opacity =
+        cardGlowOpacity + pulse * (selected ? 0.09 : hovered ? 0.045 : 0.015)
     }
 
     if (sigilRingMaterialRef.current) {
@@ -159,6 +222,23 @@ export function WorkbenchCard({
           : 0.38 + pulse * 0.06
     }
   })
+
+  const requestImage = () => {
+    if (!canRequestCardImage(card, requestingImage)) return
+
+    setRequestingImage(true)
+    const result = onGenerateImage(card.id)
+
+    if (result && typeof result.then === 'function') {
+      void result
+        .catch((error) => {
+          console.error('[GRIMOIRE] Explicit image request failed', error)
+        })
+        .finally(() => setRequestingImage(false))
+    } else {
+      setRequestingImage(false)
+    }
+  }
 
   return (
     <group
@@ -175,85 +255,37 @@ export function WorkbenchCard({
       }}
       onPointerDown={(event) => {
         event.stopPropagation()
-
         const target = event.target as unknown as {
           setPointerCapture?: (pointerId: number) => void
         }
-
         const startPoint = event.point.clone()
         pointerDownPointRef.current = startPoint
-        hasMovedRef.current = false
-
         target.setPointerCapture?.(event.pointerId)
         onDragStart(startPoint)
       }}
       onPointerMove={(event) => {
         if (!pointerDownPointRef.current) return
-
         event.stopPropagation()
-
-        const moved = pointerDownPointRef.current.distanceTo(event.point)
-
-        if (moved > 0.025) {
-          hasMovedRef.current = true
+        if (pointerDownPointRef.current.distanceTo(event.point) > 0.025) {
           onDragMove(event.point.clone())
         }
       }}
       onPointerUp={(event) => {
         event.stopPropagation()
-
         const target = event.target as unknown as {
           releasePointerCapture?: (pointerId: number) => void
         }
-
         target.releasePointerCapture?.(event.pointerId)
-
         const moved = pointerDownPointRef.current
           ? pointerDownPointRef.current.distanceTo(event.point)
           : 0
-        const wasDrag = moved > 0.18
-
         pointerDownPointRef.current = null
-        hasMovedRef.current = false
         onDragEnd()
-
-        if (wasDrag) return
-
-        onSelect()
-
-        if (
-          card.artPrompt &&
-          card.imageStatus !== 'ready' &&
-          card.imageStatus !== 'generating'
-        ) {
-          console.info('[GRIMOIRE] Requesting ComfyUI image for card', {
-            id: card.id,
-            name: card.name,
-            imageStatus: card.imageStatus,
-            hasOnGenerateImage: typeof onGenerateImage,
-          })
-
-          const maybePromise = onGenerateImage(card.id)
-
-          if (maybePromise && typeof maybePromise.then === 'function') {
-            void maybePromise
-              .then((ok) => {
-                console.info('[GRIMOIRE] onGenerateImage resolved', {
-                  id: card.id,
-                  name: card.name,
-                  ok,
-                })
-              })
-              .catch((error) => {
-                console.error('[GRIMOIRE] onGenerateImage rejected', error)
-              })
-          }
-        }
+        if (moved <= 0.18) onSelect()
       }}
       onPointerCancel={(event) => {
         event.stopPropagation()
         pointerDownPointRef.current = null
-        hasMovedRef.current = false
         onDragEnd()
       }}
     >
@@ -286,8 +318,9 @@ export function WorkbenchCard({
         <meshBasicMaterial color={selected ? '#301408' : '#0b0605'} />
       </mesh>
 
-
-      {isUsableGeneratedCardImageUrl(card.imageUrl) ? <CardFaceArt imageUrl={card.imageUrl} /> : null}
+      {isUsableGeneratedCardImageUrl(card.imageUrl) ? (
+        <CardFaceArt imageUrl={card.imageUrl} />
+      ) : null}
 
       <mesh position={[0, 0.12, 0.025]}>
         <ringGeometry args={[0.045, 0.062, 18]} />
@@ -313,27 +346,12 @@ export function WorkbenchCard({
         {card.name}
       </TempleText>
 
-      <TempleText
-        position={[0, 0.2, 0.036]}
-        fontSize={0.022}
-        color={card.artPrompt ? '#d9b5ff' : '#7b5536'}
-        anchorX="center"
-        anchorY="middle"
-        maxWidth={0.26}
-      >
-        {card.imageStatus === 'ready' ? 'IMAGE SEALED' : card.artPrompt ? 'ART SEED' : 'NO IMAGE'}
-      </TempleText>
+      <ImageAction card={card} requesting={requestingImage} onGenerate={requestImage} />
     </group>
   )
 }
 
-export function DeckTray({
-  count,
-  active,
-}: {
-  count: number
-  active: boolean
-}) {
+export function DeckTray({ count, active }: { count: number; active: boolean }) {
   const haloRef = useRef<THREE.MeshBasicMaterial>(null)
   const innerRef = useRef<THREE.MeshBasicMaterial>(null)
   const stackRef = useRef<THREE.Group>(null)
@@ -354,7 +372,8 @@ export function DeckTray({
     }
 
     if (stackRef.current) {
-      stackRef.current.position.y = TABLE_Y + 0.07 + Math.sin(t * 0.9) * (active ? 0.012 : 0.004)
+      stackRef.current.position.y =
+        TABLE_Y + 0.07 + Math.sin(t * 0.9) * (active ? 0.012 : 0.004)
       stackRef.current.rotation.z = Math.sin(t * 0.45) * (active ? 0.025 : 0.008)
     }
   })
@@ -374,7 +393,10 @@ export function DeckTray({
         />
       </mesh>
 
-      <mesh position={[-1.2, TABLE_Y + 0.021, -0.04]} rotation={[-Math.PI / 2, 0, Math.PI / 8]}>
+      <mesh
+        position={[-1.2, TABLE_Y + 0.021, -0.04]}
+        rotation={[-Math.PI / 2, 0, Math.PI / 8]}
+      >
         <ringGeometry args={[0.24, 0.27, 40]} />
         <meshBasicMaterial
           ref={innerRef}
@@ -387,33 +409,32 @@ export function DeckTray({
         />
       </mesh>
 
-      {Array.from({ length: 12 }, (_, i) => {
-        const angle = (i / 12) * Math.PI * 2
+      {Array.from({ length: 12 }, (_, index) => {
+        const angle = (index / 12) * Math.PI * 2
         const inner = 0.31
-        const outer = i % 3 === 0 ? 0.43 : 0.39
-
+        const outer = index % 3 === 0 ? 0.43 : 0.39
         return (
           <TableBar
-            key={i}
+            key={index}
             a={[-1.2 + Math.cos(angle) * inner, -0.04 + Math.sin(angle) * inner]}
             b={[-1.2 + Math.cos(angle) * outer, -0.04 + Math.sin(angle) * outer]}
-            color={i % 3 === 0 ? '#ffcf7c' : '#8a35ff'}
+            color={index % 3 === 0 ? '#ffcf7c' : '#8a35ff'}
             opacity={active ? 0.38 : 0.14}
-            width={i % 3 === 0 ? 0.012 : 0.007}
+            width={index % 3 === 0 ? 0.012 : 0.007}
           />
         )
       })}
 
       <group ref={stackRef}>
-        {Array.from({ length: active ? 9 : 5 }, (_, i) => (
+        {Array.from({ length: active ? 9 : 5 }, (_, index) => (
           <mesh
-            key={i}
+            key={index}
             position={[
-              -1.2 + i * 0.006,
-              TABLE_Y + 0.055 + i * 0.008,
-              -0.04 - i * 0.004,
+              -1.2 + index * 0.006,
+              TABLE_Y + 0.055 + index * 0.008,
+              -0.04 - index * 0.004,
             ]}
-            rotation={[-Math.PI / 2, 0, -0.08 + i * 0.012]}
+            rotation={[-Math.PI / 2, 0, -0.08 + index * 0.012]}
           >
             <boxGeometry args={[0.46, 0.68, 0.018]} />
             <meshStandardMaterial
@@ -426,24 +447,15 @@ export function DeckTray({
           </mesh>
         ))}
 
-        <mesh position={[-1.2, TABLE_Y + 0.146, -0.04]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh
+          position={[-1.2, TABLE_Y + 0.146, -0.04]}
+          rotation={[-Math.PI / 2, 0, 0]}
+        >
           <planeGeometry args={[0.36, 0.54]} />
           <meshBasicMaterial
             color={active ? '#2a1208' : '#090505'}
             transparent
             opacity={active ? 0.9 : 0.72}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
-
-        <mesh position={[-1.2, TABLE_Y + 0.15, -0.04]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.055, 0.078, 20]} />
-          <meshBasicMaterial
-            color={active ? '#ffcf7c' : '#7b5536'}
-            transparent
-            opacity={active ? 0.86 : 0.34}
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
             side={THREE.DoubleSide}
           />
         </mesh>
@@ -468,21 +480,8 @@ export function DeckTray({
         color={active ? '#d9b5ff' : '#9a6b48'}
         anchorX="center"
         anchorY="middle"
-        maxWidth={0.72}
       >
         ARCANA MATRIX
-      </TempleText>
-
-      <TempleText
-        position={[-1.2, TABLE_Y + 0.066, -0.52]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        fontSize={0.026}
-        color={active ? '#9f744b' : '#5f4932'}
-        anchorX="center"
-        anchorY="middle"
-        maxWidth={0.72}
-      >
-        DECK MEMORY // SPREAD SOURCE
       </TempleText>
     </group>
   )

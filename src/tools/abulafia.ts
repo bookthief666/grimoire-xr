@@ -1,73 +1,69 @@
-/**
- * ABULAFIA.EXE — ported core logic.
- *
- * A "cognitive disassembly engine" after 13th-century Ecstatic Kabbalah:
- * semantic language is deconstructed into mathematical permutation, paced by a
- * somatic metronome. Only the pure logic is ported here — no backend, no keys —
- * so this chamber works entirely offline.
- *
- * The source project's design spec explicitly forbids ornament: deep black,
- * high-contrast white, one restrained accent. The Cell chamber honours that; it
- * is deliberately the most stripped room in the temple.
- */
+import type { SourceProvenance } from './provenance'
 
 /**
- * Heap's algorithm.
+ * ABULAFIA.EXE — offline operative reconstruction.
  *
- * Identical characters MUST stay positionally distinct — this is a stated
- * requirement of the source project, not an oversight. "YHVH" is processed as
- * four separate tokens and yields exactly 4! = 24 arrays. Deduplicating by
- * rendered string would collapse it to 12 and destroy the practice, because the
- * two He are different letters of the Name even though they draw the same.
+ * This chamber is inspired by ecstatic Kabbalistic permutation, breath and
+ * directional-vocal practices associated with Abraham Abulafia. The exact
+ * timing, UI sequence and vowel-to-world-axis mapping below are Grimoire XR
+ * practice mechanics unless and until a source-critical edition documents a
+ * specific historical instruction.
+ */
+
+export const ABULAFIA_PROVENANCE: SourceProvenance = {
+  id: 'abulafia-operative-permutation-model',
+  work: 'Ecstatic Kabbalah permutation practice',
+  author: 'Abraham Abulafia tradition / Grimoire XR reconstruction',
+  date: '13th century sources; modern VR reconstruction',
+  layer: 'operative-reconstruction',
+  claim:
+    'Letter permutation is historically inspired; the fixed 4s/4s breath clock and five world-axis mapping are application-level practice mechanics, not asserted verbatim instructions from a critical edition.',
+  reference: 'Source-critical citations pending for the specific permutation and head-direction practices represented in VR.',
+}
+
+/**
+ * Heap's algorithm. Repeated glyphs stay positionally distinct: YHVH therefore
+ * produces 4! = 24 token permutations even though some rendered strings repeat.
  */
 export function permute<T>(items: readonly T[]): T[][] {
   const out: T[][] = []
-  const a = [...items]
+  const values = [...items]
 
-  if (a.length === 0) return out
+  if (values.length === 0) return out
 
   const generate = (k: number) => {
     if (k === 1) {
-      out.push([...a])
+      out.push([...values])
       return
     }
 
-    for (let i = 0; i < k; i += 1) {
+    for (let index = 0; index < k; index += 1) {
       generate(k - 1)
-
       if (k % 2 === 0) {
-        ;[a[i], a[k - 1]] = [a[k - 1], a[i]]
+        ;[values[index], values[k - 1]] = [values[k - 1], values[index]]
       } else {
-        ;[a[0], a[k - 1]] = [a[k - 1], a[0]]
+        ;[values[0], values[k - 1]] = [values[k - 1], values[0]]
       }
     }
   }
 
-  generate(a.length)
+  generate(values.length)
   return out
 }
 
 export type Axis = 'up' | 'forward' | 'down' | 'left' | 'right'
 
 export type Vowel = {
-  /** Traditional pointing name. */
   name: string
-  /** Latin transliteration used by the source project. */
   sound: string
-  /** Niqqud mark. */
   mark: string
   axis: Axis
-  /** Unit direction in world space. Forward is -Z, matching the scene. */
   direction: readonly [number, number, number]
 }
 
 /**
- * The five canonical vowels and their spatial mapping.
- *
- * This is the single most VR-native thing in any of the three tools. On a flat
- * screen "Holam → upward" is a label you read. In VR it is a direction you
- * physically turn your head and body along while chanting, which is what the
- * practice actually asks for.
+ * Working five-vowel spatial mapping for the VR exercise. It is intentionally
+ * labelled reconstruction rather than "canonical" historical attribution.
  */
 export const VOWELS: readonly Vowel[] = [
   { name: 'Holam', sound: 'u', mark: 'ֹ', axis: 'up', direction: [0, 1, 0] },
@@ -77,7 +73,6 @@ export const VOWELS: readonly Vowel[] = [
   { name: 'Qamatz', sound: 'a', mark: 'ָ', axis: 'right', direction: [1, 0, 0] },
 ] as const
 
-/** Somatic Metronome: rigid 4s inhale, 4s exhale. Pacing is the practice. */
 export const BREATH_IN_SECONDS = 4
 export const BREATH_OUT_SECONDS = 4
 export const BREATH_CYCLE_SECONDS = BREATH_IN_SECONDS + BREATH_OUT_SECONDS
@@ -86,20 +81,21 @@ export type BreathPhase = 'inhale' | 'exhale'
 
 export type BreathState = {
   phase: BreathPhase
-  /** 0 → 1 through the current phase. */
   progress: number
-  /** Which breath of the session this is. */
   cycle: number
 }
 
-/** Where in the breath a given elapsed time falls. Pure, so it is frame-rate free. */
 export function breathAt(elapsedSeconds: number): BreathState {
-  const t = Math.max(0, elapsedSeconds)
-  const cycle = Math.floor(t / BREATH_CYCLE_SECONDS)
-  const withinCycle = t % BREATH_CYCLE_SECONDS
+  const time = Math.max(0, elapsedSeconds)
+  const cycle = Math.floor(time / BREATH_CYCLE_SECONDS)
+  const withinCycle = time % BREATH_CYCLE_SECONDS
 
   return withinCycle < BREATH_IN_SECONDS
-    ? { phase: 'inhale', progress: withinCycle / BREATH_IN_SECONDS, cycle }
+    ? {
+        phase: 'inhale',
+        progress: withinCycle / BREATH_IN_SECONDS,
+        cycle,
+      }
     : {
         phase: 'exhale',
         progress: (withinCycle - BREATH_IN_SECONDS) / BREATH_OUT_SECONDS,
@@ -107,17 +103,12 @@ export function breathAt(elapsedSeconds: number): BreathState {
       }
 }
 
-/**
- * A single letter of a Name. Structural rather than derived from the
- * Tetragrammaton literal, so other names are not forced into Y/H/V.
- */
 export type NameToken = {
   latin: string
   hebrew: string
   name: string
 }
 
-/** The Tetragrammaton, as four positionally-distinct tokens. */
 export const TETRAGRAMMATON: readonly NameToken[] = [
   { latin: 'Y', hebrew: 'י', name: 'Yod' },
   { latin: 'H', hebrew: 'ה', name: 'He' },
@@ -125,8 +116,11 @@ export const TETRAGRAMMATON: readonly NameToken[] = [
   { latin: 'H', hebrew: 'ה', name: 'He' },
 ]
 
-/** Other names available for permutation, all short enough to stay legible in VR. */
-export const NAMES: ReadonlyArray<{ id: string; label: string; tokens: readonly NameToken[] }> = [
+export const NAMES: ReadonlyArray<{
+  id: string
+  label: string
+  tokens: readonly NameToken[]
+}> = [
   { id: 'yhvh', label: 'YHVH', tokens: TETRAGRAMMATON },
   {
     id: 'ehyh',
@@ -150,10 +144,6 @@ export const NAMES: ReadonlyArray<{ id: string; label: string; tokens: readonly 
   },
 ]
 
-/**
- * One step of the practice: a permutation of the Name paired with the vowel
- * whose axis is to be faced while chanting it.
- */
 export type PermutationStep = {
   index: number
   tokens: NameToken[]
@@ -162,34 +152,25 @@ export type PermutationStep = {
   hebrew: string
 }
 
-/** Build the full ordered practice sequence for a name. */
 export function buildSequence(tokens: readonly NameToken[]): PermutationStep[] {
-  return permute(tokens).map((perm, index) => ({
+  return permute(tokens).map((permutation, index) => ({
     index,
-    tokens: perm,
+    tokens: permutation,
     vowel: vowelForStep(index),
-    latin: perm.map((t) => t.latin).join(''),
-    hebrew: perm.map((t) => t.hebrew).join(''),
+    latin: permutation.map((token) => token.latin).join(''),
+    hebrew: permutation.map((token) => token.hebrew).join(''),
   }))
 }
 
-/** Every Name here is four letters, so every sequence is 4! steps long. */
 export const SEQUENCE_LENGTH = 24
 
-/**
- * Which step of the practice a given elapsed time falls on.
- *
- * This exists so the room and the instrument cannot disagree. They are separate
- * components with no shared state, and when each derived the step from its own
- * clock offset they drifted apart — the Name displayed one vowel while a
- * different axis lit up on the wall, which defeats the whole point of the
- * chamber. Both now call this with the same raw elapsed time.
- */
-export function stepIndexAt(elapsedSeconds: number, sequenceLength = SEQUENCE_LENGTH) {
+export function stepIndexAt(
+  elapsedSeconds: number,
+  sequenceLength = SEQUENCE_LENGTH,
+) {
   return breathAt(elapsedSeconds).cycle % Math.max(1, sequenceLength)
 }
 
-/** The vowel — and therefore the axis to face — for a step of the sequence. */
 export function vowelForStep(index: number): Vowel {
   return VOWELS[index % VOWELS.length]
 }

@@ -1,15 +1,15 @@
 import { useMemo, useState } from 'react'
 import * as THREE from 'three'
 import type {
-  ForgePhase,
-  GrimoireCard,
-  TechLevel,
-  Tone,
-  Tradition,
-  TarotSystem,
   ArtStyle,
   ErosField,
   ErosLevel,
+  ForgePhase,
+  GrimoireCard,
+  TarotSystem,
+  TechLevel,
+  Tone,
+  Tradition,
 } from '../types/grimoire'
 import type { ArtStyleFamily } from '../constants/artStyles'
 import {
@@ -86,11 +86,11 @@ type RitualWorkbenchProps = {
   ) => void
 }
 
-
 export function RitualWorkbench({
   cards,
   selectedCardId,
   subject,
+  tradition,
   tarotSystem,
   tone,
   techLevel,
@@ -112,6 +112,7 @@ export function RitualWorkbench({
   onLoadArchive,
   onClearArchive,
   onSubjectChange,
+  onTraditionChange,
   onTarotSystemChange,
   onToneChange,
   onTechLevelChange,
@@ -132,9 +133,8 @@ export function RitualWorkbench({
   const [menuMode, setMenuMode] = useState<WorkbenchMode>('closed')
 
   const displayedCards = cards.slice(0, 7)
-
-  const spreadSlots = useMemo(() => {
-    return [
+  const spreadSlots = useMemo(
+    () => [
       { x: -0.52, z: -0.06, label: 'THRESHOLD' },
       { x: 0, z: -0.06, label: 'OPERATION' },
       { x: 0.52, z: -0.06, label: 'RESULT' },
@@ -142,8 +142,9 @@ export function RitualWorkbench({
       { x: 0.26, z: 0.46, label: 'KEY' },
       { x: -0.78, z: 0.46, label: 'SHADOW' },
       { x: 0.78, z: 0.46, label: 'CROWN' },
-    ]
-  }, [])
+    ],
+    [],
+  )
 
   const startCardDrag = (cardId: number, point: THREE.Vector3) => {
     setDragState({
@@ -155,7 +156,6 @@ export function RitualWorkbench({
 
   const updateCardDrag = (point: THREE.Vector3) => {
     if (!dragState) return
-
     const dx = (point.x - dragState.startPoint.x) / WORKBENCH_SCALE
     const dz = (point.z - dragState.startPoint.z) / WORKBENCH_SCALE
 
@@ -168,21 +168,12 @@ export function RitualWorkbench({
     }))
   }
 
-  const endCardDrag = () => {
-    setDragState(null)
-  }
-
   const activeSubject = subject.trim() || SUBJECT_OPTIONS[0]
   const activeIntent = intent.trim() || INTENT_OPTIONS[0]
-
   const canForge = !loading && activeSubject.length >= 2
   const canConsult =
     hasDeck && !loading && !oracleLoading && oracleQuestion.trim().length >= 3
 
-  // These two readouts share the same volume to the right of the altar, so only
-  // one may ever be mounted. The forge readout takes precedence while the user
-  // is tuning or a forge is running; otherwise the image pipeline reports on an
-  // existing deck. Idle with no deck shows neither, leaving the altar clean.
   const showForgeReadout = menuMode === 'forge' || loading || oracleLoading
   const showImagePipeline = !showForgeReadout && hasDeck
 
@@ -221,32 +212,20 @@ export function RitualWorkbench({
 
   return (
     <group position={[0, 0.82, -0.84]} scale={WORKBENCH_SCALE}>
-
       <group position={[0, 1.0, 0.055]}>
-        <mesh position={[0, 0.62, 0]}>
-          <planeGeometry args={[3.82, 0.008]} />
-          <meshBasicMaterial
-            color={railColor}
-            transparent
-            opacity={railOpacity}
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
-
-        <mesh position={[0, -0.62, 0]}>
-          <planeGeometry args={[3.82, 0.006]} />
-          <meshBasicMaterial
-            color={railColor}
-            transparent
-            opacity={railOpacity * 0.62}
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
-
+        {[0.62, -0.62].map((y, index) => (
+          <mesh key={y} position={[0, y, 0]}>
+            <planeGeometry args={[3.82, index === 0 ? 0.008 : 0.006]} />
+            <meshBasicMaterial
+              color={railColor}
+              transparent
+              opacity={index === 0 ? railOpacity : railOpacity * 0.62}
+              depthWrite={false}
+              blending={THREE.AdditiveBlending}
+              side={THREE.DoubleSide}
+            />
+          </mesh>
+        ))}
         <TempleText
           position={[0, 0.655, 0.035]}
           fontSize={0.026}
@@ -259,10 +238,6 @@ export function RitualWorkbench({
         </TempleText>
       </group>
 
-      {/* Summoned, not permanent. The forge readout owns this space while the
-          user is configuring or forging; the image pipeline only reports once a
-          deck exists. They must never both render - their bounds overlap and
-          the pipeline panel would eclipse 7 of the readout's 8 rows. */}
       {showImagePipeline ? (
         <ImagePipelineStatus
           cards={cards}
@@ -270,6 +245,7 @@ export function RitualWorkbench({
           archiveMessage={archiveMessage}
         />
       ) : null}
+
       <mesh position={[0, TABLE_Y - 0.04, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <boxGeometry args={[3.3, 1.85, 0.08]} />
         <meshStandardMaterial
@@ -293,56 +269,7 @@ export function RitualWorkbench({
         />
       </mesh>
 
-      <mesh position={[0, TABLE_Y + 0.014, 0.878]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[3.22, 0.016]} />
-        <meshBasicMaterial
-          color="#b8860b"
-          transparent
-          opacity={0.58}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh position={[0, TABLE_Y + 0.014, -0.878]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[3.22, 0.016]} />
-        <meshBasicMaterial
-          color="#b8860b"
-          transparent
-          opacity={0.38}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh position={[1.6, TABLE_Y + 0.014, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[0.016, 1.76]} />
-        <meshBasicMaterial
-          color="#b8860b"
-          transparent
-          opacity={0.44}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh position={[-1.6, TABLE_Y + 0.014, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[0.016, 1.76]} />
-        <meshBasicMaterial
-          color="#b8860b"
-          transparent
-          opacity={0.44}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
       <AltarChromeHardware railColor={railColor} forgeEnergy={forgeEnergy} />
-
       <AltarAstrolabeRings
         active={hasDeck || menuMode !== 'closed' || loading || oracleLoading || hasOracleReading}
         erosField={erosField}
@@ -352,12 +279,12 @@ export function RitualWorkbench({
         active={hasDeck || loading || oracleLoading || hasOracleReading}
         energy={forgeEnergy}
       />
-
       <DeckTray count={cards.length} active={hasDeck} />
 
       {showForgeReadout ? (
         <ForgeConfigReadout
           activeSubject={activeSubject}
+          tradition={tradition}
           tarotSystem={tarotSystem}
           tone={tone}
           techLevel={techLevel}
@@ -371,11 +298,7 @@ export function RitualWorkbench({
         />
       ) : null}
 
-      <SpreadMandala
-        active={menuMode === 'spread' || hasDeck}
-        occupied={displayedCards.length}
-      />
-
+      <SpreadMandala active={menuMode === 'spread' || hasDeck} occupied={displayedCards.length} />
       {menuMode === 'spread' || hasDeck
         ? spreadSlots.map((slot, index) => (
             <SpreadSlot
@@ -403,11 +326,8 @@ export function RitualWorkbench({
             selected={card.id === selectedCardId}
             onDragStart={(point) => startCardDrag(card.id, point)}
             onDragMove={updateCardDrag}
-            onDragEnd={endCardDrag}
-            onGenerateImage={(cardId) => {
-              console.info('[WORKBENCH] Forwarding image request to engine', { cardId })
-              return onGenerateCardImage(cardId)
-            }}
+            onDragEnd={() => setDragState(null)}
+            onGenerateImage={onGenerateCardImage}
             onSelect={() => onCardSelect(card, [x, 1.18, z - 1.0], 0)}
           />
         )
@@ -423,11 +343,11 @@ export function RitualWorkbench({
           }}
           onPointerUp={(event) => {
             event.stopPropagation()
-            endCardDrag()
+            setDragState(null)
           }}
           onPointerCancel={(event) => {
             event.stopPropagation()
-            endCardDrag()
+            setDragState(null)
           }}
         >
           <planeGeometry args={[3.8, 2.4]} />
@@ -444,6 +364,7 @@ export function RitualWorkbench({
       {menuMode === 'forge' ? (
         <FloatingForgeMenu
           activeSubject={activeSubject}
+          tradition={tradition}
           tarotSystem={tarotSystem}
           tone={tone}
           techLevel={techLevel}
@@ -455,6 +376,7 @@ export function RitualWorkbench({
           canForge={canForge}
           onBeginRitual={() => void onBeginRitual()}
           onSubjectChange={onSubjectChange}
+          onTraditionChange={onTraditionChange}
           onTarotSystemChange={onTarotSystemChange}
           onToneChange={onToneChange}
           onTechLevelChange={onTechLevelChange}
@@ -503,7 +425,11 @@ export function RitualWorkbench({
         anchorY="middle"
         maxWidth={1.7}
       >
-        {menuMode === 'forge' ? 'FORGE MENU OPEN' : menuMode === 'spread' ? 'SPREAD FIELD OPEN' : `${forgePhase.toUpperCase()} // ${hasDeck ? 'DECK ACTIVE' : 'ALTAR IDLE'}`}
+        {menuMode === 'forge'
+          ? 'FORGE MENU OPEN'
+          : menuMode === 'spread'
+            ? 'SPREAD FIELD OPEN'
+            : `${forgePhase.toUpperCase()} // ${hasDeck ? 'DECK ACTIVE' : 'ALTAR IDLE'}`}
       </TempleText>
     </group>
   )
