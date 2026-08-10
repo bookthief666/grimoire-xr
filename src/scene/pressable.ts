@@ -6,24 +6,38 @@ type PointerCaptureTarget = {
   releasePointerCapture?: (pointerId: number) => void
 }
 
+function pointerCaptureTarget(target: unknown) {
+  return target as PointerCaptureTarget
+}
+
 /**
  * Pointer capture is a reliability aid, not a reason to lose the ritual action.
  * Browser/XR adapters can report a stale or already-released pointer during
  * cancellation/session changes, so capture cleanup must be best-effort.
  */
-export function capturePointerSafely(target: PointerCaptureTarget, pointerId: number) {
+export function capturePointerSafely(target: unknown, pointerId: number) {
+  const captureTarget = pointerCaptureTarget(target)
+
   try {
-    target.setPointerCapture?.(pointerId)
+    captureTarget.setPointerCapture?.(pointerId)
     return true
   } catch {
     return false
   }
 }
 
-export function releasePointerSafely(target: PointerCaptureTarget, pointerId: number) {
+export function releasePointerSafely(target: unknown, pointerId: number) {
+  const captureTarget = pointerCaptureTarget(target)
+
   try {
-    if (target.hasPointerCapture && !target.hasPointerCapture(pointerId)) return false
-    target.releasePointerCapture?.(pointerId)
+    if (
+      captureTarget.hasPointerCapture &&
+      !captureTarget.hasPointerCapture(pointerId)
+    ) {
+      return false
+    }
+
+    captureTarget.releasePointerCapture?.(pointerId)
     return true
   } catch {
     return false
@@ -59,21 +73,21 @@ export function pressable(onActivate: () => void, disabled = false) {
       event.stopPropagation()
       if (disabled) return
 
-      capturePointerSafely(event.target as unknown as PointerCaptureTarget, event.pointerId)
+      capturePointerSafely(event.target, event.pointerId)
     },
     onPointerUp: (event: ThreeEvent<PointerEvent>) => {
       event.stopPropagation()
 
       // Always attempt cleanup first. A control may become disabled between
       // pointer-down and pointer-up while a chamber starts transitioning.
-      releasePointerSafely(event.target as unknown as PointerCaptureTarget, event.pointerId)
+      releasePointerSafely(event.target, event.pointerId)
 
       if (disabled) return
       onActivate()
     },
     onPointerCancel: (event: ThreeEvent<PointerEvent>) => {
       event.stopPropagation()
-      releasePointerSafely(event.target as unknown as PointerCaptureTarget, event.pointerId)
+      releasePointerSafely(event.target, event.pointerId)
     },
   }
 }
