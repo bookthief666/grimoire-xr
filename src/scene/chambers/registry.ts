@@ -1,17 +1,33 @@
-import { CellArchitecture, CellInstrument, CELL_ACCENT } from './CellChamber'
-import { MonadArchitecture, MonadInstrument, MONAD_ACCENT } from './MonadChamber'
-import { ChapelArchitecture, ChapelInstrument, CHAPEL_ACCENT } from './ChapelChamber'
+import {
+  CellArchitecture,
+  CellInstrument,
+  CELL_ACCENT,
+} from './CellChamber'
+import {
+  MonadArchitecture,
+  MonadInstrument,
+  MONAD_ACCENT,
+} from './MonadChamber'
+import {
+  ChapelArchitecture,
+  ChapelInstrument,
+  CHAPEL_ACCENT,
+} from './ChapelChamber'
+import { ABULAFIA_PROVENANCE } from '../../tools/abulafia'
+import { MONAS_PROVENANCE } from '../../tools/monas'
+import { LIBER333_PROVENANCE } from '../../tools/liber333'
 import type { Chamber } from './types'
 
 export const SANCTUM_ACCENT = '#ffb000'
 
 /**
- * The four chambers. Single source of truth: the summoning ring and the scene
- * both read this, so adding a tool means adding one entry here.
+ * Instrument registry: one source of truth for the temple hub.
  *
- * The Sanctum declares no Architecture or Instrument — it *is* the existing
- * temple, rendered directly by RitualChamberScene because it is bound to the
- * live grimoire engine. Every other chamber owns the whole space.
+ * The Sanctum is intentionally different from the authored chambers. It is the
+ * network-capable generative workstation bound to the live grimoire engine.
+ * Specialized chambers are deterministic/offline instruments with an explicit
+ * provenance record; future AI interpretation must sit on top of, never replace,
+ * that authored source layer.
  */
 export const CHAMBERS: readonly Chamber[] = [
   {
@@ -20,6 +36,10 @@ export const CHAMBERS: readonly Chamber[] = [
     purpose: 'Forge a deck. Lay a spread. Consult the oracle.',
     seal: '✶',
     accent: SANCTUM_ACCENT,
+    kind: 'generative-sanctum',
+    capabilities: ['gemini', 'comfyui', 'archive'],
+    offline: 'partial',
+    performanceClass: 'moderate',
   },
   {
     id: 'cell',
@@ -27,29 +47,44 @@ export const CHAMBERS: readonly Chamber[] = [
     purpose: 'Permute the Name. Breathe along the axis.',
     seal: 'א',
     accent: CELL_ACCENT,
+    kind: 'authored-instrument',
+    capabilities: ['offline-tool', 'breath-pacing', 'spatial-axis'],
+    offline: 'full',
+    performanceClass: 'light',
+    source: ABULAFIA_PROVENANCE,
     Architecture: CellArchitecture,
     Instrument: CellInstrument,
   },
   {
     id: 'monad',
     name: 'The Monad',
-    purpose: "Construct Dee's glyph, theorem by theorem.",
+    purpose: "Construct Dee's glyph as an explicitly reconstructed spatial sequence.",
     seal: '☿',
     accent: MONAD_ACCENT,
+    kind: 'authored-instrument',
+    capabilities: ['offline-tool', 'source-reading'],
+    offline: 'full',
+    performanceClass: 'light',
+    source: MONAS_PROVENANCE,
     Architecture: MonadArchitecture,
     Instrument: MonadInstrument,
   },
   {
     id: 'chapel',
     name: 'The Chapel of Lies',
-    purpose: 'Draw chapters from the Tree by gematria.',
+    purpose: 'Draw deterministic chapters through an explicitly experimental Tree map.',
     seal: '☽',
     accent: CHAPEL_ACCENT,
+    kind: 'authored-instrument',
+    capabilities: ['offline-tool', 'deterministic-oracle', 'source-reading'],
+    offline: 'full',
+    performanceClass: 'light',
+    source: LIBER333_PROVENANCE,
     Architecture: ChapelArchitecture,
     Instrument: ChapelInstrument,
   },
 ]
 
 export function chamberById(id: string) {
-  return CHAMBERS.find((c) => c.id === id) ?? CHAMBERS[0]
+  return CHAMBERS.find((chamber) => chamber.id === id) ?? CHAMBERS[0]
 }
