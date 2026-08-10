@@ -28,6 +28,10 @@ function logOracle(stage: string, startTime: number, extra?: unknown) {
   }
 }
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error)
+}
+
 function cleanJsonText(text: string) {
   return text
     .trim()
@@ -524,9 +528,9 @@ export default async function handler(
   try {
     body = await readJsonBody(request)
     logOracle('Body parsed successfully', startTime)
-  } catch (error: any) {
+  } catch (error) {
     logOracle('Body parse failed', startTime, {
-      message: error?.message || String(error),
+      message: errorMessage(error),
     })
 
     return sendJson(response, 400, {
@@ -561,9 +565,9 @@ export default async function handler(
       ok: true,
       reading,
     })
-  } catch (error: any) {
+  } catch (error) {
     logOracle('Oracle process failed', startTime, {
-      message: error?.message || String(error),
+      message: errorMessage(error),
     })
 
     return sendJson(response, 502, {
