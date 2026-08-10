@@ -4,25 +4,8 @@ import * as THREE from 'three'
 import type { Chamber, ChamberId } from './types'
 import { TempleText } from '../TempleText'
 import { pressable } from '../pressable'
+import { provenanceLabel } from '../../tools/provenance'
 
-/**
- * The one control that is always present in every chamber: four seals that
- * summon the rooms.
- *
- * Sits in the CONTROL zone (see scene/zones.ts) — hand-reach distance, below and
- * in front of the altar so it never crosses the forward sightline at eye height.
- * Input uses the pointer-down/up + pointer-capture pattern established by
- * FloatingSigilButton; bare onClick is unreliable against XR controller rays.
- */
-
-/**
- * Below and in front of the workbench's own sigil dock, not level with it.
- *
- * At y 1.02 / z -0.46 the two overlapped by 14cm vertically across 77cm of
- * width, with the dock 7cm nearer the user — so the dock silently intercepted
- * every ray aimed at a chamber seal. Dropping the ring to its own band leaves a
- * clear 2cm gap above it and puts the seals at 0.80m, inside CONTROL.
- */
 const RING_Y = 0.86
 const RING_Z = -0.3
 const RING_TILT = -0.42
@@ -46,29 +29,25 @@ function Seal({
   const coronaRef = useRef<THREE.Mesh>(null)
 
   useFrame(({ clock }) => {
-    const t = clock.getElapsedTime()
-
-    // Staggered breathing so the ring reads as living seals rather than a
-    // static toolbar. Phase-offset by x so they never pulse in unison.
-    const breath = 0.5 + Math.sin(t * 0.9 + x * 5.0) * 0.5
+    const time = clock.getElapsedTime()
+    const breath = 0.5 + Math.sin(time * 0.9 + x * 5) * 0.5
 
     if (haloRef.current) {
       const base = active ? 0.34 : hovered ? 0.26 : 0.09
       haloRef.current.opacity = base + breath * (active ? 0.16 : 0.05)
     }
 
-    if (coronaRef.current) {
-      coronaRef.current.rotation.z = t * 0.35
-    }
+    if (coronaRef.current) coronaRef.current.rotation.z = time * 0.35
 
     if (groupRef.current) {
       const target = hovered && !disabled ? 1.12 : 1
-      groupRef.current.scale.lerp(
-        new THREE.Vector3(target, target, target),
-        0.18,
-      )
+      groupRef.current.scale.lerp(new THREE.Vector3(target, target, target), 0.18)
     }
   })
+
+  const provenance = chamber.source
+    ? `${provenanceLabel(chamber.source)} · ${chamber.offline === 'full' ? 'OFFLINE' : 'NETWORK'}`
+    : 'GENERATIVE WORKSTATION · NETWORK SERVICES'
 
   return (
     <group
@@ -85,10 +64,6 @@ function Seal({
       }}
       {...pressable(onSummon, disabled)}
     >
-      {/* Halo sits behind the disc, not in front, and is tightened to stay
-          inside the seal spacing. At radius 0.15 against 0.19 spacing adjacent
-          halos physically intersected, which is why the row read as a smear of
-          coloured blobs rather than four distinct sigils. */}
       <mesh position={[0, 0, -0.002]}>
         <circleGeometry args={[0.082, 28]} />
         <meshBasicMaterial
@@ -102,15 +77,11 @@ function Seal({
         />
       </mesh>
 
-      {/* Obsidian disc the sigil is cut into. Opaque, so the seal reads as a
-          solid object rather than a glow hanging in space. */}
       <mesh>
         <circleGeometry args={[0.058, 32]} />
         <meshBasicMaterial color="#04050b" side={THREE.DoubleSide} />
       </mesh>
 
-      {/* Hairline bezel. Thin and bright reads as engraved metal; thick and
-          soft reads as a cartoon button. */}
       <mesh position={[0, 0, 0.002]}>
         <ringGeometry args={[0.058, 0.0625, 48]} />
         <meshBasicMaterial
@@ -123,7 +94,6 @@ function Seal({
         />
       </mesh>
 
-      {/* Inner engraved circle, so the glyph sits in a recess. */}
       <mesh position={[0, 0, 0.003]}>
         <ringGeometry args={[0.044, 0.0455, 40]} />
         <meshBasicMaterial
@@ -136,7 +106,6 @@ function Seal({
         />
       </mesh>
 
-      {/* Corona: only the summoned chamber wears it, and it turns. */}
       {active ? (
         <mesh ref={coronaRef} position={[0, 0, 0.004]}>
           <ringGeometry args={[0.069, 0.0735, 6]} />
@@ -169,7 +138,7 @@ function Seal({
             color="#f2f2f5"
             anchorX="center"
             anchorY="middle"
-            maxWidth={0.6}
+            maxWidth={0.7}
           >
             {chamber.name}
           </TempleText>
@@ -179,17 +148,25 @@ function Seal({
             color="#8b8b96"
             anchorX="center"
             anchorY="middle"
-            maxWidth={0.66}
+            maxWidth={0.8}
           >
             {chamber.purpose}
+          </TempleText>
+          <TempleText
+            position={[0, -0.182, 0.02]}
+            fontSize={0.021}
+            color={chamber.source ? chamber.accent : '#ffd18a'}
+            anchorX="center"
+            anchorY="middle"
+            maxWidth={0.86}
+          >
+            {provenance}
           </TempleText>
         </>
       ) : null}
 
-      {/* Generous transparent hitbox. Never visible={false} - that would stop
-          raycasting entirely and make the seal unselectable. */}
-      <mesh position={[0, 0, 0.03]}>
-        <planeGeometry args={[0.2, 0.2]} />
+      <mesh position={[0, -0.03, 0.03]}>
+        <planeGeometry args={[0.22, 0.28]} />
         <meshBasicMaterial
           color="#ffffff"
           transparent
@@ -218,7 +195,6 @@ export function SummoningRing({
 
   return (
     <group>
-      {/* A thin rail tying the seals together, so they read as one instrument. */}
       <mesh position={[0, RING_Y, RING_Z - 0.004]} rotation={[RING_TILT, 0, 0]}>
         <planeGeometry args={[chambers.length * spacing + 0.06, 0.004]} />
         <meshBasicMaterial
