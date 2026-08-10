@@ -19,15 +19,17 @@ function isUsableGeneratedCardImageUrl(value: string | undefined): value is stri
   )
 }
 
+type TextureState = {
+  url: string
+  texture: THREE.Texture
+}
+
 function CardFaceArt({ imageUrl }: { imageUrl: string }) {
-  const [texture, setTexture] = useState<THREE.Texture | null>(null)
-  const [failed, setFailed] = useState(false)
+  const [textureState, setTextureState] = useState<TextureState | null>(null)
+  const [failedUrl, setFailedUrl] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
-    setTexture(null)
-    setFailed(false)
-
     const loader = new THREE.TextureLoader()
 
     loader.load(
@@ -42,14 +44,14 @@ function CardFaceArt({ imageUrl }: { imageUrl: string }) {
         loadedTexture.flipY = false
         loadedTexture.needsUpdate = true
 
-        setTexture((currentTexture) => {
-          currentTexture?.dispose()
-          return loadedTexture
+        setTextureState((current) => {
+          current?.texture.dispose()
+          return { url: imageUrl, texture: loadedTexture }
         })
       },
       undefined,
       () => {
-        if (!cancelled) setFailed(true)
+        if (!cancelled) setFailedUrl(imageUrl)
       },
     )
 
@@ -57,6 +59,9 @@ function CardFaceArt({ imageUrl }: { imageUrl: string }) {
       cancelled = true
     }
   }, [imageUrl])
+
+  const texture = textureState?.url === imageUrl ? textureState.texture : null
+  const failed = failedUrl === imageUrl
 
   if (failed) {
     return (
@@ -147,10 +152,7 @@ function ImageAction({
         : '#d9b5ff'
 
   return (
-    <group
-      position={[0, 0.2, 0.05]}
-      {...pressable(onGenerate, disabled)}
-    >
+    <group position={[0, 0.2, 0.05]} {...pressable(onGenerate, disabled)}>
       <mesh position={[0, 0, -0.004]}>
         <planeGeometry args={[0.28, 0.085]} />
         <meshBasicMaterial
@@ -213,10 +215,6 @@ export function WorkbenchCard({
   const y = TABLE_Y + (selected || hovered ? 0.13 : 0.07)
   const cardGlowOpacity = selected ? 0.34 : hovered ? 0.22 : 0.085
   const cardGlowScale = selected ? 1.18 : hovered ? 1.1 : 1
-
-  useEffect(() => {
-    if (card.imageStatus !== 'generating') setRequestingImage(false)
-  }, [card.imageStatus])
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime()
@@ -366,11 +364,7 @@ export function WorkbenchCard({
         {card.name}
       </TempleText>
 
-      <ImageAction
-        card={card}
-        requesting={requestingImage}
-        onGenerate={requestImage}
-      />
+      <ImageAction card={card} requesting={requestingImage} onGenerate={requestImage} />
     </group>
   )
 }
@@ -404,10 +398,7 @@ export function DeckTray({ count, active }: { count: number; active: boolean }) 
 
   return (
     <group>
-      <mesh
-        position={[-1.2, TABLE_Y + 0.018, -0.04]}
-        rotation={[-Math.PI / 2, 0, 0]}
-      >
+      <mesh position={[-1.2, TABLE_Y + 0.018, -0.04]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.38, 0.43, 48]} />
         <meshBasicMaterial
           ref={haloRef}
@@ -436,33 +427,32 @@ export function DeckTray({ count, active }: { count: number; active: boolean }) 
         />
       </mesh>
 
-      {Array.from({ length: 12 }, (_, i) => {
-        const angle = (i / 12) * Math.PI * 2
+      {Array.from({ length: 12 }, (_, index) => {
+        const angle = (index / 12) * Math.PI * 2
         const inner = 0.31
-        const outer = i % 3 === 0 ? 0.43 : 0.39
-
+        const outer = index % 3 === 0 ? 0.43 : 0.39
         return (
           <TableBar
-            key={i}
+            key={index}
             a={[-1.2 + Math.cos(angle) * inner, -0.04 + Math.sin(angle) * inner]}
             b={[-1.2 + Math.cos(angle) * outer, -0.04 + Math.sin(angle) * outer]}
-            color={i % 3 === 0 ? '#ffcf7c' : '#8a35ff'}
+            color={index % 3 === 0 ? '#ffcf7c' : '#8a35ff'}
             opacity={active ? 0.38 : 0.14}
-            width={i % 3 === 0 ? 0.012 : 0.007}
+            width={index % 3 === 0 ? 0.012 : 0.007}
           />
         )
       })}
 
       <group ref={stackRef}>
-        {Array.from({ length: active ? 9 : 5 }, (_, i) => (
+        {Array.from({ length: active ? 9 : 5 }, (_, index) => (
           <mesh
-            key={i}
+            key={index}
             position={[
-              -1.2 + i * 0.006,
-              TABLE_Y + 0.055 + i * 0.008,
-              -0.04 - i * 0.004,
+              -1.2 + index * 0.006,
+              TABLE_Y + 0.055 + index * 0.008,
+              -0.04 - index * 0.004,
             ]}
-            rotation={[-Math.PI / 2, 0, -0.08 + i * 0.012]}
+            rotation={[-Math.PI / 2, 0, -0.08 + index * 0.012]}
           >
             <boxGeometry args={[0.46, 0.68, 0.018]} />
             <meshStandardMaterial
@@ -488,21 +478,6 @@ export function DeckTray({ count, active }: { count: number; active: boolean }) 
           />
         </mesh>
 
-        <mesh
-          position={[-1.2, TABLE_Y + 0.15, -0.04]}
-          rotation={[-Math.PI / 2, 0, 0]}
-        >
-          <ringGeometry args={[0.055, 0.078, 20]} />
-          <meshBasicMaterial
-            color={active ? '#ffcf7c' : '#7b5536'}
-            transparent
-            opacity={active ? 0.86 : 0.34}
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
-
         <TempleText
           position={[-1.2, TABLE_Y + 0.158, 0.12]}
           rotation={[-Math.PI / 2, 0, 0]}
@@ -523,21 +498,8 @@ export function DeckTray({ count, active }: { count: number; active: boolean }) 
         color={active ? '#d9b5ff' : '#9a6b48'}
         anchorX="center"
         anchorY="middle"
-        maxWidth={0.72}
       >
         ARCANA MATRIX
-      </TempleText>
-
-      <TempleText
-        position={[-1.2, TABLE_Y + 0.066, -0.52]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        fontSize={0.026}
-        color={active ? '#9f744b' : '#5f4932'}
-        anchorX="center"
-        anchorY="middle"
-        maxWidth={0.72}
-      >
-        DECK MEMORY // SPREAD SOURCE
       </TempleText>
     </group>
   )
