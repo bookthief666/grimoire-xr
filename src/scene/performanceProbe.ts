@@ -1,4 +1,4 @@
-import { QUEST_PERFORMANCE_BUDGET, summarizeFrameTimes } from './performance'
+import { QUEST_PERFORMANCE_BUDGET, summarizeFrameTimes } from './performance.ts'
 
 export type DrawCallCounter = {
   supported: boolean
