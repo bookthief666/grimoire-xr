@@ -91,28 +91,116 @@ function PermutationAxisPreview({ accent }: { accent: string }) {
   )
 }
 
+/**
+ * Dee's construction as one buffer.
+ *
+ * The other three previews already instance or merge their repeats; this was
+ * the last one drawing five separate meshes with five materials, three of them
+ * the same accent. The glyph is static, so the whole figure — solar ring, its
+ * centre point, the lunar crescent, and the elemental cross — can be baked into
+ * a single geometry once and submitted in one draw.
+ *
+ * Colour is carried per-vertex rather than per-material, which is what lets the
+ * white centre point and ice-white crescent share a buffer with the accent
+ * ring and cross.
+ */
+function buildMonasGeometry(accent: string) {
+  const positions: number[] = []
+  const colors: number[] = []
+
+  const accentColor = new THREE.Color(accent)
+  const white = new THREE.Color('#ffffff')
+  const ice = new THREE.Color('#d8f6ff')
+
+  const push = (x: number, y: number, z: number, colour: THREE.Color) => {
+    positions.push(x, y, z)
+    colors.push(colour.r, colour.g, colour.b)
+  }
+
+  /** Two triangles spanning an annulus segment, or a fan wedge when inner = 0. */
+  const arc = (
+    cx: number,
+    cy: number,
+    z: number,
+    inner: number,
+    outer: number,
+    from: number,
+    to: number,
+    segments: number,
+    colour: THREE.Color,
+  ) => {
+    for (let i = 0; i < segments; i += 1) {
+      const a0 = from + ((to - from) * i) / segments
+      const a1 = from + ((to - from) * (i + 1)) / segments
+      const c0 = Math.cos(a0)
+      const s0 = Math.sin(a0)
+      const c1 = Math.cos(a1)
+      const s1 = Math.sin(a1)
+
+      const xo0 = cx + c0 * outer
+      const yo0 = cy + s0 * outer
+      const xo1 = cx + c1 * outer
+      const yo1 = cy + s1 * outer
+      const xi0 = cx + c0 * inner
+      const yi0 = cy + s0 * inner
+      const xi1 = cx + c1 * inner
+      const yi1 = cy + s1 * inner
+
+      push(xi0, yi0, z, colour)
+      push(xo0, yo0, z, colour)
+      push(xo1, yo1, z, colour)
+
+      push(xi0, yi0, z, colour)
+      push(xo1, yo1, z, colour)
+      push(xi1, yi1, z, colour)
+    }
+  }
+
+  const quad = (
+    cx: number,
+    cy: number,
+    z: number,
+    halfWidth: number,
+    halfHeight: number,
+    colour: THREE.Color,
+  ) => {
+    push(cx - halfWidth, cy - halfHeight, z, colour)
+    push(cx + halfWidth, cy - halfHeight, z, colour)
+    push(cx + halfWidth, cy + halfHeight, z, colour)
+
+    push(cx - halfWidth, cy - halfHeight, z, colour)
+    push(cx + halfWidth, cy + halfHeight, z, colour)
+    push(cx - halfWidth, cy + halfHeight, z, colour)
+  }
+
+  const TAU = Math.PI * 2
+
+  // Solar circle, and the central point it never forgets.
+  arc(0, 0.12, 0, 0.17, 0.185, 0, TAU, 36, accentColor)
+  arc(0, 0.12, 0.006, 0, 0.025, 0, TAU, 16, white)
+
+  // Lunar crescent, standing above the solar body.
+  arc(0, 0.36, 0, 0.128, 0.152, 0, Math.PI, 28, ice)
+
+  // Cross of the elements, beneath.
+  quad(0, -0.11, 0, 0.009, 0.14, accentColor)
+  quad(0, -0.16, 0.002, 0.13, 0.009, accentColor)
+
+  const geometry = new THREE.BufferGeometry()
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
+  return geometry
+}
+
 function MonasConstructionPreview({ accent }: { accent: string }) {
+  const geometry = useMemo(() => buildMonasGeometry(accent), [accent])
+
+  useEffect(() => () => geometry.dispose(), [geometry])
+
   return (
     <group position={[0, 0.02, 0]}>
-      <mesh position={[0, 0.12, 0]} raycast={noRaycast}>
-        <ringGeometry args={[0.17, 0.185, 36]} />
-        <meshBasicMaterial color={accent} />
-      </mesh>
-      <mesh position={[0, 0.12, 0.006]} raycast={noRaycast}>
-        <circleGeometry args={[0.025, 16]} />
-        <meshBasicMaterial color="#ffffff" />
-      </mesh>
-      <mesh position={[0, 0.36, 0]} rotation={[0, 0, Math.PI]} raycast={noRaycast}>
-        <torusGeometry args={[0.14, 0.012, 5, 28, Math.PI]} />
-        <meshBasicMaterial color="#d8f6ff" />
-      </mesh>
-      <mesh position={[0, -0.11, 0]} raycast={noRaycast}>
-        <planeGeometry args={[0.018, 0.28]} />
-        <meshBasicMaterial color={accent} />
-      </mesh>
-      <mesh position={[0, -0.16, 0.002]} raycast={noRaycast}>
-        <planeGeometry args={[0.26, 0.018]} />
-        <meshBasicMaterial color={accent} />
+      <mesh geometry={geometry} raycast={noRaycast}>
+        <meshBasicMaterial vertexColors />
       </mesh>
     </group>
   )
