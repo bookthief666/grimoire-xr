@@ -23,45 +23,68 @@ The on-screen `?perf=1&hud=1` probe produced the first device-side comparison of
 - Cell: visual smoke passed; the supplied screenshot was captured while the five-second window was still collecting, so no completed numeric sample is recorded yet.
 - Sanctum: 17.17 ms average, 58.2 fps, 827.1 average draws / 901 worst — 72 Hz over-budget.
 
-The screenshots and numbers agree: the authored chambers are relatively light, while Sanctum is still stacking its pre-Rotunda shell (`93` pillars, local shrine/walls, Xenotheurgy, GrandArchitecture) on top of the new Rotunda plus the actual Forge/workbench surfaces.
+The screenshots and numbers agree: the authored chambers are relatively light, while Sanctum was still stacking a large pre-Rotunda environment on top of the new Rotunda plus the actual Forge/workbench surfaces.
 
-## Legacy Sanctum retirement
+## Rotunda-native Sanctum compression
 
-The duplicated pre-Rotunda Sanctum architecture is being retired from the default scene rather than deleted. `?legacySanctum=1` restores it for exact A/B comparison and regression diagnosis.
+Rather than broadly editing the large `RitualChamberScene` orchestrator or deleting functionality, the three largest pre-Rotunda decorative subsystems keep their existing public component APIs but now have compact implementations:
 
-Default Sanctum must preserve the functional surfaces:
+### `TempleAtmosphere`
+
+- now provides reactive lighting only;
+- no second cosmic void, star field, floor aura, A∴A∴ trace, or orbiting seal layer;
+- no shadow-casting key light or shadow-map pass;
+- the shared Rotunda owns the environment.
+
+### `TempleGrandArchitecture`
+
+- no second floor, remote twisted pillars, floating obelisks, distant axis, or redundant ray system;
+- replaced by a local Sanctum circuit crown behind the Forge;
+- one merged line lattice and one instanced node field provide geometric density efficiently.
+
+### `TempleXenotheurgy`
+
+- no second collection of wall circuits, obelisks, veils, star gate, and parallel room-scale installations;
+- replaced by one coherent state-reactive astral engine;
+- retains an orrery vocabulary, Babalon glyph, all 78 card loci in one instanced mesh, and instanced ritual nodes.
+
+The previous implementations remain available in Git history and the earlier qualified PR commits for forensic comparison/revert. No runtime legacy query flag is retained because it would permanently keep duplicate implementation complexity in the product surface.
+
+The local Sanctum pieces defined directly in `RitualChamberScene` — including the four legacy `93` pillars and related shrine pieces — intentionally remain for the next measured comparison. Their removal or reinterpretation will be driven by the post-compression Fold result rather than assumed in advance.
+
+## Functional invariants
+
+The compression pass must preserve:
 
 - Forge configuration and deck creation;
 - Spread and card interaction;
 - explicit/manual card-image generation;
 - Oracle and ritual tablets;
 - card manifestation/altar behavior;
-- shared station-bay and chamber switching.
-
-Only architecture and atmosphere that duplicate the shared Rotunda should disappear in this pass. Further visual density is added back deliberately after the new baseline is measured.
+- shared station-bay navigation and chamber switching.
 
 ## Performance guardrails
 
 - no postprocessing bloom;
 - one low-cost floor reflection echo under the altar, not a rendered reflection pass;
 - no raycasting on ambient wall bays;
-- keep the existing `?perf=1` probe active after the old summoning rail is retired;
+- keep the existing `?perf=1` probe active;
 - `?perf=1&hud=1` adds a DOM-only QA overlay for Fold screenshots without adding WebGL draw calls;
-- preserve a query-flag A/B path for retired Sanctum architecture;
-- measure the stripped Sanctum before another density pass.
+- no shadow-map pass in the Rotunda-native Sanctum atmosphere;
+- measure the compressed Sanctum before another density pass.
 
 ## Current verification
 
-The station-bay / altar implementation has passed the normal PR gates:
+The station-bay / altar implementation and the Rotunda-native Sanctum component replacements are required to pass the normal PR gates:
 
-- deterministic tests: pass;
-- TypeScript/Vite production build: pass;
-- ESLint: pass;
-- production/full dependency audit: pass;
-- Vercel preview: deployed.
+- deterministic tests;
+- TypeScript/Vite production build;
+- ESLint;
+- production/full dependency audit;
+- Vercel preview deployment.
 
 The station-layout tests additionally verify that wall bays remain ambient while all four altar selectors remain in `ZONES.control` and out of the central forward sightline.
 
 ## Next visual evidence
 
-After the legacy Sanctum shell is disabled by default, capture one clean Sanctum screenshot and one `?perf=1&hud=1` Sanctum screenshot on the Fold 6. Compare the result to the recorded 17.17 ms / 827.1-draw baseline before adding any replacement density. If the stripped Sanctum is comfortably healthy, the next aesthetic pass can spend that recovered budget on efficient architectural detail that actually moves the room toward the neon-rotunda reference.
+Capture one clean Sanctum screenshot and one `?perf=1&hud=1` Sanctum screenshot on the Fold 6 after the latest deployment. Compare the result to the recorded 17.17 ms / 827.1-average-draw baseline before adding any replacement density. If the compressed Sanctum is comfortably healthy, the next aesthetic pass can spend the recovered budget on efficient architectural detail that actually moves the room toward the neon-rotunda reference. If it remains over budget, the next measured targets are the local `93` pillar/shrine layer and the Forge/readout rendering density — not the authored chambers, which are already healthy in the Fold evidence.
