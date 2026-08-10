@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - agent/neon-rotunda-stations
+  pull_request:
+    branches:
+      - agent/react-xr-hardening-v2
 
 permissions:
   contents: write
