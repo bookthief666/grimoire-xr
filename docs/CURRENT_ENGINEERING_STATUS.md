@@ -7,10 +7,16 @@ This document is the canonical technical status for active development. The `CLA
 ```text
 main
   └─ claude/temple-foundation-hub
-       └─ agent/react-xr-hardening-v2   ← active hardening PR
+       └─ agent/react-xr-hardening-v2
+            └─ agent/neon-rotunda-stations
+                 └─ codex/electric-rotunda-instruments   ← published draft PR #27
 ```
 
 `main` has not been used as the direct development target for this hardening work.
+
+The Electric Rotunda slice is published as draft PR #27. Its initial visual
+commit, `aa011d1f993518dd6bedc3c9f3d494155ef34539`, is one commit ahead of the
+exact parent head and zero commits behind it.
 
 The older `claude/temple-visual-uplift-Y2JMb` branch is historical ancestry. It is not the active integration target and should not be force-renamed, rebased over, or used to replace the tested foundation.
 
@@ -133,32 +139,35 @@ For desktop XR-path testing, `?emulate=1&perf=1` may be used. Real Quest qualifi
 
 The production build still emits large lazy XR/emulation/room chunks from the current `@react-three/xr` dependency. That warning has not been hidden by raising Vite's chunk threshold. Do not change bundling or XR dependencies solely to silence the warning; measure initial-load and headset impact first.
 
+The Electric Rotunda local flat-browser smoke records 427 direct draws for idle Sanctum and 288 for Cell after retiring the remaining duplicated Sanctum room layer. The in-app browser is cadence-limited near 30 fps, so its frame time is not qualification evidence. These draw counts are a local comparison point only; Fold and Quest captures remain separate requirements.
+
 See `QUEST_QUALIFICATION.md` for the required capture sequence.
 
-## Current retained branch evidence
+## Current retained parent evidence
 
-The retained PR head immediately before this documentation update was `df1f0d42f720f9ddf03f613d9d47b592fb3e847a` and passed:
+The qualified visual parent is `agent/neon-rotunda-stations` at `6898c1fdb638a0e788e745ba73a8a19cbef7617a` (draft PR #25). The published Electric Rotunda slice is stacked from that exact commit. GitHub Actions run #95 passed test/build, lint, and both dependency-audit jobs for its initial visual commit. The corresponding Vercel preview reached Ready/DEPLOYED. Local verification also passed:
 
 - Test + production build;
 - blocking lint;
 - blocking production dependency audit;
 - blocking full dependency audit;
-- Vercel deployment check.
+- flat visual/chamber-switch smoke.
 
-The final documentation-only head must retain the same gates before this status is treated as current.
+Vercel Ready establishes that the preview deployed; it does not establish WebXR correctness, real backend image generation, or target-device performance. Fold re-capture, real backend image-generation smoke, and Quest immersive qualification are still external/device gates.
 
 ## What is still genuinely unverified
 
 No repository-side automated evidence can replace the following target-device checks:
 
 - entering a real `immersive-vr` Quest session;
-- verifying the assumed XR origin / eye-height geometry on hardware;
+- morph comfort and fixed-origin / eye-height stability on hardware; the current architecture deliberately has no locomotion;
 - controller-ray pointer capture and small-ray-drift behavior;
 - bespoke card/panel drag capture and cancellation behavior;
 - readable scale and sightlines through headset optics;
 - Monad lectern and Chapel lower-Tree layout at real headset scale;
 - sustained standalone Quest performance for every chamber;
 - repeated chamber cycles for memory/resource growth;
+- the canonical ten-minute no-context-loss check and extended 30-minute thermal/resource soak;
 - enter/exit XR lifecycle stability;
 - explicit card-art generation and retry UX with the real network/backend path.
 

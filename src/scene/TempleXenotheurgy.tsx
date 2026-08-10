@@ -16,6 +16,26 @@ const noRaycast = () => null
 const CARD_COUNT = 78
 const NODE_COUNT = 8
 
+function buildSolarRayGeometry() {
+  const positions: number[] = []
+  for (let index = 0; index < 14; index += 1) {
+    const angle = (index / 14) * Math.PI * 2
+    const inner = index % 2 === 0 ? 0.24 : 0.27
+    const outer = index % 2 === 0 ? 0.48 : 0.4
+    positions.push(
+      Math.cos(angle) * inner,
+      Math.sin(angle) * inner,
+      0,
+      Math.cos(angle) * outer,
+      Math.sin(angle) * outer,
+      0,
+    )
+  }
+  const geometry = new THREE.BufferGeometry()
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+  return geometry
+}
+
 function writeCardMatrices(mesh: THREE.InstancedMesh, dummy: THREE.Object3D) {
   for (let index = 0; index < CARD_COUNT; index += 1) {
     const major = index < 22
@@ -77,11 +97,12 @@ export function TempleXenotheurgy({
   const cardRootRef = useRef<THREE.Group>(null)
   const ringARef = useRef<THREE.Group>(null)
   const ringBRef = useRef<THREE.Group>(null)
+  const coreRootRef = useRef<THREE.Group>(null)
   const coreRef = useRef<THREE.MeshBasicMaterial>(null)
-  const veilRef = useRef<THREE.MeshBasicMaterial>(null)
   const cardsRef = useRef<THREE.InstancedMesh>(null)
   const nodesRef = useRef<THREE.InstancedMesh>(null)
   const dummy = useMemo(() => new THREE.Object3D(), [])
+  const rayGeometry = useMemo(() => buildSolarRayGeometry(), [])
 
   const active =
     loading || oracleLoading || hasActiveCard || hasOracleReading || hasDeck
@@ -91,6 +112,8 @@ export function TempleXenotheurgy({
     if (cardsRef.current) writeCardMatrices(cardsRef.current, dummy)
     if (nodesRef.current) writeNodeMatrices(nodesRef.current, dummy)
   }, [dummy])
+
+  useEffect(() => () => rayGeometry.dispose(), [rayGeometry])
 
   useFrame(({ clock }, delta) => {
     const t = clock.getElapsedTime()
@@ -105,6 +128,12 @@ export function TempleXenotheurgy({
     if (ringARef.current) ringARef.current.rotation.y += delta * (speed + impulse * 0.08)
     if (ringBRef.current) ringBRef.current.rotation.x -= delta * (speed * 0.72 + impulse * 0.05)
     if (cardRootRef.current) cardRootRef.current.rotation.z += delta * (active ? 0.014 : 0.004)
+    if (coreRootRef.current) {
+      coreRootRef.current.rotation.z -= delta * (active ? 0.08 : 0.025)
+      coreRootRef.current.scale.setScalar(
+        1 + Math.sin(t * 0.92) * 0.035 + impulse * 0.12,
+      )
+    }
 
     if (coreRef.current) {
       coreRef.current.opacity = Math.min(
@@ -116,13 +145,6 @@ export function TempleXenotheurgy({
       )
     }
 
-    if (veilRef.current) {
-      veilRef.current.opacity =
-        0.035 +
-        (active ? 0.025 : 0) +
-        (oracleActive ? 0.028 : 0) +
-        impulse * 0.04
-    }
   })
 
   const accent = oracleActive ? '#ff2bd6' : loading ? '#ffffff' : '#00e5ff'
@@ -132,26 +154,12 @@ export function TempleXenotheurgy({
     <group
       ref={rootRef}
       position={[0, 2.2, -2.95]}
-      scale={1.05}
+      scale={1.12}
       raycast={noRaycast}
     >
-      {/* One faint veil anchors the engine into the central Sanctum bay. */}
-      <mesh position={[0, 0, -0.09]} raycast={noRaycast}>
-        <circleGeometry args={[1.62, 48]} />
-        <meshBasicMaterial
-          ref={veilRef}
-          color={accent}
-          transparent
-          opacity={0.035}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
       <group ref={ringARef} raycast={noRaycast}>
         <mesh rotation={[Math.PI / 2, 0, 0]} raycast={noRaycast}>
-          <torusGeometry args={[0.78, 0.012, 6, 64]} />
+          <torusGeometry args={[0.9, 0.012, 6, 64]} />
           <meshBasicMaterial
             color={secondary}
             transparent
@@ -164,7 +172,7 @@ export function TempleXenotheurgy({
 
       <group ref={ringBRef} raycast={noRaycast}>
         <mesh rotation={[0.78, 0.2, 0.4]} raycast={noRaycast}>
-          <torusGeometry args={[0.58, 0.01, 6, 56]} />
+          <torusGeometry args={[0.68, 0.01, 6, 56]} />
           <meshBasicMaterial
             color={accent}
             transparent
@@ -175,26 +183,42 @@ export function TempleXenotheurgy({
         </mesh>
       </group>
 
-      <mesh raycast={noRaycast}>
-        <sphereGeometry args={[0.095, 12, 8]} />
-        <meshBasicMaterial
-          ref={coreRef}
-          color={oracleActive ? '#ffffff' : '#d8f6ff'}
-          transparent
-          opacity={0.28}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-        />
-      </mesh>
-
-      <group position={[0, 0, 0.04]} raycast={noRaycast}>
+      <group position={[0, 0, 0.018]} raycast={noRaycast}>
         <BabalonStarGlyph
-          radius={0.48}
+          radius={0.58}
           color={secondary}
-          opacity={active ? 0.42 : 0.18}
-          lineWidth={1.8}
+          opacity={active ? 0.62 : 0.28}
+          lineWidth={2.2}
           withRose
         />
+      </group>
+
+      {/* The solar core is the primary read; orbitals and card loci support it. */}
+      <group ref={coreRootRef} position={[0, 0, 0.085]} raycast={noRaycast}>
+        <lineSegments geometry={rayGeometry} raycast={noRaycast}>
+          <lineBasicMaterial
+            color={secondary}
+            transparent
+            opacity={active ? 0.82 : 0.48}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </lineSegments>
+        <mesh raycast={noRaycast}>
+          <ringGeometry args={[0.165, 0.22, 42]} />
+          <meshBasicMaterial color={secondary} />
+        </mesh>
+        <mesh position={[0, 0, 0.025]} raycast={noRaycast}>
+          <icosahedronGeometry args={[0.13, 1]} />
+          <meshBasicMaterial
+            ref={coreRef}
+            color={oracleActive ? '#ffffff' : '#d8f6ff'}
+            transparent
+            opacity={0.42}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+          />
+        </mesh>
       </group>
 
       {/* All seventy-eight card loci share one geometry/material draw. */}

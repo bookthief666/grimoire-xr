@@ -153,6 +153,7 @@ export function RotundaDome({ accent = NEON.cyan }: { accent?: string }) {
       {/* Meridian ribs, so the dome reads as built rather than as a painted sky. */}
       {[0, 1, 2, 3, 4, 5].map((i) => {
         const a = (i / 6) * Math.PI
+        const ribColor = [accent, NEON.cyan, NEON.magenta][i % 3]
         return (
           <mesh
             key={i}
@@ -162,9 +163,9 @@ export function RotundaDome({ accent = NEON.cyan }: { accent?: string }) {
           >
             <torusGeometry args={[DOME_RADIUS * 0.99, 0.012, 6, 48, Math.PI]} />
             <meshBasicMaterial
-              color={accent}
+              color={ribColor}
               transparent
-              opacity={0.16}
+              opacity={0.22}
               depthWrite={false}
               blending={THREE.AdditiveBlending}
             />

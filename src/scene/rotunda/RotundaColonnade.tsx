@@ -139,9 +139,18 @@ export function RotundaColonnade({ accent = NEON.cyan }: { accent?: string }) {
     const base = new THREE.Matrix4()
     const local = new THREE.Matrix4()
     const world = new THREE.Matrix4()
+    const circuitPalette = [
+      new THREE.Color(accent),
+      new THREE.Color(NEON.cyan),
+      new THREE.Color(accent),
+      new THREE.Color(NEON.magenta),
+      new THREE.Color(accent),
+      new THREE.Color(NEON.violet),
+    ]
 
     for (let i = 0; i < COLUMN_COUNT; i += 1) {
       columnMatrix(i, base)
+      const circuitColor = circuitPalette[i % circuitPalette.length]
 
       // Shaft, centred on the column's half-height.
       shaftRef.current?.setMatrixAt(
@@ -162,6 +171,7 @@ export function RotundaColonnade({ accent = NEON.cyan }: { accent?: string }) {
             local.makeTranslation(ox, COLUMN_HEIGHT / 2, 0.175),
           ),
         )
+        stripRef.current?.setColorAt(i * 2 + k, circuitColor)
       })
 
       // Capital and base bands, laid flat.
@@ -170,13 +180,16 @@ export function RotundaColonnade({ accent = NEON.cyan }: { accent?: string }) {
           .makeRotationX(-Math.PI / 2)
           .premultiply(new THREE.Matrix4().makeTranslation(0, y, 0))
         bandRef.current?.setMatrixAt(i * 2 + k, world.multiplyMatrices(base, local))
+        bandRef.current?.setColorAt(i * 2 + k, circuitColor)
       })
     }
 
     if (shaftRef.current) shaftRef.current.instanceMatrix.needsUpdate = true
     if (stripRef.current) stripRef.current.instanceMatrix.needsUpdate = true
     if (bandRef.current) bandRef.current.instanceMatrix.needsUpdate = true
-  }, [])
+    if (stripRef.current?.instanceColor) stripRef.current.instanceColor.needsUpdate = true
+    if (bandRef.current?.instanceColor) bandRef.current.instanceColor.needsUpdate = true
+  }, [accent])
 
   useFrame(({ clock }) => {
     if (!groupRef.current) return
@@ -208,7 +221,7 @@ export function RotundaColonnade({ accent = NEON.cyan }: { accent?: string }) {
       >
         <planeGeometry args={[0.014, COLUMN_HEIGHT * 0.92]} />
         <meshBasicMaterial
-          color={accent}
+          color="#ffffff"
           transparent
           opacity={0.75}
           depthWrite={false}
@@ -226,7 +239,7 @@ export function RotundaColonnade({ accent = NEON.cyan }: { accent?: string }) {
       >
         <ringGeometry args={[0.2, 0.26, 24]} />
         <meshBasicMaterial
-          color={accent}
+          color="#ffffff"
           transparent
           opacity={0.85}
           depthWrite={false}

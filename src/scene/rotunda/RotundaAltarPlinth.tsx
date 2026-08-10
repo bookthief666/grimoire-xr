@@ -4,7 +4,7 @@ import * as THREE from 'three'
 import { NEON } from '../../theme/neon'
 import { provenanceLabel } from '../../tools/provenance'
 import type { Chamber, ChamberId } from '../chambers/types'
-import { PerformanceProbe } from '../PerformanceProbe'
+import { PerformanceProbe } from '../RuntimePerformanceProbe'
 import { pressable } from '../pressable'
 import { TempleText } from '../TempleText'
 import { ROTUNDA_NAV, selectorX } from './navigationLayout'
@@ -32,6 +32,7 @@ function SummoningKey({
   const [hovered, setHovered] = useState(false)
   const groupRef = useRef<THREE.Group>(null)
   const haloRef = useRef<THREE.MeshBasicMaterial>(null)
+  const targetScale = useRef(new THREE.Vector3(1, 1, 1))
 
   useFrame(({ clock }) => {
     const t = clock.getElapsedTime()
@@ -44,7 +45,8 @@ function SummoningKey({
 
     if (groupRef.current) {
       const target = hovered && !disabled ? 1.1 : 1
-      groupRef.current.scale.lerp(new THREE.Vector3(target, target, target), 0.18)
+      targetScale.current.setScalar(target)
+      groupRef.current.scale.lerp(targetScale.current, 0.18)
     }
   })
 
@@ -134,6 +136,8 @@ export function RotundaAltarPlinth({
   onSummon: (id: ChamberId) => void
 }) {
   const [hoveredId, setHoveredId] = useState<ChamberId | null>(null)
+  const crownRef = useRef<THREE.Group>(null)
+  const fieldRef = useRef<THREE.MeshBasicMaterial>(null)
   const active = useMemo(
     () => chambers.find((chamber) => chamber.id === activeId) ?? chambers[0],
     [activeId, chambers],
@@ -141,6 +145,14 @@ export function RotundaAltarPlinth({
   const display = hoveredId
     ? chambers.find((chamber) => chamber.id === hoveredId) ?? active
     : active
+
+  useFrame(({ clock }) => {
+    const t = clock.getElapsedTime()
+    if (crownRef.current) crownRef.current.rotation.y = Math.sin(t * 0.22) * 0.08
+    if (fieldRef.current) {
+      fieldRef.current.opacity = 0.08 + (0.5 + Math.sin(t * 0.8) * 0.5) * 0.055
+    }
+  })
 
   return (
     <group>
@@ -163,53 +175,63 @@ export function RotundaAltarPlinth({
       {/* Obsidian pedestal. The selectors float above its crown inside the
           control zone; the body itself stays low enough not to block the
           forward content sightline. */}
-      <mesh position={[0, 0.31, -0.56]}>
-        <boxGeometry args={[1.08, 0.62, 0.52]} />
+      <mesh position={[0, 0.31, -0.56]} scale={[1, 1, 0.52]}>
+        <cylinderGeometry args={[0.58, 0.72, 0.62, 6]} />
         <meshStandardMaterial
-          color="#05070d"
-          emissive="#080b14"
-          emissiveIntensity={0.25}
+          color="#03050b"
+          emissive="#090d18"
+          emissiveIntensity={0.32}
           roughness={0.3}
-          metalness={0.74}
+          metalness={0.82}
         />
       </mesh>
 
-      <mesh position={[0, 0.64, -0.56]}>
-        <boxGeometry args={[1.42, 0.08, 0.7]} />
+      <mesh position={[0, 0.64, -0.56]} scale={[1, 1, 0.55]}>
+        <cylinderGeometry args={[0.76, 0.64, 0.1, 6]} />
         <meshStandardMaterial
           color="#070a12"
           emissive={display.accent}
-          emissiveIntensity={0.14}
+          emissiveIntensity={0.18}
           roughness={0.24}
           metalness={0.78}
         />
       </mesh>
 
-      <mesh position={[0, 0.686, -0.56]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[0.22, 0.235, 48]} />
-        <meshBasicMaterial
+      <group ref={crownRef} position={[0, 0.695, -0.56]}>
+        <mesh rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.43, 0.47, 6]} />
+          <meshBasicMaterial
+            ref={fieldRef}
+            color={display.accent}
+            transparent
+            opacity={0.1}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+        <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.29, 0.315, 6]} />
+          <meshBasicMaterial color={NEON.ice} transparent opacity={0.42} />
+        </mesh>
+        <mesh position={[0, 0.006, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <ringGeometry args={[0.18, 0.205, 40]} />
+          <meshBasicMaterial color={display.accent} transparent opacity={0.82} />
+        </mesh>
+        <TempleText
+          position={[0, 0.01, 0]}
+          rotation={[-Math.PI / 2, 0, 0]}
+          fontSize={0.11}
           color={display.accent}
-          transparent
-          opacity={0.72}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
+          anchorX="center"
+          anchorY="middle"
+        >
+          {display.seal}
+        </TempleText>
+      </group>
 
-      <TempleText
-        position={[0, 0.695, -0.56]}
-        rotation={[-Math.PI / 2, 0, 0]}
-        fontSize={0.11}
-        color={display.accent}
-        anchorX="center"
-        anchorY="middle"
-      >
-        {display.seal}
-      </TempleText>
-
-      <mesh position={[0, 0.39, -0.292]}>
-        <planeGeometry args={[0.92, 0.3]} />
+      <mesh position={[0, 0.39, -0.17]}>
+        <planeGeometry args={[0.88, 0.29]} />
         <meshBasicMaterial
           color={display.accent}
           transparent
@@ -220,7 +242,7 @@ export function RotundaAltarPlinth({
       </mesh>
 
       <TempleText
-        position={[0, 0.46, -0.285]}
+        position={[0, 0.46, -0.158]}
         fontSize={0.055}
         color="#ffffff"
         anchorX="center"
@@ -231,7 +253,7 @@ export function RotundaAltarPlinth({
       </TempleText>
 
       <TempleText
-        position={[0, 0.37, -0.284]}
+        position={[0, 0.37, -0.157]}
         fontSize={0.029}
         color={NEON.textDim}
         anchorX="center"
@@ -243,7 +265,7 @@ export function RotundaAltarPlinth({
       </TempleText>
 
       <TempleText
-        position={[0, 0.29, -0.284]}
+        position={[0, 0.29, -0.156]}
         fontSize={0.023}
         color={display.accent}
         anchorX="center"

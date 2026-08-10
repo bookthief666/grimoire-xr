@@ -47,6 +47,17 @@ Run on the primary Quest-class standalone headset in immersive WebXR.
 - No black-canvas or WebGL context-loss event during a ten-minute session.
 - Enter/exit immersive VR at least three times without stale controller state.
 
+### Fixed-origin comfort
+
+The current chamber contract has no teleport or smooth locomotion. Qualification
+therefore evaluates the comfort of room morphs around a stationary practitioner,
+not locomotion comfort:
+
+- the shared floor, altar, colonnade, and eye-height relationship remain fixed through every chamber morph;
+- ordinary head turns do not reveal scale jumps or unstable world motion;
+- chamber materialization does not create a vection-inducing camera move;
+- controller reach remains comfortable from the fixed origin.
+
 ### Summoning ring / chamber morph
 
 For Sanctum → Cell → Monad → Chapel → Sanctum:
@@ -117,6 +128,15 @@ Block promotion when:
 - memory growth is obvious over repeated Sanctum ↔ chamber cycles;
 - direct draw-call instrumentation is unsupported and no equivalent profiler evidence is captured.
 
+## Stability and soak capture
+
+The canonical functional gate remains a minimum ten-minute session with no
+black canvas or WebGL context loss. For this visual slice, extend the same run to
+at least 30 minutes as a thermal/resource soak. Repeatedly cycle Sanctum → Cell →
+Monad → Chapel → Sanctum and watch for rising frame time, draw count, memory,
+heat-related throttling, stale controller state, or degraded interaction. Record
+the ten-minute context-loss result and the completed 30-minute soak separately.
+
 ## Merge evidence
 
 Attach or record:
@@ -128,3 +148,4 @@ Attach or record:
 - screenshots or short recordings of any visual defect;
 - explicit confirmation that card selection no longer auto-generates art;
 - explicit confirmation that Monad controls and Chapel lower-Tree geometry do not collide at headset scale.
+- pass/fail evidence for the ten-minute context-loss gate and 30-minute thermal/resource soak.

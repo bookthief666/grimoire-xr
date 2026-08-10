@@ -17,6 +17,7 @@ import { ABULAFIA_PROVENANCE } from '../../tools/abulafia'
 import { MONAS_PROVENANCE } from '../../tools/monas'
 import { LIBER333_PROVENANCE } from '../../tools/liber333'
 import type { Chamber } from './types'
+import { CHAMBER_PREVIEW_ARTIFACTS } from './previewArtifacts'
 
 export const SANCTUM_ACCENT = '#ffb000'
 
@@ -36,6 +37,7 @@ export const CHAMBERS: readonly Chamber[] = [
     purpose: 'Forge a deck. Lay a spread. Consult the oracle.',
     seal: '✶',
     accent: SANCTUM_ACCENT,
+    previewArtifact: CHAMBER_PREVIEW_ARTIFACTS.sanctum,
     kind: 'generative-sanctum',
     capabilities: ['gemini', 'comfyui', 'archive'],
     offline: 'partial',
@@ -47,6 +49,7 @@ export const CHAMBERS: readonly Chamber[] = [
     purpose: 'Permute the Name. Breathe along the axis.',
     seal: 'א',
     accent: CELL_ACCENT,
+    previewArtifact: CHAMBER_PREVIEW_ARTIFACTS.cell,
     kind: 'authored-instrument',
     capabilities: ['offline-tool', 'breath-pacing', 'spatial-axis'],
     offline: 'full',
@@ -61,6 +64,7 @@ export const CHAMBERS: readonly Chamber[] = [
     purpose: "Construct Dee's glyph as an explicitly reconstructed spatial sequence.",
     seal: '☿',
     accent: MONAD_ACCENT,
+    previewArtifact: CHAMBER_PREVIEW_ARTIFACTS.monad,
     kind: 'authored-instrument',
     capabilities: ['offline-tool', 'source-reading'],
     offline: 'full',
@@ -75,6 +79,7 @@ export const CHAMBERS: readonly Chamber[] = [
     purpose: 'Draw deterministic chapters through an explicitly experimental Tree map.',
     seal: '☽',
     accent: CHAPEL_ACCENT,
+    previewArtifact: CHAMBER_PREVIEW_ARTIFACTS.chapel,
     kind: 'authored-instrument',
     capabilities: ['offline-tool', 'deterministic-oracle', 'source-reading'],
     offline: 'full',

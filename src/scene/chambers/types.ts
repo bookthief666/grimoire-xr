@@ -20,6 +20,12 @@ export type ChamberProps = {
 
 export type ChamberKind = 'generative-sanctum' | 'authored-instrument'
 
+export type ChamberPreviewArtifact =
+  | 'solar-forge'
+  | 'permutation-axis'
+  | 'monas-construction'
+  | 'chapter-tree'
+
 export type ChamberCapability =
   | 'gemini'
   | 'comfyui'
@@ -36,6 +42,8 @@ export type Chamber = {
   purpose: string
   seal: string
   accent: string
+  /** Verified instrument identity rendered inside its architectural station. */
+  previewArtifact: ChamberPreviewArtifact
 
   /**
    * The Sanctum is the generative magical workstation. Specialized chambers are

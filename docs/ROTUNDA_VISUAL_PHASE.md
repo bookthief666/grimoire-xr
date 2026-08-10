@@ -1,4 +1,4 @@
-# Neon Rotunda — Station Bay / Altar Phase
+# Living Electric Rotunda — Station Bay / Altar Phase
 
 This branch continues the visual-overhaul plan after the qualified React/XR hardening baseline.
 
@@ -50,7 +50,32 @@ Rather than broadly editing the large `RitualChamberScene` orchestrator or delet
 
 The previous implementations remain available in Git history and the earlier qualified PR commits for forensic comparison/revert. No runtime legacy query flag is retained because it would permanently keep duplicate implementation complexity in the product surface.
 
-The local Sanctum pieces defined directly in `RitualChamberScene` — including the four legacy `93` pillars and related shrine pieces — intentionally remain for the next measured comparison. Their removal or reinterpretation will be driven by the post-compression Fold result rather than assumed in advance.
+At the end of the first compression pass, the local Sanctum pieces defined directly in `RitualChamberScene` — including the four legacy `93` pillars and related shrine pieces — remained as the next measured target. The hero slice below records their subsequent retirement.
+
+## Electric Rotunda hero slice — 2026-08-10
+
+The next measured implementation slice retires the remaining duplicated local room layer rather than recoloring it:
+
+- removes the four independent `93` pillars and their per-mesh edge passes;
+- removes duplicated lateral wall planes, rear shrine/arch/dais, local ceiling crown, and individually drawn Sanctum ember field;
+- leaves the shared Rotunda responsible for room enclosure and celestial atmosphere;
+- converts the Sanctum circuit backdrop to an opaque architectural recess plus one merged frame/lattice;
+- removes the astral engine's full-disc veil and promotes one solar core, one Babalon star, two orbitals, one instanced 78-card field, and one instanced ritual-node field into a clear hierarchy;
+- lays the dormant card-manifestation seal into its altar surface instead of projecting an `Awaiting Selection` ring/text layer across the hero engine;
+- gives all four registered station bays a verified preview artifact: solar forge, permutation axis, Monas construction, and 22-link chapter Tree;
+- adds slow, deterministic preview pulse and uses existing colonnade/dome draws for cyan, magenta, violet, gold, and ice-white energy routing;
+- replaces the plain command plinth body with a dimensional obsidian hexagonal crown while preserving all four control-zone selector positions.
+
+No Forge, spread, card, Oracle, archive, image-generation, or chamber-switching capability was removed. The explicit image-generation policy and provenance layers are unchanged.
+
+Local in-app-browser flat smoke after the slice recorded:
+
+- Sanctum idle: 427 direct WebGL draws;
+- Cell active: 288 direct WebGL draws;
+- successful altar-driven Sanctum → Cell → Monad → Chapel → Sanctum switching;
+- no runtime error logs; the existing Three `Clock` deprecation warning remains.
+
+This browser surface is cadence-limited near 30 fps, so its frame-time result is not used as performance qualification and is not compared numerically with Fold/Quest frame time. The direct-draw result is retained as local comparative evidence only. A new Fold capture and the first real Quest `immersive-vr` capture remain required.
 
 ## Functional invariants
 
@@ -68,6 +93,7 @@ The compression pass must preserve:
 - no postprocessing bloom;
 - one low-cost floor reflection echo under the altar, not a rendered reflection pass;
 - no raycasting on ambient wall bays;
+- one shared frame subscription animates all four mounted preview artifacts;
 - keep the existing `?perf=1` probe active;
 - `?perf=1&hud=1` adds a DOM-only QA overlay for Fold screenshots without adding WebGL draw calls;
 - no shadow-map pass in the Rotunda-native Sanctum atmosphere;
@@ -75,7 +101,7 @@ The compression pass must preserve:
 
 ## Current verification
 
-The station-bay / altar implementation and the Rotunda-native Sanctum component replacements are required to pass the normal PR gates:
+For the published initial visual commit `aa011d1f993518dd6bedc3c9f3d494155ef34539`, GitHub Actions run #95 passed the normal PR gates and the Vercel preview reached Ready/DEPLOYED:
 
 - deterministic tests;
 - TypeScript/Vite production build;
@@ -83,7 +109,7 @@ The station-bay / altar implementation and the Rotunda-native Sanctum component 
 - production/full dependency audit;
 - Vercel preview deployment.
 
-The station-layout tests additionally verify that wall bays remain ambient while all four altar selectors remain in `ZONES.control` and out of the central forward sightline.
+Ready confirms deployment only; it is not WebXR or backend-image-generation evidence. The station-layout tests additionally verify that wall bays remain ambient while all four altar selectors remain in `ZONES.control` and out of the central forward sightline. A dependency-light registry contract now verifies the unique solar forge, permutation axis, Monas construction, and chapter Tree preview identities without treating that test as visual QA.
 
 ## Next visual evidence
 
