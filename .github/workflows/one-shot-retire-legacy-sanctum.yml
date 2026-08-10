@@ -1,0 +1,144 @@
+name: One-shot retire legacy Sanctum shell
+
+on:
+  push:
+    branches:
+      - agent/neon-rotunda-stations
+
+permissions:
+  contents: write
+
+jobs:
+  retire-legacy-sanctum:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout visual branch
+        uses: actions/checkout@v6
+        with:
+          ref: agent/neon-rotunda-stations
+
+      - name: Use Node 22
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Put duplicated Sanctum shell behind explicit legacy opt-in
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/scene/RitualChamberScene.tsx')
+          text = path.read_text()
+
+          old_import = "import { buildEmberField } from './deterministicField'"
+          new_import = old_import + "\nimport { legacySanctumEnabled } from './sanctumProfile'"
+          if text.count(old_import) != 1:
+              raise SystemExit('Expected exactly one deterministicField import')
+          text = text.replace(old_import, new_import, 1)
+
+          old_flags = """const SHOW_LEGACY_TEMPLE_FLOOR = false
+          const SHOW_LEGACY_VR_CONSOLE = false
+          const SHOW_LEGACY_CARD_ARC = false""".replace('          ', '')
+          new_flags = old_flags + "\nconst SHOW_LEGACY_SANCTUM_ARCHITECTURE = legacySanctumEnabled()"
+          if text.count(old_flags) != 1:
+              raise SystemExit('Expected exactly one legacy flag block')
+          text = text.replace(old_flags, new_flags, 1)
+
+          old_arch = """      <TempleXenotheurgy
+        ritualImpulseRef={ritualImpulseRef}
+        loading={loading}
+        oracleLoading={oracleLoading}
+        hasDeck={hasDeck}
+        hasActiveCard={Boolean(focusedCard)}
+        hasOracleReading={hasOracleReading}
+      />
+
+      <TempleGrandArchitecture
+        ritualImpulseRef={ritualImpulseRef}
+        loading={loading}
+        oracleLoading={oracleLoading}
+        hasDeck={hasDeck}
+        hasActiveCard={Boolean(focusedCard)}
+        hasOracleReading={hasOracleReading}
+      />"""
+          new_arch = """      {SHOW_LEGACY_SANCTUM_ARCHITECTURE ? (
+        <>
+          <TempleXenotheurgy
+            ritualImpulseRef={ritualImpulseRef}
+            loading={loading}
+            oracleLoading={oracleLoading}
+            hasDeck={hasDeck}
+            hasActiveCard={Boolean(focusedCard)}
+            hasOracleReading={hasOracleReading}
+          />
+
+          <TempleGrandArchitecture
+            ritualImpulseRef={ritualImpulseRef}
+            loading={loading}
+            oracleLoading={oracleLoading}
+            hasDeck={hasDeck}
+            hasActiveCard={Boolean(focusedCard)}
+            hasOracleReading={hasOracleReading}
+          />
+        </>
+      ) : null}"""
+          if text.count(old_arch) != 1:
+              raise SystemExit('Expected exactly one Xenotheurgy/GrandArchitecture block')
+          text = text.replace(old_arch, new_arch, 1)
+
+          old_shell = """      <LateralWalls />
+      <RearShrine ritualImpulseRef={ritualImpulseRef} />
+      <RearArch />
+      <OracleDais />
+      <Pillar x={-2.1} />
+      <Pillar x={2.1} />
+      <Pillar x={-2.2} z={-1.72} />
+      <Pillar x={2.2} z={-1.72} />
+      <CeilingCrown ritualImpulseRef={ritualImpulseRef} />"""
+          new_shell = """      {SHOW_LEGACY_SANCTUM_ARCHITECTURE ? (
+        <>
+          <LateralWalls />
+          <RearShrine ritualImpulseRef={ritualImpulseRef} />
+          <RearArch />
+          <OracleDais />
+          <Pillar x={-2.1} />
+          <Pillar x={2.1} />
+          <Pillar x={-2.2} z={-1.72} />
+          <Pillar x={2.2} z={-1.72} />
+          <CeilingCrown ritualImpulseRef={ritualImpulseRef} />
+        </>
+      ) : null}"""
+          if text.count(old_shell) != 1:
+              raise SystemExit('Expected exactly one legacy local Sanctum shell block')
+          path.write_text(text.replace(old_shell, new_shell, 1))
+          PY
+
+      - name: Refuse unrelated source edits
+        run: |
+          changed="$(git diff --name-only)"
+          test "$changed" = "src/scene/RitualChamberScene.tsx" || {
+            echo "Unexpected changed files:"
+            printf '%s\n' "$changed"
+            exit 1
+          }
+
+      - name: Install
+        run: npm ci
+
+      - name: Qualify retirement
+        run: |
+          npm test
+          npm run build
+          npm run lint
+
+      - name: Commit qualified retirement
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/scene/RitualChamberScene.tsx
+          git commit -m "perf: retire duplicated Sanctum architecture by default"
+          git push origin HEAD:agent/neon-rotunda-stations
