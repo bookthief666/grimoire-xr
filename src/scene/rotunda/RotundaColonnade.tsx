@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { NEON } from '../../theme/neon'
@@ -10,109 +10,244 @@ const noRaycast = () => null
  *
  * The floor alone left the temple half-built — past the horizon ring there was
  * nothing but black, so the space read as a lit disc suspended in void. Columns
- * and arches give the floor something to belong to and, more importantly, give
- * the eye vertical scale. A room is only as tall as its walls tell you it is.
+ * and arches give the floor something to belong to and give the eye vertical
+ * scale. A room is only as tall as its walls say it is.
  *
- * Everything here is neon line-work rather than lit stone: a dark opaque shaft
- * so the column reads as solid and occludes what is behind it, with bright
- * additive strips down its edges. That is the reference image's language, and it
- * is far cheaper than trying to light real geometry.
+ * Everything is neon line-work rather than lit stone: dark opaque shafts that
+ * depth-write so the room gains a real inside and outside, with bright additive
+ * strips down the visible faces.
+ *
+ * ## Why this is instanced and merged rather than composed
+ *
+ * A readable version of this — one `<mesh>` per shaft, strip, band and arch
+ * segment — costs about 170 draw calls. That is unaffordable here: the scene is
+ * already several times over the standalone-Quest budget, and WebXR renders
+ * once per eye. Since every column is the same object at a different angle, and
+ * every arch segment shares one material, the whole colonnade collapses to six
+ * draws: four instanced meshes and one merged arch geometry, plus the
+ * entablature.
  */
 
 const COLUMN_COUNT = 12
 const RING_RADIUS = 6.4
 const COLUMN_HEIGHT = 4.6
 const CENTRE_Z = -1.0
+const ARCH_SEGMENTS = 9
+const STRIP_OFFSET = 0.11
+const SPAN = (Math.PI * 2 * RING_RADIUS) / COLUMN_COUNT
 
-/** One column: dark shaft, lit edges, base and capital. */
-function Column({
-  angle,
-  accent,
-}: {
-  angle: number
-  accent: string
-}) {
-  const x = Math.sin(angle) * RING_RADIUS
-  const z = Math.cos(angle) * RING_RADIUS + CENTRE_Z
-
-  return (
-    <group position={[x, 0, z]} rotation={[0, angle, 0]} raycast={noRaycast}>
-      {/* Opaque shaft. Depth-writing, so the additive glow of anything beyond
-          the colonnade is correctly occluded and the room gains a real inside
-          and outside. */}
-      <mesh position={[0, COLUMN_HEIGHT / 2, 0]} raycast={noRaycast}>
-        <cylinderGeometry args={[0.17, 0.21, COLUMN_HEIGHT, 8]} />
-        <meshBasicMaterial color={NEON.void} />
-      </mesh>
-
-      {/* Vertical neon strips down the visible face. Two, offset, so the column
-          reads as round rather than as a flat card. */}
-      {[-0.11, 0.11].map((ox) => (
-        <mesh
-          key={ox}
-          position={[ox, COLUMN_HEIGHT / 2, 0.175]}
-          raycast={noRaycast}
-        >
-          <planeGeometry args={[0.014, COLUMN_HEIGHT * 0.92]} />
-          <meshBasicMaterial
-            color={accent}
-            transparent
-            opacity={0.75}
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
-      ))}
-
-      {/* Capital and base: bright horizontal bands that terminate the shaft. */}
-      {[0.12, COLUMN_HEIGHT - 0.16].map((y) => (
-        <mesh
-          key={y}
-          position={[0, y, 0]}
-          rotation={[-Math.PI / 2, 0, 0]}
-          raycast={noRaycast}
-        >
-          <ringGeometry args={[0.2, 0.26, 24]} />
-          <meshBasicMaterial
-            color={accent}
-            transparent
-            opacity={0.85}
-            depthWrite={false}
-            blending={THREE.AdditiveBlending}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
-      ))}
-    </group>
+/** World transform of column `i`: on the ring, turned to face the centre. */
+function columnMatrix(i: number, out: THREE.Matrix4) {
+  const a = (i / COLUMN_COUNT) * Math.PI * 2
+  return out.compose(
+    new THREE.Vector3(
+      Math.sin(a) * RING_RADIUS,
+      0,
+      Math.cos(a) * RING_RADIUS + CENTRE_Z,
+    ),
+    new THREE.Quaternion().setFromEuler(new THREE.Euler(0, a, 0)),
+    new THREE.Vector3(1, 1, 1),
   )
 }
 
 /**
- * The arcade ring: a bright band running around the tops of the columns, plus
- * the arch curves between them. This is what closes the colonnade into a single
- * piece of architecture rather than twelve separate posts.
+ * All arch curves as one geometry.
+ *
+ * Each arch spans the gap between two columns as a half-ellipse of short quads.
+ * Rather than emitting 12 x 9 meshes, every quad is written directly into a
+ * single buffer in world space.
  */
-function Arcade({ accent }: { accent: string }) {
-  const arches = useMemo(() => {
-    // One arch per gap between neighbouring columns. Built as a flattened torus
-    // arc sitting in the plane tangent to the ring.
-    return Array.from({ length: COLUMN_COUNT }, (_, i) => {
-      const a = ((i + 0.5) / COLUMN_COUNT) * Math.PI * 2
-      return {
-        key: i,
-        x: Math.sin(a) * RING_RADIUS,
-        z: Math.cos(a) * RING_RADIUS + CENTRE_Z,
-        rotY: a,
+function buildArchGeometry() {
+  const positions: number[] = []
+  const half = 0.01 // half the 0.02 ribbon width
+
+  const p = new THREE.Vector3()
+  const m = new THREE.Matrix4()
+
+  for (let arch = 0; arch < COLUMN_COUNT; arch += 1) {
+    // Arches sit half a bay round from the columns, at capital height.
+    const a = ((arch + 0.5) / COLUMN_COUNT) * Math.PI * 2
+    m.compose(
+      new THREE.Vector3(
+        Math.sin(a) * RING_RADIUS,
+        COLUMN_HEIGHT - 0.16,
+        Math.cos(a) * RING_RADIUS + CENTRE_Z,
+      ),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(0, a, 0)),
+      new THREE.Vector3(1, 1, 1),
+    )
+
+    for (let s = 0; s < ARCH_SEGMENTS; s += 1) {
+      const t0 = (s / ARCH_SEGMENTS) * Math.PI
+      const t1 = ((s + 1) / ARCH_SEGMENTS) * Math.PI
+      const rx = SPAN * 0.42
+      const ry = 0.62
+
+      const x0 = Math.cos(t0) * rx
+      const y0 = Math.sin(t0) * ry
+      const x1 = Math.cos(t1) * rx
+      const y1 = Math.sin(t1) * ry
+
+      // Perpendicular in the arch plane, so the ribbon keeps a constant width.
+      const dx = x1 - x0
+      const dy = y1 - y0
+      const len = Math.hypot(dx, dy) || 1
+      const nx = (-dy / len) * half
+      const ny = (dx / len) * half
+
+      const corners: Array<[number, number]> = [
+        [x0 + nx, y0 + ny],
+        [x0 - nx, y0 - ny],
+        [x1 - nx, y1 - ny],
+        [x1 + nx, y1 + ny],
+      ]
+
+      // Two triangles per quad, transformed into world space as we go.
+      for (const [ci0, ci1, ci2] of [
+        [0, 1, 2],
+        [0, 2, 3],
+      ]) {
+        for (const ci of [ci0, ci1, ci2]) {
+          p.set(corners[ci][0], corners[ci][1], 0).applyMatrix4(m)
+          positions.push(p.x, p.y, p.z)
+        }
       }
-    })
+    }
+  }
+
+  const geom = new THREE.BufferGeometry()
+  geom.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(positions, 3),
+  )
+  return geom
+}
+
+export function RotundaColonnade({ accent = NEON.cyan }: { accent?: string }) {
+  const groupRef = useRef<THREE.Group>(null)
+  const shaftRef = useRef<THREE.InstancedMesh>(null)
+  const stripRef = useRef<THREE.InstancedMesh>(null)
+  const bandRef = useRef<THREE.InstancedMesh>(null)
+
+  const archGeometry = useMemo(() => buildArchGeometry(), [])
+
+  // Dispose the merged buffer on unmount; it is built imperatively, so React
+  // will not clean it up for us.
+  useEffect(() => () => archGeometry.dispose(), [archGeometry])
+
+  useEffect(() => {
+    const base = new THREE.Matrix4()
+    const local = new THREE.Matrix4()
+    const world = new THREE.Matrix4()
+
+    for (let i = 0; i < COLUMN_COUNT; i += 1) {
+      columnMatrix(i, base)
+
+      // Shaft, centred on the column's half-height.
+      shaftRef.current?.setMatrixAt(
+        i,
+        world.multiplyMatrices(
+          base,
+          local.makeTranslation(0, COLUMN_HEIGHT / 2, 0),
+        ),
+      )
+
+      // Two lit strips per column, offset either side of the facing edge, so
+      // the shaft reads as round rather than as a flat card.
+      ;[-STRIP_OFFSET, STRIP_OFFSET].forEach((ox, k) => {
+        stripRef.current?.setMatrixAt(
+          i * 2 + k,
+          world.multiplyMatrices(
+            base,
+            local.makeTranslation(ox, COLUMN_HEIGHT / 2, 0.175),
+          ),
+        )
+      })
+
+      // Capital and base bands, laid flat.
+      ;[0.12, COLUMN_HEIGHT - 0.16].forEach((y, k) => {
+        local
+          .makeRotationX(-Math.PI / 2)
+          .premultiply(new THREE.Matrix4().makeTranslation(0, y, 0))
+        bandRef.current?.setMatrixAt(i * 2 + k, world.multiplyMatrices(base, local))
+      })
+    }
+
+    if (shaftRef.current) shaftRef.current.instanceMatrix.needsUpdate = true
+    if (stripRef.current) stripRef.current.instanceMatrix.needsUpdate = true
+    if (bandRef.current) bandRef.current.instanceMatrix.needsUpdate = true
   }, [])
 
-  const span = (Math.PI * 2 * RING_RADIUS) / COLUMN_COUNT
+  useFrame(({ clock }) => {
+    if (!groupRef.current) return
+    // Almost imperceptible drift. The architecture should feel alive without
+    // ever reading as spinning scenery.
+    groupRef.current.rotation.y = Math.sin(clock.getElapsedTime() * 0.05) * 0.012
+  })
 
   return (
-    <group raycast={noRaycast}>
-      {/* Entablature: the ring that ties every capital together. */}
+    <group ref={groupRef} raycast={noRaycast}>
+      {/* Shafts. Opaque and depth-writing, so additive glow beyond the
+          colonnade is correctly occluded. */}
+      <instancedMesh
+        ref={shaftRef}
+        args={[undefined, undefined, COLUMN_COUNT]}
+        raycast={noRaycast}
+        frustumCulled={false}
+      >
+        <cylinderGeometry args={[0.17, 0.21, COLUMN_HEIGHT, 8]} />
+        <meshBasicMaterial color={NEON.void} />
+      </instancedMesh>
+
+      {/* Vertical neon strips. */}
+      <instancedMesh
+        ref={stripRef}
+        args={[undefined, undefined, COLUMN_COUNT * 2]}
+        raycast={noRaycast}
+        frustumCulled={false}
+      >
+        <planeGeometry args={[0.014, COLUMN_HEIGHT * 0.92]} />
+        <meshBasicMaterial
+          color={accent}
+          transparent
+          opacity={0.75}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </instancedMesh>
+
+      {/* Capital and base bands. */}
+      <instancedMesh
+        ref={bandRef}
+        args={[undefined, undefined, COLUMN_COUNT * 2]}
+        raycast={noRaycast}
+        frustumCulled={false}
+      >
+        <ringGeometry args={[0.2, 0.26, 24]} />
+        <meshBasicMaterial
+          color={accent}
+          transparent
+          opacity={0.85}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </instancedMesh>
+
+      {/* Every arch curve, in one draw. */}
+      <mesh geometry={archGeometry} raycast={noRaycast} frustumCulled={false}>
+        <meshBasicMaterial
+          color={accent}
+          transparent
+          opacity={0.55}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+
+      {/* Entablature: the rings that tie every capital together. */}
       {[COLUMN_HEIGHT - 0.05, COLUMN_HEIGHT + 0.12].map((y, i) => (
         <mesh
           key={y}
@@ -131,72 +266,6 @@ function Arcade({ accent }: { accent: string }) {
           />
         </mesh>
       ))}
-
-      {/* Arch curves. A half-ellipse of short segments spanning each gap. */}
-      {arches.map((arch) => (
-        <group
-          key={arch.key}
-          position={[arch.x, COLUMN_HEIGHT - 0.16, arch.z]}
-          rotation={[0, arch.rotY, 0]}
-          raycast={noRaycast}
-        >
-          {Array.from({ length: 9 }, (_, s) => {
-            const t0 = (s / 9) * Math.PI
-            const t1 = ((s + 1) / 9) * Math.PI
-            const rx = span * 0.42
-            const ry = 0.62
-            const p0: [number, number] = [Math.cos(t0) * rx, Math.sin(t0) * ry]
-            const p1: [number, number] = [Math.cos(t1) * rx, Math.sin(t1) * ry]
-            const dx = p1[0] - p0[0]
-            const dy = p1[1] - p0[1]
-
-            return (
-              <mesh
-                key={s}
-                position={[(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, 0]}
-                rotation={[0, 0, Math.atan2(dy, dx)]}
-                raycast={noRaycast}
-              >
-                <planeGeometry args={[Math.hypot(dx, dy) * 1.06, 0.02]} />
-                <meshBasicMaterial
-                  color={accent}
-                  transparent
-                  opacity={0.55}
-                  depthWrite={false}
-                  blending={THREE.AdditiveBlending}
-                  side={THREE.DoubleSide}
-                />
-              </mesh>
-            )
-          })}
-        </group>
-      ))}
-    </group>
-  )
-}
-
-export function RotundaColonnade({ accent = NEON.cyan }: { accent?: string }) {
-  const groupRef = useRef<THREE.Group>(null)
-
-  useFrame(({ clock }) => {
-    if (!groupRef.current) return
-    // Almost imperceptible drift. The architecture should feel alive without
-    // ever reading as spinning scenery.
-    groupRef.current.rotation.y = Math.sin(clock.getElapsedTime() * 0.05) * 0.012
-  })
-
-  const columns = useMemo(
-    () =>
-      Array.from({ length: COLUMN_COUNT }, (_, i) => (i / COLUMN_COUNT) * Math.PI * 2),
-    [],
-  )
-
-  return (
-    <group ref={groupRef} raycast={noRaycast}>
-      {columns.map((a) => (
-        <Column key={a} angle={a} accent={accent} />
-      ))}
-      <Arcade accent={accent} />
     </group>
   )
 }
