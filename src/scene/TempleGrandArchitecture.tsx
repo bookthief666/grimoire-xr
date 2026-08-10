@@ -32,7 +32,14 @@ const CIRCUIT_LINKS: ReadonlyArray<readonly [number, number]> = [
 ]
 
 function buildCircuitGeometry() {
-  const positions: number[] = []
+  const positions: number[] = [
+    -1.16, -1.18, 0, 1.16, -1.18, 0,
+    1.16, -1.18, 0, 1.16, 0.7, 0,
+    1.16, 0.7, 0, 0.72, 1.18, 0,
+    0.72, 1.18, 0, -0.72, 1.18, 0,
+    -0.72, 1.18, 0, -1.16, 0.7, 0,
+    -1.16, 0.7, 0, -1.16, -1.18, 0,
+  ]
 
   for (const [a, b] of CIRCUIT_LINKS) {
     const start = CIRCUIT_POINTS[a]
@@ -112,9 +119,9 @@ export function TempleGrandArchitecture({
 
     if (haloRef.current) {
       const target =
-        0.055 +
-        (active ? 0.05 : 0) +
-        (oracleActive ? 0.045 : 0) +
+        0.1 +
+        (active ? 0.07 : 0) +
+        (oracleActive ? 0.055 : 0) +
         impulse * 0.08
       haloRef.current.opacity = THREE.MathUtils.lerp(
         haloRef.current.opacity,
@@ -133,25 +140,19 @@ export function TempleGrandArchitecture({
       scale={1.18}
       raycast={noRaycast}
     >
-      {/* One dark recess gives the crown visual mass without another room wall. */}
-      <mesh position={[0, 0.02, -0.055]} raycast={noRaycast}>
-        <planeGeometry args={[2.65, 2.75]} />
-        <meshBasicMaterial
-          color="#02050b"
-          transparent
-          opacity={0.58}
-          depthWrite
-          side={THREE.DoubleSide}
-        />
+      {/* Opaque recess: architecture supplies depth without a full-screen veil. */}
+      <mesh position={[0, 0.02, -0.13]} raycast={noRaycast}>
+        <boxGeometry args={[2.62, 2.78, 0.2]} />
+        <meshBasicMaterial color="#02050b" />
       </mesh>
 
-      <mesh position={[0, 0.02, -0.07]} raycast={noRaycast}>
-        <planeGeometry args={[2.85, 2.95]} />
+      <mesh position={[0, 0.05, -0.018]} raycast={noRaycast}>
+        <ringGeometry args={[1.18, 1.27, 56]} />
         <meshBasicMaterial
           ref={haloRef}
           color={accent}
           transparent
-          opacity={0.055}
+          opacity={0.12}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
           side={THREE.DoubleSide}

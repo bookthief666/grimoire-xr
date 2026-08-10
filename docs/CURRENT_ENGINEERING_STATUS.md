@@ -7,7 +7,9 @@ This document is the canonical technical status for active development. The `CLA
 ```text
 main
   └─ claude/temple-foundation-hub
-       └─ agent/react-xr-hardening-v2   ← active hardening PR
+       └─ agent/react-xr-hardening-v2
+            └─ agent/neon-rotunda-stations
+                 └─ codex/electric-rotunda-instruments   ← active local slice
 ```
 
 `main` has not been used as the direct development target for this hardening work.
@@ -133,19 +135,21 @@ For desktop XR-path testing, `?emulate=1&perf=1` may be used. Real Quest qualifi
 
 The production build still emits large lazy XR/emulation/room chunks from the current `@react-three/xr` dependency. That warning has not been hidden by raising Vite's chunk threshold. Do not change bundling or XR dependencies solely to silence the warning; measure initial-load and headset impact first.
 
+The Electric Rotunda local flat-browser smoke records 427 direct draws for idle Sanctum and 288 for Cell after retiring the remaining duplicated Sanctum room layer. The in-app browser is cadence-limited near 30 fps, so its frame time is not qualification evidence. These draw counts are a local comparison point only; Fold and Quest captures remain separate requirements.
+
 See `QUEST_QUALIFICATION.md` for the required capture sequence.
 
-## Current retained branch evidence
+## Current retained parent evidence
 
-The retained PR head immediately before this documentation update was `df1f0d42f720f9ddf03f613d9d47b592fb3e847a` and passed:
+The qualified visual parent is `agent/neon-rotunda-stations` at `6898c1fdb638a0e788e745ba73a8a19cbef7617a` (draft PR #25). The active Electric Rotunda slice is stacked from that exact commit and has passed locally:
 
 - Test + production build;
 - blocking lint;
 - blocking production dependency audit;
 - blocking full dependency audit;
-- Vercel deployment check.
+- flat visual/chamber-switch smoke.
 
-The final documentation-only head must retain the same gates before this status is treated as current.
+Fold re-capture, real backend image-generation smoke, Vercel preview, and Quest immersive qualification are still external/device gates; they must not be inferred from this local evidence.
 
 ## What is still genuinely unverified
 

@@ -5,6 +5,7 @@ import type { Chamber, ChamberId } from '../chambers/types'
 import { TempleText } from '../TempleText'
 import { NeonSign } from './NeonSign'
 import { stationPose } from './navigationLayout'
+import { StationPreviewArtifact } from './StationPreviewArtifact'
 
 const noRaycast = () => null
 
@@ -39,9 +40,9 @@ function StationBay({
     >
       {/* Dark architectural recess. It depth-writes, so the signage reads as
           mounted into the rotunda wall instead of floating in the void. */}
-      <mesh position={[0, 0.12, -0.035]} raycast={noRaycast}>
-        <planeGeometry args={[1.88, 2.24]} />
-        <meshBasicMaterial color="#03050a" transparent opacity={0.94} />
+      <mesh position={[0, 0.12, -0.11]} raycast={noRaycast}>
+        <boxGeometry args={[1.88, 2.24, 0.18]} />
+        <meshBasicMaterial color="#03050a" />
       </mesh>
 
       {/* One cheap halo behind the whole bay instead of bloom/postprocessing. */}
@@ -50,7 +51,7 @@ function StationBay({
         <meshBasicMaterial
           color={chamber.accent}
           transparent
-          opacity={active ? 0.075 : 0.025}
+          opacity={active ? 0.12 : 0.045}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
@@ -62,7 +63,7 @@ function StationBay({
         <meshBasicMaterial
           color={chamber.accent}
           transparent
-          opacity={active ? 0.9 : 0.42}
+          opacity={active ? 0.96 : 0.56}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
         />
@@ -74,10 +75,23 @@ function StationBay({
           <meshBasicMaterial
             color={chamber.accent}
             transparent
-            opacity={active ? 0.78 : 0.34}
+            opacity={active ? 0.84 : 0.46}
             depthWrite={false}
             blending={THREE.AdditiveBlending}
             side={THREE.DoubleSide}
+          />
+        </mesh>
+      ))}
+
+      {[-0.68, 0.72].map((y) => (
+        <mesh key={y} position={[0, y, 0.006]} raycast={noRaycast}>
+          <planeGeometry args={[1.42, 0.018]} />
+          <meshBasicMaterial
+            color={chamber.accent}
+            transparent
+            opacity={active ? 0.58 : 0.22}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
           />
         </mesh>
       ))}
@@ -86,36 +100,18 @@ function StationBay({
         <NeonSign label={chamber.name} accent={chamber.accent} active={active} />
       </group>
 
-      <mesh position={[0, 0.18, 0.012]} raycast={noRaycast}>
-        <ringGeometry args={[0.29, 0.305, 48]} />
-        <meshBasicMaterial
-          color={chamber.accent}
-          transparent
-          opacity={active ? 0.95 : 0.48}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
+      <group position={[0, 0.2, 0.035]}>
+        <StationPreviewArtifact
+          kind={chamber.previewArtifact}
+          accent={chamber.accent}
+          active={active}
+          phaseOffset={index * 1.37}
         />
-      </mesh>
-
-      <mesh position={[0, 0.18, -0.002]} raycast={noRaycast}>
-        <circleGeometry args={[0.275, 40]} />
-        <meshBasicMaterial color={NEON.void} />
-      </mesh>
+      </group>
 
       <TempleText
-        position={[0, 0.18, 0.03]}
-        fontSize={0.23}
-        color={active ? '#ffffff' : chamber.accent}
-        anchorX="center"
-        anchorY="middle"
-      >
-        {chamber.seal}
-      </TempleText>
-
-      <TempleText
-        position={[0, -0.23, 0.026]}
-        fontSize={0.062}
+        position={[0, -0.37, 0.026]}
+        fontSize={0.057}
         color={NEON.text}
         anchorX="center"
         anchorY="middle"
@@ -126,7 +122,7 @@ function StationBay({
       </TempleText>
 
       <TempleText
-        position={[0, -0.53, 0.026]}
+        position={[0, -0.58, 0.026]}
         fontSize={0.044}
         color={active ? chamber.accent : NEON.textDim}
         anchorX="center"

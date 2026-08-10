@@ -43,7 +43,7 @@ function updateHud(element: HTMLDivElement, report: GrimoirePerformanceReport) {
 }
 
 /**
- * Opt-in QA probe. Add `?perf=1` to measure. Add `&hud=1` to show the latest
+ * Opt-in runtime QA probe. Add `?perf=1` to measure. Add `&hud=1` to show the latest
  * stable report as a DOM overlay for Fold/phone screenshots.
  *
  * The HUD lives outside WebGL, so it does not add Three draw calls. Every stable
