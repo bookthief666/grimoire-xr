@@ -66,8 +66,18 @@ export function releasePointerSafely(target: unknown, pointerId: number) {
  * Pair it with a generous transparent hitbox — `opacity: 0.001`,
  * `depthWrite: false`. Never `visible={false}`, which stops raycasting entirely
  * and makes the control unhittable.
+ *
+ * `onActivate` receives the pointer event, so a control can decide something
+ * from *where* it was hit — the Forge's dials read the local x of the hit to
+ * step forward or back from a single target instead of paying for two. Handlers
+ * that do not care can ignore it. Deriving that by overriding `onPointerUp` on
+ * top of a spread `pressable()` would drop the best-effort release above, which
+ * exists because XR adapters report stale pointers during session changes.
  */
-export function pressable(onActivate: () => void, disabled = false) {
+export function pressable(
+  onActivate: (event: ThreeEvent<PointerEvent>) => void,
+  disabled = false,
+) {
   return {
     onPointerDown: (event: ThreeEvent<PointerEvent>) => {
       event.stopPropagation()
@@ -83,7 +93,7 @@ export function pressable(onActivate: () => void, disabled = false) {
       releasePointerSafely(event.target, event.pointerId)
 
       if (disabled) return
-      onActivate()
+      onActivate(event)
     },
     onPointerCancel: (event: ThreeEvent<PointerEvent>) => {
       event.stopPropagation()

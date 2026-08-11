@@ -26,7 +26,7 @@ import {
   AltarChromeHardware,
   TableHexagram,
 } from './workbench/AltarHardware'
-import { FloatingForgeMenu, ForgeConfigReadout } from './workbench/ForgeMenu'
+import { FloatingForgeMenu } from './workbench/ForgeMenu'
 import { SpreadMandala, SpreadSlot } from './workbench/SpreadField'
 import { DeckTray, WorkbenchCard } from './workbench/WorkbenchCards'
 import { FloatingArchiveMenu, FloatingSigilDock } from './workbench/SigilDock'
@@ -174,8 +174,8 @@ export function RitualWorkbench({
   const canConsult =
     hasDeck && !loading && !oracleLoading && oracleQuestion.trim().length >= 3
 
-  const showForgeReadout = menuMode === 'forge' || loading || oracleLoading
-  const showImagePipeline = !showForgeReadout && hasDeck
+  const forgeContextActive = menuMode === 'forge' || loading || oracleLoading
+  const showImagePipeline = !forgeContextActive && hasDeck
 
   const forgeEnergy: ForgeEnergy =
     loading || oracleLoading
@@ -281,22 +281,11 @@ export function RitualWorkbench({
       />
       <DeckTray count={cards.length} active={hasDeck} />
 
-      {showForgeReadout ? (
-        <ForgeConfigReadout
-          activeSubject={activeSubject}
-          tradition={tradition}
-          tarotSystem={tarotSystem}
-          tone={tone}
-          techLevel={techLevel}
-          activeIntent={activeIntent}
-          artStyleFamily={artStyleFamily}
-          artStyle={artStyle}
-          erosLevel={erosLevel}
-          forgePhase={forgePhase}
-          loading={loading || oracleLoading}
-          canForge={canForge}
-        />
-      ) : null}
+      {/* The ACTIVE FORGE CONFIG readout is gone. It was a second plate
+          repeating the same nine values the dials already show, and together
+          with the menu's own plate it cost about 156 draws — the Sanctum went
+          from 267 to 423 the moment the Forge opened, against a 300 ceiling.
+          Status now rides a single inscribed band inside the menu. */}
 
       <SpreadMandala active={menuMode === 'spread' || hasDeck} occupied={displayedCards.length} />
       {menuMode === 'spread' || hasDeck
