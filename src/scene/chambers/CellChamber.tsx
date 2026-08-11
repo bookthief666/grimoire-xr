@@ -1,19 +1,26 @@
-import { useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import {
+  GATES_PER_LETTER,
   NAMES,
   VOWELS,
   breathAt,
-  buildSequence,
-  stepIndexAt,
-  vowelForStep,
+  createPracticeSession,
+  getPracticePosition,
+  renderPermutation,
+  renderPermutationHebrew,
   type Axis,
 } from '../../tools/abulafia'
+import { GATE_TABLE, STUDY_SECTIONS } from '../../tools/abulafiaStudy'
+import { PROVENANCE_LABELS } from '../../tools/provenance'
 import { USER_EYE_VR } from '../zones'
 import type { ChamberProps } from './types'
 import { TempleText } from '../TempleText'
+import { ScriptureArc } from '../ScriptureArc'
 import { pressable } from '../pressable'
+import { cellControlPose } from './cellReaderLayout'
+import { cellPractice } from './cellPracticeState'
 
 /**
  * THE CELL — abulafia.exe
@@ -151,13 +158,52 @@ function AxisMarker({
   )
 }
 
+/**
+ * A press target with no plate behind it: the visible mark is the label, the
+ * hit area an invisible quad sized for a controller ray.
+ */
+function CellKey({
+  label,
+  color = '#c8ced4',
+  size = 0.03,
+  width = 0.3,
+  onPress,
+}: {
+  label: string
+  color?: string
+  size?: number
+  width?: number
+  onPress: () => void
+}) {
+  return (
+    <group {...pressable(onPress)}>
+      <TempleText fontSize={size} color={color} anchorX="center" anchorY="middle">
+        {label}
+      </TempleText>
+      <mesh position={[0, 0, 0.01]}>
+        <planeGeometry args={[width, 0.1]} />
+        <meshBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.001}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+    </group>
+  )
+}
+
 export function CellArchitecture({ morphRef, active }: ChamberProps) {
   const floorRef = useRef<THREE.MeshBasicMaterial>(null)
-  const [step, setStep] = useState(0)
+  const [gateAxis, setGateAxis] = useState<Axis>(VOWELS[0].axis)
 
-  // The active axis is derived from elapsed time so the architecture and the
-  // instrument stay locked to the same breath without prop-drilling.
-  useFrame(({ clock }) => {
+  // The lit axis comes from the instrument's practice position, not from this
+  // component's own clock. Deriving it independently held while both sides ran
+  // free but broke under the transport: pausing froze the readout while the
+  // wall kept advancing, so the Name asked for one direction and another stayed
+  // lit. Turning to face the axis you are sounding is the whole premise here.
+  useFrame(() => {
     const m = morphRef.current
 
     if (floorRef.current) {
@@ -165,13 +211,10 @@ export function CellArchitecture({ morphRef, active }: ChamberProps) {
     }
 
     if (!active) return
-    // Same raw clock and same derivation as the instrument, so the axis that
-    // lights is always the one the displayed permutation is asking you to face.
-    const next = stepIndexAt(clock.getElapsedTime())
-    setStep((prev) => (prev === next ? prev : next))
-  })
 
-  const activeVowel = vowelForStep(step)
+    const next = cellPractice.position?.gate.axis
+    if (next && next !== gateAxis) setGateAxis(next)
+  })
 
   const grid = useMemo(() => {
     const lines: Array<[number, number, number, number]> = []
@@ -224,7 +267,7 @@ export function CellArchitecture({ morphRef, active }: ChamberProps) {
           axis={v.axis}
           label={v.name}
           sound={v.sound}
-          active={active && v.axis === activeVowel.axis}
+          active={active && v.axis === gateAxis}
           morphRef={morphRef}
         />
       ))}
@@ -235,15 +278,28 @@ export function CellArchitecture({ morphRef, active }: ChamberProps) {
 export function CellInstrument({ morphRef, active }: ChamberProps) {
   const [nameIndex, setNameIndex] = useState(0)
   const [running, setRunning] = useState(true)
-  const [manualStep, setManualStep] = useState(0)
+  const [showStudy, setShowStudy] = useState(false)
+  const [studyPage, setStudyPage] = useState(0)
 
   const groupRef = useRef<THREE.Group>(null)
   const breathRef = useRef<THREE.Mesh>(null)
   const breathMatRef = useRef<THREE.MeshBasicMaterial>(null)
-  const [display, setDisplay] = useState({ step: 0, phase: 'inhale', progress: 0 })
+
+  // Breath count is held in refs, not state: it advances every frame and must
+  // not re-render. `held` accumulates the breaths skipped while paused so
+  // resuming continues where the practice stopped rather than jumping to
+  // wherever the wall clock has reached.
+  const breathRef2 = useRef(0)
+  const heldRef = useRef(0)
+  const manualRef = useRef(0)
+
+  const [display, setDisplay] = useState({
+    breath: 0,
+    phase: 'inhale' as 'inhale' | 'exhale',
+  })
 
   const name = NAMES[nameIndex]
-  const sequence = useMemo(() => buildSequence(name.tokens), [name])
+  const session = useMemo(() => createPracticeSession(name.tokens), [name])
 
   useFrame(({ clock }) => {
     const m = morphRef.current
@@ -255,156 +311,236 @@ export function CellInstrument({ morphRef, active }: ChamberProps) {
 
     if (!active) return
 
-    // Raw clock, with no per-component offset. An earlier version started its
-    // own timer here, which put the instrument on a different breath count from
-    // the architecture: the Name asked for one axis while a different one lit
-    // on the wall. Both sides now read the same clock.
     const elapsed = clock.getElapsedTime()
     const breath = breathAt(elapsed)
 
     // Inhale swells the ring, exhale releases it. This is the metronome the
     // practice is paced by, so it drives the visuals rather than decorating them.
-    const swell =
-      breath.phase === 'inhale' ? breath.progress : 1 - breath.progress
+    const swell = breath.phase === 'inhale' ? breath.progress : 1 - breath.progress
 
     if (breathRef.current) {
-      const s = 0.82 + swell * 0.34
-      breathRef.current.scale.setScalar(s * m)
+      breathRef.current.scale.setScalar((0.82 + swell * 0.34) * m)
     }
     if (breathMatRef.current) {
       breathMatRef.current.opacity = (0.2 + swell * 0.45) * m
     }
 
-    const stepIndex = running ? stepIndexAt(elapsed, sequence.length) : manualStep
+    if (running) {
+      breathRef2.current = breath.cycle - heldRef.current + manualRef.current
+    } else {
+      // Freeze the count and bank the breaths passing while held.
+      heldRef.current = breath.cycle - breathRef2.current + manualRef.current
+    }
+
+    const position = getPracticePosition(session, breathRef2.current)
+
+    // The architecture reads this to light the matching axis. Written every
+    // frame so the wall can never disagree with the readout, including while
+    // held or stepped by hand.
+    cellPractice.position = position
 
     if (
-      display.step !== stepIndex ||
-      display.phase !== breath.phase ||
-      Math.abs(display.progress - breath.progress) > 0.05
+      display.breath !== breathRef2.current ||
+      display.phase !== breath.phase
     ) {
-      setDisplay({ step: stepIndex, phase: breath.phase, progress: breath.progress })
+      setDisplay({ breath: breathRef2.current, phase: breath.phase })
     }
   })
 
-  const current = sequence[display.step % sequence.length]
+  const position = getPracticePosition(session, display.breath)
+  const letter = position.currentLetter ?? position.currentPermutation[0]
+  const gate = position.gate
+
+  type CellAction = 'hold' | 'step' | 'name' | 'study' | 'page'
+
+  const runAction = useCallback(
+    (action: CellAction) => {
+      if (action === 'hold') setRunning((r) => !r)
+      if (action === 'step') manualRef.current += 1
+      if (action === 'name') {
+        setNameIndex((i) => (i + 1) % NAMES.length)
+        heldRef.current = 0
+        manualRef.current = 0
+        breathRef2.current = 0
+        cellPractice.position = null
+        setStudyPage(0)
+      }
+      if (action === 'study') {
+        setShowStudy((open) => !open)
+        setStudyPage(0)
+      }
+      if (action === 'page') setStudyPage((p) => (p + 1) % STUDY_SECTIONS.length)
+    },
+    [],
+  )
+
+  // Data, not closures. The controls table is mapped during render, and the
+  // lint rule correctly refuses to let a ref-touching function ride along in it.
+  const controls: Array<{
+    label: string
+    action: CellAction
+    color?: string
+    width?: number
+  }> = [
+    { label: running ? 'HOLD' : 'RESUME', action: 'hold', color: '#c8ced4' },
+    { label: 'STEP ▸', action: 'step', color: '#c8ced4' },
+    { label: name.label, action: 'name', color: CELL_ACCENT },
+    {
+      label: showStudy ? '▪ STUDY' : '◇ STUDY',
+      action: 'study',
+      color: showStudy ? CELL_ACCENT : '#8a949c',
+      width: 0.36,
+    },
+  ]
+
+  if (showStudy) {
+    controls.push({
+      label: `${studyPage + 1}/${STUDY_SECTIONS.length} ▸`,
+      action: 'page',
+      color: '#8a949c',
+      width: 0.28,
+    })
+  }
+
+  const section = STUDY_SECTIONS[studyPage]
 
   return (
-    <group ref={groupRef} position={[0, 1.34, -0.95]}>
-      {/* Breath ring. Its diameter is the metronome. */}
-      <mesh ref={breathRef}>
-        <ringGeometry args={[0.42, 0.432, 64]} />
-        <meshBasicMaterial
-          ref={breathMatRef}
+    <group>
+      {/* The letter being worked, held at the centre. The old panel showed the
+          whole permutation at once; the practice works one letter at a time and
+          the room should say which. */}
+      <group ref={groupRef} position={[0, 1.34, -0.95]}>
+        <mesh ref={breathRef}>
+          <ringGeometry args={[0.42, 0.432, 64]} />
+          <meshBasicMaterial
+            ref={breathMatRef}
+            color={CELL_ACCENT}
+            transparent
+            opacity={0.3}
+            depthWrite={false}
+            blending={THREE.AdditiveBlending}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+
+        <TempleText
+          position={[0, 0.06, 0]}
+          fontSize={0.26}
+          color="#ffffff"
+          anchorX="center"
+          anchorY="middle"
+        >
+          {letter?.hebrew ?? ''}
+        </TempleText>
+
+        <TempleText
+          position={[0, -0.14, 0]}
+          fontSize={0.062}
           color={CELL_ACCENT}
-          transparent
-          opacity={0.3}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <TempleText
-        position={[0, 0.1, 0]}
-        fontSize={0.19}
-        color="#ffffff"
-        anchorX="center"
-        anchorY="middle"
-        letterSpacing={0.18}
-      >
-        {current.hebrew}
-      </TempleText>
-
-      <TempleText
-        position={[0, -0.08, 0]}
-        fontSize={0.072}
-        color={CELL_ACCENT}
-        anchorX="center"
-        anchorY="middle"
-        letterSpacing={0.3}
-      >
-        {current.latin}
-      </TempleText>
-
-      <TempleText
-        position={[0, -0.17, 0]}
-        fontSize={0.03}
-        color="#8a949c"
-        anchorX="center"
-        anchorY="middle"
-      >
-        {`${current.vowel.name.toUpperCase()} · ${current.vowel.sound} · ${current.vowel.axis.toUpperCase()}`}
-      </TempleText>
-
-      <TempleText
-        position={[0, -0.235, 0]}
-        fontSize={0.025}
-        color="#4d565e"
-        anchorX="center"
-        anchorY="middle"
-      >
-        {`${(display.step % sequence.length) + 1} / ${sequence.length}   ${display.phase.toUpperCase()}`}
-      </TempleText>
-
-      {/* Controls, kept to the minimum the practice needs. */}
-      <group position={[0, -0.34, 0.02]}>
-        <group position={[-0.2, 0, 0]} {...pressable(() => setRunning((r) => !r))}>
-          <TempleText fontSize={0.032} color="#c8ced4" anchorX="center" anchorY="middle">
-            {running ? 'HOLD' : 'RESUME'}
-          </TempleText>
-          <mesh position={[0, 0, 0.01]}>
-            <planeGeometry args={[0.2, 0.09]} />
-            <meshBasicMaterial
-              color="#ffffff"
-              transparent
-              opacity={0.001}
-              depthWrite={false}
-              side={THREE.DoubleSide}
-            />
-          </mesh>
-        </group>
-
-        <group
-          position={[0.06, 0, 0]}
-          {...pressable(() => setManualStep((s) => (s + 1) % sequence.length))}
+          anchorX="center"
+          anchorY="middle"
+          letterSpacing={0.3}
         >
-          <TempleText fontSize={0.032} color="#c8ced4" anchorX="center" anchorY="middle">
-            STEP
-          </TempleText>
-          <mesh position={[0, 0, 0.01]}>
-            <planeGeometry args={[0.18, 0.09]} />
-            <meshBasicMaterial
-              color="#ffffff"
-              transparent
-              opacity={0.001}
-              depthWrite={false}
-              side={THREE.DoubleSide}
-            />
-          </mesh>
-        </group>
-
-        <group
-          position={[0.29, 0, 0]}
-          {...pressable(() => {
-            setNameIndex((i) => (i + 1) % NAMES.length)
-            setManualStep(0)
-          })}
-        >
-          <TempleText fontSize={0.032} color={CELL_ACCENT} anchorX="center" anchorY="middle">
-            {name.label}
-          </TempleText>
-          <mesh position={[0, 0, 0.01]}>
-            <planeGeometry args={[0.22, 0.09]} />
-            <meshBasicMaterial
-              color="#ffffff"
-              transparent
-              opacity={0.001}
-              depthWrite={false}
-              side={THREE.DoubleSide}
-            />
-          </mesh>
-        </group>
+          {letter?.latin ?? ''}
+        </TempleText>
       </group>
+
+      {/* The gate: what to sound, and where to turn. */}
+      <ScriptureArc
+        radius={2.0}
+        y={1.86}
+        fontSize={0.036}
+        color={CELL_ACCENT}
+        opacity={0.85}
+        maxWidth={2.6}
+        shelf={false}
+      >
+        {position.isComplete
+          ? 'THE SESSION IS COMPLETE'
+          : `${gate.name.toUpperCase()} · ${gate.sound.toUpperCase()} · ${gate.axis.toUpperCase()}`}
+      </ScriptureArc>
+
+      <ScriptureArc
+        radius={2.0}
+        y={1.7}
+        fontSize={0.028}
+        color="#7c868e"
+        maxWidth={2.8}
+        shelf={false}
+      >
+        {`${display.phase.toUpperCase()} · GATE ${position.gateIndex + 1}/${GATES_PER_LETTER} · LETTER ${position.letterIndex + 1}/${session.lettersPerPermutation} · PERMUTATION ${position.permutationIndex + 1}/${session.totalPermutations}`}
+      </ScriptureArc>
+
+      {/* The arrangement this letter belongs to, so the permutation stays
+          visible while a single letter holds the centre. */}
+      <ScriptureArc
+        radius={2.3}
+        y={0.86}
+        fontSize={0.05}
+        color="#c8ced4"
+        opacity={0.9}
+        maxWidth={2.6}
+        shelfColor={CELL_ACCENT}
+        shelfOpacity={0.16}
+      >
+        {renderPermutationHebrew(position.currentPermutation)}
+      </ScriptureArc>
+
+      <ScriptureArc
+        radius={2.3}
+        y={0.7}
+        fontSize={0.03}
+        color="#5f6970"
+        maxWidth={2.6}
+        shelf={false}
+      >
+        {`${renderPermutation(position.currentPermutation)}  ·  BREATH ${Math.min(display.breath + 1, session.totalBreaths)} / ${session.totalBreaths}`}
+      </ScriptureArc>
+
+      {showStudy ? (
+        <>
+          <ScriptureArc
+            radius={2.75}
+            y={0.44}
+            fontSize={0.03}
+            color={CELL_ACCENT}
+            opacity={0.8}
+            maxWidth={3.4}
+            shelf={false}
+          >
+            {`${section.kicker.toUpperCase()} · ${section.title} · ${PROVENANCE_LABELS[section.layer]}`}
+          </ScriptureArc>
+
+          <ScriptureArc
+            radius={2.75}
+            y={0.26}
+            fontSize={0.036}
+            color="#aab4bc"
+            opacity={0.92}
+            maxWidth={3.6}
+            shelfColor={CELL_ACCENT}
+            shelfOpacity={0.12}
+          >
+            {section.id === 'gates'
+              ? `${section.body[0]}  —  ${GATE_TABLE.map((g) => `${g.vowel} ${g.sound} ${g.direction}`).join('  ·  ')}`
+              : section.body.join('  ')}
+          </ScriptureArc>
+        </>
+      ) : null}
+
+      {controls.map((control, i) => {
+        const pose = cellControlPose(i, controls.length)
+        return (
+          <group key={control.label} position={pose.position} rotation={[0, pose.rotationY, 0]}>
+            <CellKey
+              label={control.label}
+              color={control.color}
+              width={control.width}
+              onPress={() => runAction(control.action)}
+            />
+          </group>
+        )
+      })}
     </group>
   )
 }

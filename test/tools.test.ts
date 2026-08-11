@@ -6,9 +6,8 @@ import {
   BREATH_CYCLE_SECONDS,
   TETRAGRAMMATON,
   breathAt,
-  buildSequence,
+  createPracticeSession,
   permute,
-  stepIndexAt,
 } from '../src/tools/abulafia.ts'
 import {
   GLYPH_PHASES,
@@ -27,6 +26,10 @@ import {
 } from '../src/tools/liber333.ts'
 
 test('Abulafia permutations preserve positional duplicates', () => {
+  // Deliberately changed. buildSequence() paired one vowel with each of 24
+  // permutations, which is not the practice: the original walks letters within
+  // a permutation and five gates within a letter. It is replaced by
+  // createPracticeSession(). Full coverage is in test/abulafia-practice.ts.
   const permutations = permute(TETRAGRAMMATON)
   assert.equal(permutations.length, 24)
 
@@ -35,16 +38,20 @@ test('Abulafia permutations preserve positional duplicates', () => {
   )
   assert.ok(new Set(rendered).size < rendered.length)
 
-  const sequence = buildSequence(TETRAGRAMMATON)
-  assert.equal(sequence.length, 24)
-  assert.deepEqual(sequence[0].tokens.length, 4)
+  const session = createPracticeSession(TETRAGRAMMATON)
+  assert.equal(session.totalPermutations, 24)
+  assert.equal(session.lettersPerPermutation, 4)
+  assert.equal(session.totalBreaths, 480)
 })
 
 test('Abulafia breath clock is deterministic at phase boundaries', () => {
   assert.deepEqual(breathAt(0), { phase: 'inhale', progress: 0, cycle: 0 })
   assert.equal(breathAt(4).phase, 'exhale')
   assert.equal(breathAt(BREATH_CYCLE_SECONDS).cycle, 1)
-  assert.equal(stepIndexAt(BREATH_CYCLE_SECONDS * 25, 24), 1)
+
+  // stepIndexAt() is gone with buildSequence(): it mapped a breath straight
+  // onto a permutation index, skipping the letter and gate levels entirely.
+  assert.equal(breathAt(BREATH_CYCLE_SECONDS * 25).cycle, 25)
 })
 
 test('Abulafia practice advertises reconstruction provenance', () => {
