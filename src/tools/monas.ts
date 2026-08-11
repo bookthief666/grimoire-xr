@@ -1,29 +1,50 @@
 import type { SourceProvenance } from './provenance'
+import { MONAS_SENTENCES, type MonasSentence } from './monasCorpus.ts'
 
 /**
- * MONAS HIEROGLYPHICA — six-phase VR construction model.
+ * MONAS HIEROGLYPHICA — sourced fragment, inscribed as a construction.
  *
- * IMPORTANT: this module is an operative reconstruction for Grimoire XR. It is
- * not a transcription of Dee's twenty-four theorems and the six phases below
- * must not be represented as verbatim Dee Latin or as Dee's theorem sequence.
+ * Until this port every entry here carried the literal string
+ * 'OPERATIVE RECONSTRUCTION — NOT A DEE QUOTATION' in its source-language slot,
+ * because the XR app had no sourced text. That was the honest thing to do at
+ * the time. It is no longer the situation: the original edition
+ * (bookthief666/monas-hieroglyphica) carries Dee's Latin with its own account
+ * of how it was checked, a translation, a paraphrase, and commentary in up to
+ * seven registers. All of it is ported in ./monasCorpus.ts.
  *
- * The phase model exists because point, extension, enclosure, solar/lunar
- * relation and elemental cross make a useful spatial construction grammar in
- * VR. Source-critical text should be added separately and tagged as primary
- * source or translation through the provenance contract.
+ * What remains a Grimoire XR construct is the SIX-PHASE ORDER — point, line,
+ * circle, sun, moon, cross — which is the glyph's assembly grammar for VR, not
+ * Dee's theorem sequence. Both sequences are now real and they are not the
+ * same: theorem 1 is the `circle` phase, theorem 2 covers `line` and `point`.
+ * The chamber shows both rather than collapsing them.
  */
 
+/**
+ * What this corpus does and does not cover.
+ *
+ * Stated as data so a test can assert the code and the documentation cannot
+ * drift apart — the same discipline the Liber 333 corpus convention uses.
+ */
+export const MONAS_CORPUS_SCOPE = Object.freeze({
+  sentences: 13,
+  /** Dee's theorems represented in the sourced fragment. */
+  coveredTheorems: [1, 2, 3, 4, 6] as readonly number[],
+  /** Theorems in the actual work. The fragment is not the book. */
+  theoremsInWork: 24,
+})
+
 export const MONAS_PROVENANCE: SourceProvenance = {
-  id: 'dee-monas-operative-model',
+  id: 'dee-monas-sourced-fragment',
   work: 'Monas Hieroglyphica',
   author: 'John Dee',
   date: '1564',
-  layer: 'operative-reconstruction',
+  layer: 'primary-source',
   claim:
-    'The six-stage point/line/circle/sun/moon/cross sequence is a Grimoire XR interface model, not a verbatim transcription or historical theorem numbering.',
-  reference: 'John Dee, Monas Hieroglyphica (Antwerp, 1564), 24 theorems.',
+    "Latin is Dee's, as transcribed by the source edition, which supplies its own note on how each sentence was checked. The translation and commentary are that edition's. The six-phase construction order is a Grimoire XR interface model and is not Dee's theorem sequence.",
+  reference:
+    'John Dee, Monas Hieroglyphica (Antwerp, 1564), 24 theorems. This edition carries a sourced fragment: 13 sentences across theorems 1, 2, 3, 4 and 6.',
   notes:
-    'Replace reconstruction copy only with source-checked transcription/translation stored as a separate provenance layer.',
+    'The remaining nineteen theorems are absent. Do not compose Latin to fill the gap; extend only from a source-checked edition.',
 }
 
 export type GlyphPhase = 'point' | 'line' | 'circle' | 'sun' | 'moon' | 'cross'
@@ -37,105 +58,32 @@ export const GLYPH_PHASES: readonly GlyphPhase[] = [
   'cross',
 ] as const
 
-export type Theorem = {
-  /** Internal phase number. This is NOT Dee's theorem number. */
-  number: number
-  phase: GlyphPhase
-  title: string
-  /** Provenance notice shown in the source-language slot of the current lectern. */
-  latin: string
-  /** Grimoire XR operative description, not a historical translation. */
-  english: string
-  commentary: string
+/** Every sourced sentence for a construction phase, in the edition's order. */
+export function sentencesForPhase(phase: GlyphPhase): MonasSentence[] {
+  return MONAS_SENTENCES.filter((sentence) => sentence.phase === phase)
 }
 
-const RECONSTRUCTION_NOTICE = 'OPERATIVE RECONSTRUCTION — NOT A DEE QUOTATION'
+/** The first sourced sentence for a phase. Every phase has at least one. */
+export function sentenceForPhase(phase: GlyphPhase): MonasSentence {
+  return sentencesForPhase(phase)[0]
+}
 
-/**
- * Six internal construction phases for the VR instrument.
- *
- * The existing chamber UI still calls these "THEOREMA" for visual continuity;
- * the displayed source slot now makes their status explicit. A later source-
- * edition slice should rename that UI label and add the complete 24-theorem
- * source corpus beside this operative model.
- */
-export const THEOREMS: readonly Theorem[] = [
-  {
-    number: 1,
-    phase: 'point',
-    title: 'The Point',
-    latin: RECONSTRUCTION_NOTICE,
-    english:
-      'Begin from a single unextended centre. Hold attention there before permitting the figure to acquire direction or magnitude.',
-    commentary:
-      'GEOMETRY  The point functions here as the operational origin.\n' +
-      'INTERPRETATION  This is a VR construction cue, not a claim that Dee begins his first theorem with this wording.\n' +
-      'OPERATION  Fix the centre and let no second figure appear yet.',
-  },
-  {
-    number: 2,
-    phase: 'line',
-    title: 'Extension',
-    latin: RECONSTRUCTION_NOTICE,
-    english:
-      'Extend the centre into direction. The line is treated here as the first visible motion of the operation.',
-    commentary:
-      'GEOMETRY  Extension introduces direction and relation.\n' +
-      'INTERPRETATION  Grimoire XR uses this as the second construction phase; it is not Dee theorem II in source order.\n' +
-      'OPERATION  Draw the centre outward without yet closing a boundary.',
-  },
-  {
-    number: 3,
-    phase: 'circle',
-    title: 'Enclosure',
-    latin: RECONSTRUCTION_NOTICE,
-    english:
-      'Sweep extension around the centre until a boundary appears. The operation now has an inside, an outside and a retained origin.',
-    commentary:
-      'GEOMETRY  Rotation of a radius produces enclosure.\n' +
-      'INTERPRETATION  The circle is used as a spatial vessel in this application model.\n' +
-      'OPERATION  Close the figure and hold the distinction between centre and circumference.',
-  },
-  {
-    number: 4,
-    phase: 'sun',
-    title: 'Solar Mark',
-    latin: RECONSTRUCTION_NOTICE,
-    english:
-      'Restore the centre within the circle and read the combined figure as a solar sign: boundary made intelligible by its origin.',
-    commentary:
-      'SYMBOLISM  Circle plus central point forms the familiar solar character.\n' +
-      'INTERPRETATION  This phase visualizes a relation used by the Monas; it is not a standalone quotation from Dee.\n' +
-      'OPERATION  Let circumference and centre be apprehended simultaneously.',
-  },
-  {
-    number: 5,
-    phase: 'moon',
-    title: 'Lunar Relation',
-    latin: RECONSTRUCTION_NOTICE,
-    english:
-      'Set the lunar crescent in relation to the solar body. The figure now expresses distinction through conjunction rather than isolated symbols.',
-    commentary:
-      'SYMBOLISM  Solar and lunar characters are brought into one composite engine.\n' +
-      'INTERPRETATION  This is an app-authored staging of the composite glyph.\n' +
-      'OPERATION  Hold the two luminaries as a single articulated relation.',
-  },
-  {
-    number: 6,
-    phase: 'cross',
-    title: 'Elemental Cross',
-    latin: RECONSTRUCTION_NOTICE,
-    english:
-      'Complete the operative construction by adding the cross beneath the luminary structure, grounding the composite sign in extension and differentiation.',
-    commentary:
-      'GEOMETRY  Orthogonal lines introduce a fourfold directional frame.\n' +
-      'INTERPRETATION  The completed figure is a pedagogical reconstruction of the Monas as a spatial sequence.\n' +
-      'OPERATION  Read the finished glyph from centre, through luminaries, into the cross below.',
-  },
-] as const
+/** Registers this sentence actually carries, in a stable display order. */
+export function registersFor(sentence: MonasSentence) {
+  const order = [
+    'literal',
+    'geometric',
+    'astronomical',
+    'cabalistic',
+    'alchemical',
+    'philological',
+    'speculative',
+  ] as const
 
-export function theoremForPhase(phase: GlyphPhase) {
-  return THEOREMS.find((entry) => entry.phase === phase) ?? THEOREMS[0]
+  return order.filter((register) => {
+    const body = sentence.layers[register]
+    return typeof body === 'string' && body.trim().length > 0
+  })
 }
 
 export function phaseProgress(phase: GlyphPhase) {

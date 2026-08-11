@@ -48,6 +48,44 @@ export const SCHOLARLY_CONTENT_RULES = Object.freeze({
 })
 
 /**
+ * Per-field provenance for the Monas Hieroglyphica corpus.
+ *
+ * Four tiers in one record, which is why the chamber renders them at four
+ * different distances rather than stacking them on one panel: `latin` is Dee,
+ * `english` is that edition translating Dee, `paraphrase` and `layers` are that
+ * edition interpreting him.
+ *
+ * `sourceNote` is deliberately absent from this map. It is not a tier of the
+ * text — it is the edition's own account of how it checked the Latin, and it is
+ * displayed as an attributed claim rather than as content.
+ */
+export const MONAS_FIELD_PROVENANCE = Object.freeze({
+  latin: 'primary-source',
+  english: 'translation',
+  paraphrase: 'scholarly-commentary',
+  layers: 'scholarly-commentary',
+} as const satisfies Record<string, ProvenanceLayer>)
+
+export const MONAS_PROVENANCE_LABELS = Object.freeze({
+  latin: 'SOURCE TEXT · DEE, 1564',
+  english: 'TRANSLATION',
+  paraphrase: 'EDITORIAL PARAPHRASE',
+  layers: 'EDITORIAL COMMENTARY',
+  sourceNote: 'SOURCE NOTE',
+})
+
+export const MONAS_PROVENANCE_NOTES = Object.freeze({
+  latin:
+    "The Latin is Dee's, transcribed by the source edition. Grimoire XR has not independently checked it against a facsimile; the edition's own account of its checking is shown beside it.",
+  english:
+    'The English is the source edition’s translation of the Latin above, not a separate historical translation.',
+  commentary:
+    'Paraphrase and the register commentaries are the source edition’s interpretation. They are not Dee’s and are not presented as his.',
+  scope:
+    'This edition carries a sourced fragment: 13 sentences across Dee’s theorems 1, 2, 3, 4 and 6. The Monas Hieroglyphica has 24 theorems. The remainder is absent, not summarised.',
+})
+
+/**
  * Per-field provenance for the Liber CCCXXXIII corpus.
  *
  * A chapter record is not one provenance tier. Crowley wrote the verse; this

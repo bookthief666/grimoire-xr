@@ -12,9 +12,10 @@ import {
 } from '../src/tools/abulafia.ts'
 import {
   GLYPH_PHASES,
+  MONAS_CORPUS_SCOPE,
   MONAS_PROVENANCE,
-  THEOREMS,
   phaseReached,
+  sentenceForPhase,
 } from '../src/tools/monas.ts'
 import {
   CHAPTER_COUNT,
@@ -50,11 +51,27 @@ test('Abulafia practice advertises reconstruction provenance', () => {
   assert.equal(ABULAFIA_PROVENANCE.layer, 'operative-reconstruction')
 })
 
-test('Monad phase model is ordered and explicitly reconstructed', () => {
+test('Monad phase model is ordered and now carries sourced text', () => {
+  // Deliberately changed. This previously asserted THEOREMS.length === 6, a
+  // provenance layer of 'operative-reconstruction', and that the first entry's
+  // Latin matched /NOT A DEE QUOTATION/ — because the chamber had no sourced
+  // text and said so honestly. It has sourced text now, ported from the
+  // original edition, so those assertions would lock in the placeholder.
+  // Detailed coverage lives in test/monas-corpus.test.ts.
   assert.equal(GLYPH_PHASES.length, 6)
-  assert.equal(THEOREMS.length, GLYPH_PHASES.length)
-  assert.equal(MONAS_PROVENANCE.layer, 'operative-reconstruction')
-  assert.match(THEOREMS[0].latin, /NOT A DEE QUOTATION/)
+  assert.equal(MONAS_PROVENANCE.layer, 'primary-source')
+
+  for (const phase of GLYPH_PHASES) {
+    const sentence = sentenceForPhase(phase)
+    assert.ok(sentence, `phase "${phase}" has no sourced sentence`)
+    assert.doesNotMatch(sentence.latin, /NOT A DEE QUOTATION/)
+  }
+
+  // The construction order stays a Grimoire XR model; Dee's 24 theorems are
+  // only partly represented and the code must keep saying so.
+  assert.equal(MONAS_CORPUS_SCOPE.theoremsInWork, 24)
+  assert.ok(MONAS_CORPUS_SCOPE.coveredTheorems.length < 24)
+
   assert.equal(phaseReached('cross', 'point'), true)
   assert.equal(phaseReached('point', 'cross'), false)
 })
