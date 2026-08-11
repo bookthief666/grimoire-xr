@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
+import type { MutableRefObject } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import {
@@ -13,6 +14,8 @@ import {
 } from '../../tools/liber333'
 import { LIBER333_PROVENANCE_LABELS } from '../../tools/provenance'
 import { buildReaderPages } from './readerPagination'
+import { ScriptureArc } from '../ScriptureArc'
+import { readerControlPose } from './readerControlLayout'
 import type { ChamberProps } from './types'
 import { TempleText } from '../TempleText'
 import { pressable } from '../pressable'
@@ -42,6 +45,8 @@ import { pressable } from '../pressable'
  * which.
  */
 
+const noRaycast = () => null
+
 export const CHAPEL_ACCENT = '#9a6bff'
 
 /**
@@ -68,11 +73,15 @@ function PathChannel({
   from,
   to,
   lit,
+  recedeRef,
   morphRef,
 }: {
   from: readonly [number, number]
   to: readonly [number, number]
   lit: boolean
+  /** 0 = present, 1 = withdrawn while a chapter has the room. Read inside
+   *  useFrame, not as a rendered value — it changes every frame. */
+  recedeRef: MutableRefObject<number>
   morphRef: ChamberProps['morphRef']
 }) {
   const matRef = useRef<THREE.MeshBasicMaterial>(null)
@@ -86,7 +95,8 @@ function PathChannel({
   useFrame(({ clock }) => {
     if (!matRef.current) return
     const pulse = 0.5 + Math.sin(clock.getElapsedTime() * 0.8) * 0.5
-    matRef.current.opacity = (lit ? 0.42 + pulse * 0.24 : 0.09) * morphRef.current
+    const base = lit ? 0.42 + pulse * 0.24 : 0.09
+    matRef.current.opacity = base * morphRef.current * (1 - recedeRef.current * 0.82)
   })
 
   return (
@@ -111,10 +121,14 @@ function PathChannel({
 function SephiraLamp({
   sephira,
   lit,
+  recedeRef,
   morphRef,
 }: {
   sephira: (typeof SEPHIROTH)[number]
   lit: boolean
+  /** 0 = present, 1 = withdrawn while a chapter has the room. Read inside
+   *  useFrame, not as a rendered value — it changes every frame. */
+  recedeRef: MutableRefObject<number>
   morphRef: ChamberProps['morphRef']
 }) {
   const coreRef = useRef<THREE.MeshBasicMaterial>(null)
@@ -128,14 +142,20 @@ function SephiraLamp({
     const t = clock.getElapsedTime()
     const pulse = 0.5 + Math.sin(t * 0.7 + sephira.index * 0.6) * 0.5
 
+    // Withdrawing is not just dimming: the lamps also shrink slightly, so the
+    // Tree reads as stepping back rather than switching off.
+    const recede = recedeRef.current
+    const present = 1 - recede * 0.85
+
     if (coreRef.current) {
-      coreRef.current.opacity = (lit ? 0.95 : 0.3 + pulse * 0.1) * m
+      coreRef.current.opacity = (lit ? 0.95 : 0.3 + pulse * 0.1) * m * present
     }
     if (haloRef.current) {
-      haloRef.current.opacity = (lit ? 0.22 + pulse * 0.12 : 0.04) * m
+      haloRef.current.opacity = (lit ? 0.22 + pulse * 0.12 : 0.04) * m * present
     }
     if (groupRef.current) {
-      groupRef.current.scale.setScalar((lit ? 1.18 : 1) * (0.7 + m * 0.3))
+      const scale = (lit ? 1.18 : 1) * (0.7 + m * 0.3) * (1 - recede * 0.18)
+      groupRef.current.scale.setScalar(scale)
     }
   })
 
@@ -239,17 +259,19 @@ function TinyButton({
 }
 
 /**
- * The chapter reader.
+ * The chapter, inscribed onto the room.
  *
- * Placed off the forward axis and turned toward the practitioner, for the same
- * reason the Monad's lectern is: a reading panel on the axis draws over the
- * architecture it is explaining. Its controls sit along the top edge, clear of
- * the altar selector row, which otherwise wins the raycast.
+ * This replaced a flat dark panel. A rectangle of prose is the one shape VR is
+ * worst at: it has a border the room does not, it occludes the architecture
+ * behind it, and it forces a single focal plane. Here the text is the only
+ * thing lit, wrapped around the practitioner on two cylinders.
  *
- * Source verse and editorial commentary are separated and separately labelled.
- * The commentary in this corpus is modern editorial interpretation supplied by
- * the edition; rendering it in the same voice as the verse would present it as
- * Crowley's.
+ * The provenance split is carried by depth rather than by a label alone. The
+ * source verse is near and bright at eye level. The editorial commentary sits
+ * further out and lower, cooler and dimmer, so reading from Crowley to this
+ * edition is a physical movement — you look past and down. The labels remain,
+ * because depth is a cue and not a citation, but the arrangement means the two
+ * can never be mistaken for one voice even at a glance.
  */
 function ChapterReader({
   draw,
@@ -268,7 +290,7 @@ function ChapterReader({
   const accent = sephira?.color ?? CHAPEL_ACCENT
 
   const pages = useMemo(
-    () => buildReaderPages(record.text, record.commentary),
+    () => buildReaderPages(record.text, record.commentary, 260, 380),
     [record.text, record.commentary],
   )
 
@@ -276,110 +298,148 @@ function ChapterReader({
   const current = pages[index]
   const isVerse = current.kind === 'verse'
 
+  // Controls ride a shallow arc at hand height rather than sitting on a plate.
+  const controls: Array<{ label: string; color?: string; width?: number; press: () => void }> = [
+    { label: '◂ PREV', press: () => onPage(Math.max(0, index - 1)) },
+    { label: `${index + 1} / ${pages.length}`, color: '#5d5474', width: 0.26, press: () => onPage(0) },
+    { label: 'NEXT ▸', press: () => onPage(Math.min(pages.length - 1, index + 1)) },
+    { label: '✕ CLOSE', color: '#7a6f92', width: 0.28, press: onClose },
+  ]
+
   return (
-    <group position={[-1.02, 1.5, -1.16]} rotation={[-0.16, 0.52, 0]}>
-      <mesh>
-        <planeGeometry args={[1.42, 0.94]} />
-        <meshBasicMaterial color="#06040d" transparent opacity={0.93} side={THREE.DoubleSide} />
-      </mesh>
-
-      <mesh position={[0, 0, 0.002]}>
-        <planeGeometry args={[1.46, 0.98]} />
-        <meshBasicMaterial
-          color={accent}
-          transparent
-          opacity={0.1}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      {/* Controls along the top edge, away from the altar console.
-          Spacing is deliberate: at 0.5 and 0.62 the NEXT and CLOSE hit planes
-          overlapped between local x 0.56 and 0.65, so CLOSE swallowed presses
-          meant for NEXT and dismissed the reader instead of turning the page.
-          Panel half-width is 0.71; these four spans are disjoint inside it. */}
-      <group position={[-0.52, 0.41, 0.012]}>
-        <TinyButton label="◂ PREV" onPress={() => onPage(Math.max(0, index - 1))} />
-      </group>
-      <group position={[-0.16, 0.41, 0.012]}>
-        <TinyButton
-          label={`${index + 1}/${pages.length}`}
-          color="#5d5474"
-          width={0.22}
-          onPress={() => onPage(0)}
-        />
-      </group>
-      <group position={[0.2, 0.41, 0.012]}>
-        <TinyButton label="NEXT ▸" onPress={() => onPage(Math.min(pages.length - 1, index + 1))} />
-      </group>
-      <group position={[0.58, 0.41, 0.012]}>
-        <TinyButton label="✕ CLOSE" color="#7a6f92" width={0.16} size={0.022} onPress={onClose} />
-      </group>
-
+    <group>
+      {/* The numeral hangs far back and huge, behind the Tree: the chapter as
+          architecture rather than as a number on a card. */}
       <TempleText
-        position={[-0.66, 0.29, 0.008]}
-        fontSize={0.021}
+        position={[0, 2.35, -5.4]}
+        fontSize={veil ? 1.5 : 1.9}
         color={accent}
-        anchorX="left"
+        fillOpacity={0.07}
+        anchorX="center"
         anchorY="middle"
-        maxWidth={1.3}
+        raycast={noRaycast}
+      >
+        {veil ? record.title : String(record.chapter)}
+      </TempleText>
+
+      {/* Title band, above the verse. */}
+      <ScriptureArc
+        radius={2.15}
+        y={2.12}
+        fontSize={0.088}
+        color="#ffffff"
+        maxWidth={3.0}
+        shelf={false}
+        outlineOpacity={0.22}
+      >
+        {record.title}
+      </ScriptureArc>
+
+      <ScriptureArc
+        radius={2.15}
+        y={1.98}
+        fontSize={0.036}
+        color={accent}
+        opacity={0.85}
+        maxWidth={3.0}
+        shelf={false}
       >
         {veil
           ? `PRELIMINARY VEIL · ${record.sephira}`
-          : `CHAPTER ${record.chapter} · ${record.sephira}${record.tarot !== '—' ? ` · ${record.tarot}` : ''}`}
-      </TempleText>
+          : `CHAPTER ${record.chapter} · ${record.sephira}${record.tarot !== '—' ? ` · ${record.tarot}` : ''} · ${record.element}`}
+      </ScriptureArc>
 
-      <TempleText
-        position={[-0.66, 0.21, 0.008]}
-        fontSize={0.034}
-        color="#ffffff"
-        anchorX="left"
-        anchorY="middle"
-        maxWidth={1.3}
-      >
-        {record.title}
-      </TempleText>
+      {/* SOURCE — near, bright, at eye level. */}
+      {isVerse ? (
+        <>
+          <ScriptureArc
+            radius={2.0}
+            y={1.78}
+            fontSize={0.03}
+            color="#8fe3c0"
+            opacity={0.9}
+            maxWidth={2.6}
+            shelf={false}
+          >
+            {LIBER333_PROVENANCE_LABELS.sourceText}
+          </ScriptureArc>
 
-      {/* Provenance tier of the page currently shown, in the edition's own
-          wording. This is the label that keeps commentary from reading as
-          Crowley. */}
-      <TempleText
-        position={[-0.66, 0.13, 0.008]}
-        fontSize={0.019}
-        color={isVerse ? '#8fe3c0' : '#c9a2ff'}
-        anchorX="left"
-        anchorY="middle"
-        maxWidth={1.3}
-      >
-        {isVerse
-          ? LIBER333_PROVENANCE_LABELS.sourceText
-          : LIBER333_PROVENANCE_LABELS.editorialCommentary}
-      </TempleText>
+          <ScriptureArc
+            radius={2.0}
+            y={1.55}
+            fontSize={0.062}
+            color="#f4efff"
+            maxWidth={2.9}
+            shelfColor="#8fe3c0"
+            shelfOpacity={0.3}
+            outlineOpacity={0.18}
+          >
+            {current.body}
+          </ScriptureArc>
+        </>
+      ) : (
+        /* EDITION — further out, lower, cooler. You look past and down to it. */
+        <>
+          <ScriptureArc
+            radius={2.6}
+            y={1.62}
+            fontSize={0.03}
+            color="#c9a2ff"
+            opacity={0.85}
+            maxWidth={3.2}
+            shelf={false}
+          >
+            {LIBER333_PROVENANCE_LABELS.editorialCommentary}
+          </ScriptureArc>
 
-      <TempleText
-        position={[-0.66, 0.06, 0.008]}
-        fontSize={isVerse ? 0.026 : 0.023}
-        color={isVerse ? '#f2ecff' : '#b3a7cc'}
-        anchorX="left"
-        anchorY="top"
-        maxWidth={1.3}
-        lineHeight={1.32}
-      >
-        {current.body}
-      </TempleText>
+          <ScriptureArc
+            radius={2.6}
+            y={1.38}
+            fontSize={0.05}
+            color="#b9abd6"
+            opacity={0.92}
+            maxWidth={3.5}
+            shelfColor="#c9a2ff"
+            shelfOpacity={0.2}
+          >
+            {current.body}
+          </ScriptureArc>
+        </>
+      )}
 
-      <TempleText
-        position={[-0.66, -0.42, 0.008]}
-        fontSize={0.016}
+      <ScriptureArc
+        radius={2.0}
+        y={1.13}
+        fontSize={0.026}
         color="#5d5474"
-        anchorX="left"
-        anchorY="middle"
-        maxWidth={1.3}
+        maxWidth={2.6}
+        shelf={false}
       >
         {isVerse ? 'CROWLEY · LIBER CCCXXXIII' : 'THIS EDITION · NOT CROWLEY'}
-      </TempleText>
+      </ScriptureArc>
+
+      {/* Controls on a shallow arc at hand height, each turned to face the
+          practitioner. No backing plate: the hit planes stay invisible.
+          Radius is deliberately inside ZONES.content (1.5-2.5m), which
+          zones.ts reserves for exactly this: "Readings and tablets.
+          Interactive only for pagination." The first version sat at 1.32m,
+          inside ZONES.work — the same distance band as the altar desk's own
+          CONSULT/QUESTION/TRIAD controls at ~1.19m, so a reach for NEXT could
+          land on CONSULT instead and silently draw a new reading. This is the
+          same class of collision already fixed once on the Monad's lectern. */}
+      {controls.map((control, i) => {
+        const pose = readerControlPose(i, controls.length)
+        return (
+          <group key={control.label} position={pose.position} rotation={[0, pose.rotationY, 0]}>
+            <TinyButton
+              label={control.label}
+              color={control.color}
+              width={control.width}
+              onPress={control.press}
+            />
+          </group>
+        )
+      })}
     </group>
   )
 }
@@ -434,6 +494,14 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
 
   const openRecord = openDraw === null ? null : draws[openDraw] ?? null
 
+  // Eased so the Tree withdraws and returns rather than snapping. Held in a ref
+  // and read inside useFrame: this changes every frame and must not re-render.
+  const recedeRef = useRef(0)
+  useFrame((_, delta) => {
+    const target = openRecord ? 1 : 0
+    recedeRef.current += (target - recedeRef.current) * Math.min(1, delta * 3.2)
+  })
+
   return (
     <group>
       {/* THE TREE AS ARCHITECTURE */}
@@ -444,6 +512,7 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
             from={SEPHIROTH[p[0]].position}
             to={SEPHIROTH[p[1]].position}
             lit={active && litPaths.has(i)}
+            recedeRef={recedeRef}
             morphRef={morphRef}
           />
         ))}
@@ -453,6 +522,7 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
             key={s.name}
             sephira={s}
             lit={active && litSephiroth.has(s.index)}
+            recedeRef={recedeRef}
             morphRef={morphRef}
           />
         ))}
@@ -556,95 +626,152 @@ export function ChapelInstrument({ morphRef, active }: ChamberProps) {
         </TempleText>
       </group>
 
-      {/* THE INSCRIPTIONS — now selectors into the corpus, not dead ends. */}
-      {draws.map((draw, i) => {
-        const spread = draws.length === 1 ? 0 : (i - 1) * 0.66
-        const sephira = sephiraForRecord(draw.record)
-        const colour = sephira?.color ?? CHAPEL_ACCENT
-        const isOpen = openDraw === i
+      {/* THE INSCRIPTIONS — shafts of light standing in the room, not cards.
+          Each rises at its own angle on a shallow arc so the triad reads as
+          three standing presences the practitioner turns between, and each is
+          a door into the chapter. They hide themselves while a chapter is open
+          so the inscription has the room to itself. */}
+      {draws.length === 0
+        ? null
+        : draws.map((draw, i) => {
+            const a = draws.length === 1 ? 0 : (i - 1) * 0.34
+            const r = 2.75
+            const sephira = sephiraForRecord(draw.record)
+            const colour = sephira?.color ?? CHAPEL_ACCENT
+            const isOpen = openDraw === i
+            const veil = isVeil(draw.record)
 
-        return (
-          <group key={draw.position} position={[spread, 1.86, -1.9]}>
-            <mesh {...pressable(() => {
-              setOpenDraw(isOpen ? null : i)
-              setPage(0)
-            })}>
-              <planeGeometry args={[0.6, 0.5]} />
-              <meshBasicMaterial
-                color="#07040f"
-                transparent
-                opacity={0.9}
-                side={THREE.DoubleSide}
-              />
-            </mesh>
+            if (openDraw !== null && !isOpen) return null
 
-            <mesh position={[0, 0, 0.002]}>
-              <ringGeometry args={[0.3, 0.307, 40]} />
-              <meshBasicMaterial
-                color={colour}
-                transparent
-                opacity={isOpen ? 0.85 : 0.4}
-                depthWrite={false}
-                blending={THREE.AdditiveBlending}
-                side={THREE.DoubleSide}
-              />
-            </mesh>
+            return (
+              <group
+                key={draw.position}
+                position={[Math.sin(a) * r, 0, -Math.cos(a) * r]}
+                rotation={[0, -a, 0]}
+              >
+                {/* The shaft. Bright at the floor, fading upward, so it reads
+                    as light standing rather than a rectangle hanging. */}
+                <mesh position={[0, 1.05, 0]} raycast={noRaycast}>
+                  <planeGeometry args={[0.5, 2.1]} />
+                  <meshBasicMaterial
+                    color={colour}
+                    transparent
+                    opacity={isOpen ? 0.16 : 0.075}
+                    depthWrite={false}
+                    blending={THREE.AdditiveBlending}
+                    side={THREE.DoubleSide}
+                  />
+                </mesh>
 
-            <TempleText
-              position={[0, 0.195, 0.008]}
-              fontSize={0.026}
-              color={colour}
-              anchorX="center"
-              anchorY="middle"
-            >
-              {draw.position.toUpperCase()}
-            </TempleText>
+                <mesh position={[0, 1.05, -0.01]} raycast={noRaycast}>
+                  <planeGeometry args={[0.03, 2.1]} />
+                  <meshBasicMaterial
+                    color={colour}
+                    transparent
+                    opacity={isOpen ? 0.9 : 0.45}
+                    depthWrite={false}
+                    blending={THREE.AdditiveBlending}
+                    side={THREE.DoubleSide}
+                  />
+                </mesh>
 
-            <TempleText
-              position={[0, 0.085, 0.008]}
-              fontSize={0.11}
-              color="#ffffff"
-              anchorX="center"
-              anchorY="middle"
-            >
-              {isVeil(draw.record) ? draw.record.title : String(draw.number)}
-            </TempleText>
+                {/* Pool of light where the shaft meets the floor. */}
+                <mesh position={[0, 0.012, 0]} rotation={[-Math.PI / 2, 0, 0]} raycast={noRaycast}>
+                  <ringGeometry args={[0.16, 0.44, 32]} />
+                  <meshBasicMaterial
+                    color={colour}
+                    transparent
+                    opacity={isOpen ? 0.34 : 0.14}
+                    depthWrite={false}
+                    blending={THREE.AdditiveBlending}
+                    side={THREE.DoubleSide}
+                  />
+                </mesh>
 
-            <TempleText
-              position={[0, -0.035, 0.008]}
-              fontSize={0.023}
-              color="#cbbde8"
-              anchorX="center"
-              anchorY="middle"
-              maxWidth={0.54}
-            >
-              {isVeil(draw.record) ? 'PRELIMINARY VEIL' : draw.record.title}
-            </TempleText>
+                <TempleText
+                  position={[0, 2.05, 0.02]}
+                  fontSize={0.032}
+                  color={colour}
+                  anchorX="center"
+                  anchorY="middle"
+                  raycast={noRaycast}
+                >
+                  {draw.position.toUpperCase()}
+                </TempleText>
 
-            <TempleText
-              position={[0, -0.145, 0.008]}
-              fontSize={0.024}
-              color={colour}
-              anchorX="center"
-              anchorY="middle"
-              maxWidth={0.54}
-            >
-              {draw.record.sephira}
-            </TempleText>
+                <TempleText
+                  position={[0, 1.78, 0.02]}
+                  fontSize={veil ? 0.28 : 0.34}
+                  color="#ffffff"
+                  fillOpacity={0.95}
+                  anchorX="center"
+                  anchorY="middle"
+                  raycast={noRaycast}
+                >
+                  {veil ? draw.record.title : String(draw.number)}
+                </TempleText>
 
-            <TempleText
-              position={[0, -0.205, 0.008]}
-              fontSize={0.021}
-              color="#6b6082"
-              anchorX="center"
-              anchorY="middle"
-              maxWidth={0.54}
-            >
-              {isOpen ? 'READING' : 'READ ▸'}
-            </TempleText>
-          </group>
-        )
-      })}
+                <TempleText
+                  position={[0, 1.5, 0.02]}
+                  fontSize={0.044}
+                  color="#e6dcff"
+                  anchorX="center"
+                  anchorY="middle"
+                  maxWidth={0.95}
+                  textAlign="center"
+                  raycast={noRaycast}
+                >
+                  {veil ? 'PRELIMINARY VEIL' : draw.record.title}
+                </TempleText>
+
+                <TempleText
+                  position={[0, 1.3, 0.02]}
+                  fontSize={0.036}
+                  color={colour}
+                  anchorX="center"
+                  anchorY="middle"
+                  maxWidth={0.95}
+                  raycast={noRaycast}
+                >
+                  {draw.record.sephira}
+                </TempleText>
+
+                {/* The whole shaft is the target, at a size a controller ray
+                    can actually hold. */}
+                <group
+                  position={[0, 1.05, 0.03]}
+                  {...pressable(() => {
+                    setOpenDraw(isOpen ? null : i)
+                    setPage(0)
+                  })}
+                >
+                  <TempleText
+                    position={[0, -0.42, 0]}
+                    fontSize={0.038}
+                    color={isOpen ? '#ffffff' : '#8d81ab'}
+                    anchorX="center"
+                    anchorY="middle"
+                    raycast={noRaycast}
+                  >
+                    {isOpen ? '▾ CLOSE' : 'READ ▸'}
+                  </TempleText>
+                  {/* The one mesh here that keeps its default raycast: the
+                      whole shaft is the press target, at a size a controller
+                      ray can hold without fine aim. */}
+                  <mesh>
+                    <planeGeometry args={[0.56, 2.1]} />
+                    <meshBasicMaterial
+                      color="#ffffff"
+                      transparent
+                      opacity={0.001}
+                      depthWrite={false}
+                      side={THREE.DoubleSide}
+                    />
+                  </mesh>
+                </group>
+              </group>
+            )
+          })}
 
       {openRecord ? (
         <ChapterReader
