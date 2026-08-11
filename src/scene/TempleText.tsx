@@ -24,7 +24,27 @@ import type { ComponentProps } from 'react'
 
 export const TEMPLE_FONT = '/fonts/DejaVuSans.ttf'
 
-type TempleTextProps = ComponentProps<typeof Text>
+/**
+ * troika supports more than drei declares.
+ *
+ * drei types `Text` against the three.js Mesh props it knows about, but it
+ * spreads everything else straight onto the troika text mesh, which understands
+ * a wider set. `curveRadius` in particular bends a text mesh onto a cylinder at
+ * render time — the mechanism that lets an inscription wrap the practitioner
+ * for the cost of one draw call instead of one draw per line. Declaring the
+ * extras here keeps call sites type-checked rather than casting at each use.
+ */
+type TroikaExtras = {
+  /** Cylinder radius to bend the text onto. Positive puts the centre behind. */
+  curveRadius?: number
+  /** Glyph fill opacity, independent of the material's own opacity. */
+  fillOpacity?: number
+  outlineWidth?: number | string
+  outlineColor?: string
+  outlineOpacity?: number
+}
+
+type TempleTextProps = ComponentProps<typeof Text> & TroikaExtras
 
 export function TempleText({ font = TEMPLE_FONT, ...props }: TempleTextProps) {
   return <Text font={font} {...props} />

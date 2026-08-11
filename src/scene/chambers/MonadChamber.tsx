@@ -3,15 +3,19 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import {
   GLYPH_PHASES,
-  MONAS_PROVENANCE,
-  THEOREMS,
+  MONAS_CORPUS_SCOPE,
   phaseReached,
+  registersFor,
+  sentencesForPhase,
   type GlyphPhase,
 } from '../../tools/monas'
-import { provenanceLabel } from '../../tools/provenance'
+import type { CommentaryRegister } from '../../tools/monasCorpus'
+import { MONAS_PROVENANCE_LABELS } from '../../tools/provenance'
 import type { ChamberProps } from './types'
 import { TempleText } from '../TempleText'
+import { ScriptureArc } from '../ScriptureArc'
 import { pressable } from '../pressable'
+import { monadControlPose, monadRegisterPose } from './monadReaderLayout'
 import {
   buildMergedPlanarSegments,
   type PlanarSegment,
@@ -24,17 +28,14 @@ export const MONAD_ACCENT = '#d8e8ff'
  * height and far enough back to be built at architectural scale rather than
  * held at arm's length.
  *
- * It used to sit at [0, 1.86, -1.15] with the lectern directly beneath it at
- * [0, 1.36, -0.95]. Tilted back, the lectern's top edge reached about +6 deg
- * above the horizon while the glyph's lower half sat below it, so the panel
- * drew straight over the construction it exists to explain. The lectern has
- * moved off-axis and down to reading angle; the glyph took the centre.
+ * It once sat at [0, 1.86, -1.15] with a flat lectern directly beneath it,
+ * whose tilted top edge reached above the horizon and drew straight over the
+ * construction it existed to explain. That lectern is gone entirely: the
+ * reading is now inscribed around the practitioner in concentric bands, and
+ * the forward axis belongs to the glyph alone.
  */
 const GLYPH_ORIGIN: [number, number, number] = [0, 2.0, -1.55]
 const GLYPH_SCALE = 1.32
-const LECTERN_WIDTH = 1.34
-const LECTERN_HEIGHT = 0.84
-const LECTERN_TEXT_WIDTH = 1.2
 
 function mergedCircleSegments(radius: number, opacity: number): PlanarSegment[] {
   const points = Array.from({ length: 48 }, (_, index) => {
@@ -92,6 +93,44 @@ function MergedTrace({ segments }: { segments: readonly PlanarSegment[] }) {
         side={THREE.DoubleSide}
       />
     </mesh>
+  )
+}
+
+/**
+ * A press target with no plate behind it.
+ *
+ * The visible mark is the label; the hit area is an invisible quad sized for a
+ * controller ray rather than for the glyph it sits under.
+ */
+function MonadKey({
+  label,
+  color = '#7f93a8',
+  size = 0.028,
+  width = 0.34,
+  onPress,
+}: {
+  label: string
+  color?: string
+  size?: number
+  width?: number
+  onPress: () => void
+}) {
+  return (
+    <group {...pressable(onPress)}>
+      <TempleText fontSize={size} color={color} anchorX="center" anchorY="middle">
+        {label}
+      </TempleText>
+      <mesh position={[0, 0, 0.01]}>
+        <planeGeometry args={[width, 0.1]} />
+        <meshBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.001}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
+    </group>
   )
 }
 
@@ -263,147 +302,220 @@ export function MonadArchitecture({ morphRef }: ChamberProps) {
 }
 
 export function MonadInstrument({ morphRef, active }: ChamberProps) {
-  const [index, setIndex] = useState(0)
+  const [phaseIndex, setPhaseIndex] = useState(0)
+  const [sentenceIndex, setSentenceIndex] = useState(0)
+  const [register, setRegister] = useState<CommentaryRegister>('literal')
+  const [showSourceNote, setShowSourceNote] = useState(false)
   const [exploded, setExploded] = useState(false)
-  const phase = THEOREMS[index]
-  const lecternRef = useRef<THREE.Group>(null)
 
-  useFrame(() => {
-    const morph = morphRef.current
-    if (lecternRef.current) lecternRef.current.scale.setScalar(0.88 + morph * 0.12)
-  })
+  const phase = GLYPH_PHASES[phaseIndex]
+  const sentences = useMemo(() => sentencesForPhase(phase), [phase])
+  const sentence = sentences[Math.min(sentenceIndex, sentences.length - 1)]
+  const registers = useMemo(() => registersFor(sentence), [sentence])
+
+  // A register the current sentence does not carry must never stay selected:
+  // the commentary layers are partial across the corpus, and holding a stale
+  // choice would render an empty band under a confident label.
+  const activeRegister = registers.includes(register) ? register : registers[0]
+  const commentary = sentence.layers[activeRegister] ?? ''
+
+  const goToPhase = (next: number) => {
+    setPhaseIndex(next)
+    setSentenceIndex(0)
+    setShowSourceNote(false)
+  }
+
+  const navigation: Array<{ label: string; color?: string; width?: number; press: () => void }> = [
+    { label: '◂ RESET', color: '#7f93a8', press: () => { goToPhase(0); setExploded(false) } },
+    {
+      label: exploded ? '▪ COLLAPSE' : '◈ OPEN',
+      color: exploded ? MONAD_ACCENT : '#7f93a8',
+      press: () => setExploded((open) => !open),
+    },
+    {
+      label: showSourceNote ? '▪ NOTE' : '◇ NOTE',
+      color: showSourceNote ? '#ffd7a1' : '#7f93a8',
+      width: 0.26,
+      press: () => setShowSourceNote((open) => !open),
+    },
+    {
+      label: 'ADVANCE ▸',
+      color: '#ffffff',
+      press: () => goToPhase((phaseIndex + 1) % GLYPH_PHASES.length),
+    },
+  ]
+
+  // The moon phase carries six sourced sentences and point and sun carry two.
+  // Before this the chamber could only ever show the first of them. Cycling on
+  // one key keeps every control on a single tested row rather than adding a
+  // second row of dots that would have to clear the same zones.
+  if (sentences.length > 1) {
+    navigation.splice(3, 0, {
+      label: `SENTENCE ${sentenceIndex + 1}/${sentences.length} ▸`,
+      color: '#9fb3c8',
+      width: 0.46,
+      press: () => {
+        setSentenceIndex((current) => (current + 1) % sentences.length)
+        setShowSourceNote(false)
+      },
+    })
+  }
 
   return (
     <group>
-      <MonadGlyph phase={phase.phase} morphRef={morphRef} exploded={exploded} />
+      <MonadGlyph phase={phase} morphRef={morphRef} exploded={exploded} />
 
-      {/* Off the forward axis and angled back toward the practitioner: a
-          lectern beside the work, not a panel across it. */}
-      <group ref={lecternRef} position={[-0.95, 1.34, -0.98]} rotation={[-0.24, 0.5, 0]}>
-        <mesh>
-          <planeGeometry args={[LECTERN_WIDTH, LECTERN_HEIGHT]} />
-          <meshBasicMaterial color="#03060a" transparent opacity={0.9} side={THREE.DoubleSide} />
-        </mesh>
+      {/* THE SOURCE — nearest and brightest. Dee's own Latin.
+          Everything below it is progressively further out and dimmer, so the
+          distance from Dee to this edition's reading of him is a distance the
+          practitioner physically looks across rather than a caption. */}
+      <ScriptureArc
+        radius={1.9}
+        y={1.88}
+        fontSize={0.03}
+        color="#ffd7a1"
+        opacity={0.9}
+        maxWidth={2.5}
+        shelf={false}
+      >
+        {`${MONAS_PROVENANCE_LABELS.latin} · THEOREM ${sentence.theorem}${sentence.provisional ? ' (PREVIEW)' : ''}`}
+      </ScriptureArc>
 
-        <TempleText
-          position={[-0.62, 0.29, 0.006]}
-          fontSize={0.024}
-          color={MONAD_ACCENT}
-          anchorX="left"
-          anchorY="middle"
-          maxWidth={LECTERN_TEXT_WIDTH}
+      <ScriptureArc
+        radius={1.9}
+        y={1.68}
+        fontSize={0.054}
+        color="#fff3df"
+        maxWidth={2.8}
+        shelfColor="#ffd7a1"
+        shelfOpacity={0.26}
+        outlineOpacity={0.16}
+      >
+        {sentence.latin}
+      </ScriptureArc>
+
+      {/* THE TRANSLATION — a step further out. */}
+      <ScriptureArc
+        radius={2.32}
+        y={1.42}
+        fontSize={0.026}
+        color={MONAD_ACCENT}
+        opacity={0.8}
+        maxWidth={3.0}
+        shelf={false}
+      >
+        {MONAS_PROVENANCE_LABELS.english}
+      </ScriptureArc>
+
+      <ScriptureArc
+        radius={2.32}
+        y={1.26}
+        fontSize={0.044}
+        color="#dbe7f5"
+        opacity={0.95}
+        maxWidth={3.3}
+        shelfColor={MONAD_ACCENT}
+        shelfOpacity={0.18}
+      >
+        {sentence.english}
+      </ScriptureArc>
+
+      {/* THIS EDITION READING DEE — furthest and coolest. */}
+      {showSourceNote ? (
+        <ScriptureArc
+          radius={2.78}
+          y={0.62}
+          fontSize={0.034}
+          color="#9a8fb5"
+          opacity={0.88}
+          maxWidth={3.6}
+          shelfColor="#ffd7a1"
+          shelfOpacity={0.14}
         >
-          {`${provenanceLabel(MONAS_PROVENANCE)} · PHASE ${index + 1}/${THEOREMS.length}`}
-        </TempleText>
-
-        <TempleText
-          position={[-0.62, 0.23, 0.006]}
-          fontSize={0.032}
-          color="#ffffff"
-          anchorX="left"
-          anchorY="middle"
-          maxWidth={LECTERN_TEXT_WIDTH}
+          {`${MONAS_PROVENANCE_LABELS.sourceNote} — ${sentence.sourceNote}`}
+        </ScriptureArc>
+      ) : (
+        <ScriptureArc
+          radius={2.78}
+          y={0.62}
+          fontSize={0.034}
+          color="#a99cc4"
+          opacity={0.85}
+          maxWidth={3.6}
+          shelfColor="#8f7fb5"
+          shelfOpacity={0.14}
         >
-          {phase.title.toUpperCase()}
-        </TempleText>
+          {commentary}
+        </ScriptureArc>
+      )}
 
-        <TempleText
-          position={[-0.62, 0.17, 0.006]}
-          fontSize={0.022}
-          color="#77889b"
-          anchorX="left"
-          anchorY="top"
-          maxWidth={LECTERN_TEXT_WIDTH}
-          lineHeight={1.25}
-        >
-          {MONAS_PROVENANCE.claim}
-        </TempleText>
+      {/* Register selector. Only the registers this sentence actually carries
+          are offered — the layers are partial across the corpus, and a button
+          resolving to nothing would misrepresent what the edition wrote. */}
+      {!showSourceNote && registers.length > 1
+        ? registers.map((name, i) => {
+            const pose = monadRegisterPose(i, registers.length)
+            const selected = name === activeRegister
+            return (
+              <group key={name} position={pose.position} rotation={[0, pose.rotationY, 0]}>
+                <MonadKey
+                  label={name.toUpperCase()}
+                  color={selected ? '#ffffff' : '#6b7f96'}
+                  size={0.026}
+                  width={0.3}
+                  onPress={() => setRegister(name)}
+                />
+              </group>
+            )
+          })
+        : null}
 
-        <TempleText
-          position={[-0.62, 0.02, 0.006]}
-          fontSize={0.024}
-          color="#f2f6fb"
-          anchorX="left"
-          anchorY="top"
-          maxWidth={LECTERN_TEXT_WIDTH}
-          lineHeight={1.28}
-        >
-          {phase.english}
-        </TempleText>
-
-        <TempleText
-          position={[-0.62, -0.15, 0.006]}
-          fontSize={0.021}
-          color="#6b7f96"
-          anchorX="left"
-          anchorY="top"
-          maxWidth={LECTERN_TEXT_WIDTH}
-          lineHeight={1.3}
-        >
-          {phase.commentary}
-        </TempleText>
-
-        <group
-          position={[0.42, 0.4, 0.01]}
-          {...pressable(() => setIndex((current) => (current + 1) % THEOREMS.length))}
-        >
-          <TempleText fontSize={0.029} color="#ffffff" anchorX="center" anchorY="middle">
-            ADVANCE ▸
-          </TempleText>
-          <mesh position={[0, 0, 0.01]}>
-            <planeGeometry args={[0.38, 0.11]} />
-            <meshBasicMaterial color="#ffffff" transparent opacity={0.001} depthWrite={false} side={THREE.DoubleSide} />
-          </mesh>
-        </group>
-
-        <group position={[-0.5, 0.4, 0.01]} {...pressable(() => setIndex(0))}>
-          <TempleText fontSize={0.029} color="#7f93a8" anchorX="center" anchorY="middle">
-            ◂ RESET
-          </TempleText>
-          <mesh position={[0, 0, 0.01]}>
-            <planeGeometry args={[0.34, 0.11]} />
-            <meshBasicMaterial color="#ffffff" transparent opacity={0.001} depthWrite={false} side={THREE.DoubleSide} />
-          </mesh>
-        </group>
-
-        {/* Pull the construction apart in depth. Dee's argument is that the
-            monad is assembled in a fixed order; flat, that order is only
-            visible while it animates. Separated, it stays readable. */}
-        <group position={[-0.02, 0.4, 0.01]} {...pressable(() => setExploded((open) => !open))}>
-          <TempleText
-            fontSize={0.026}
-            color={exploded ? MONAD_ACCENT : '#7f93a8'}
-            anchorX="center"
-            anchorY="middle"
-          >
-            {exploded ? '▪ COLLAPSE' : '◈ OPEN'}
-          </TempleText>
-          <mesh position={[0, 0, 0.01]}>
-            <planeGeometry args={[0.4, 0.11]} />
-            <meshBasicMaterial color="#ffffff" transparent opacity={0.001} depthWrite={false} side={THREE.DoubleSide} />
-          </mesh>
-        </group>
-      </group>
+      {navigation.map((control, i) => {
+        const pose = monadControlPose(i, navigation.length)
+        return (
+          <group key={control.label} position={pose.position} rotation={[0, pose.rotationY, 0]}>
+            <MonadKey
+              label={control.label}
+              color={control.color}
+              width={control.width}
+              onPress={control.press}
+            />
+          </group>
+        )
+      })}
 
       {/* Phase track, centred beneath the glyph rather than beneath the
           lectern, so progress reads against the thing that is progressing. */}
       <group position={[0, 1.33, -1.5]}>
-        {GLYPH_PHASES.map((glyphPhase, phaseIndex) => (
+        {GLYPH_PHASES.map((glyphPhase, i) => (
           <mesh
             key={glyphPhase}
-            position={[(phaseIndex - (GLYPH_PHASES.length - 1) / 2) * 0.085, 0, 0]}
+            position={[(i - (GLYPH_PHASES.length - 1) / 2) * 0.085, 0, 0]}
           >
             <circleGeometry args={[0.014, 16]} />
             <meshBasicMaterial
               color={MONAD_ACCENT}
               transparent
-              opacity={active && phaseReached(phase.phase, glyphPhase) ? 0.9 : 0.14}
+              opacity={active && phaseReached(phase, glyphPhase) ? 0.9 : 0.14}
               depthWrite={false}
               blending={THREE.AdditiveBlending}
             />
           </mesh>
         ))}
       </group>
+
+      {/* Scope, stated in the room. Five of Dee's twenty-four theorems are
+          represented; the rest are absent, not summarised. */}
+      <ScriptureArc
+        radius={2.78}
+        y={0.4}
+        fontSize={0.022}
+        color="#544c68"
+        maxWidth={3.4}
+        shelf={false}
+      >
+        {`SOURCED FRAGMENT · THEOREMS ${MONAS_CORPUS_SCOPE.coveredTheorems.join(', ')} OF ${MONAS_CORPUS_SCOPE.theoremsInWork}`}
+      </ScriptureArc>
     </group>
   )
 }

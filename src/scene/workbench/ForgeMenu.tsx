@@ -14,13 +14,12 @@ import type { ArtStyleFamily } from '../../constants/artStyles'
 import type {
   ArtStyle,
   ErosLevel,
-  ForgePhase,
   TarotSystem,
   TechLevel,
   Tone,
   Tradition,
 } from '../../types/grimoire'
-import { FloatingDial, FloatingMenuButton } from './WorkbenchControls'
+import { FloatingMenuButton } from './WorkbenchControls'
 import {
   INTENT_OPTIONS,
   SUBJECT_OPTIONS,
@@ -30,183 +29,82 @@ import {
   shortText,
 } from './shared'
 import { TempleText } from '../TempleText'
+import { ScriptureArc } from '../ScriptureArc'
+import { pressable } from '../pressable'
+import { forgeDialPose } from './forgeDialLayout'
 
-function ForgeGlyph({ glyph, x, y }: { glyph: string; x: number; y: number }) {
-  return (
-    <group position={[x, y, 0.08]}>
-      <TempleText
-        fontSize={0.09}
-        color="#ff6a00"
-        anchorX="center"
-        anchorY="middle"
-        fillOpacity={0.18}
-      >
-        {glyph}
-      </TempleText>
-      <TempleText
-        position={[0, 0, 0.003]}
-        fontSize={0.058}
-        color="#ffd7a3"
-        anchorX="center"
-        anchorY="middle"
-      >
-        {glyph}
-      </TempleText>
-    </group>
-  )
-}
-
-export function ForgeConfigReadout({
-  activeSubject,
-  tradition,
-  tarotSystem,
-  tone,
-  techLevel,
-  activeIntent,
-  artStyleFamily,
-  artStyle,
-  erosLevel,
-  forgePhase,
-  loading,
-  canForge,
+/**
+ * One configuration dimension, inscribed rather than plated.
+ *
+ * The old `FloatingDial` cost about twelve draws each — a backing plate, two
+ * rules, a doubled glyph, a label, a value and two arrow targets — and nine of
+ * them plus two panels was 156 draws, which pushed the Sanctum from 267 to 423
+ * against a ceiling of 300.
+ *
+ * There is one hit plane, not two. Direction comes from which side of it the
+ * ray lands on: an invisible plane still costs a draw, so two arrow targets per
+ * row is eighteen wasted draws across nine dials, and one wide target is a
+ * better thing to hit with a controller ray than a small glyph anyway.
+ */
+function ForgeDial({
+  label,
+  value,
+  column,
+  row,
+  onStep,
 }: {
-  activeSubject: string
-  tradition: Tradition
-  tarotSystem: TarotSystem
-  tone: Tone
-  techLevel: TechLevel
-  activeIntent: string
-  artStyleFamily: ArtStyleFamily
-  artStyle: ArtStyle
-  erosLevel: ErosLevel
-  forgePhase: ForgePhase
-  loading: boolean
-  canForge: boolean
+  label: string
+  value: string
+  column: 'left' | 'right'
+  row: number
+  onStep: (direction: 1 | -1) => void
 }) {
-  const activeArtStyleOptions = getStylesByFamily(artStyleFamily).map((style) => ({
-    value: style.id,
-    label: style.label,
-  }))
-
-  const subjectLabel = activeSubject.trim() || '—'
-  const intentLabel = activeIntent.trim() || '—'
-  const energized = loading || forgePhase === 'forging' || forgePhase === 'ready'
-  const status = loading ? 'FORGING' : canForge ? 'READY' : 'SUBJECT REQUIRED'
-  const rows = [
-    ['SUBJECT', subjectLabel],
-    ['CURRENT', optionLabel(TRADITION_OPTIONS, tradition)],
-    ['TAROT', optionLabel(TAROT_SYSTEM_OPTIONS, tarotSystem)],
-    ['TONE', optionLabel(TONE_OPTIONS, tone)],
-    ['LEVEL', optionLabel(TECH_LEVEL_OPTIONS, techLevel)],
-    ['FAMILY', optionLabel(ART_STYLE_FAMILY_OPTIONS, artStyleFamily)],
-    ['STYLE', optionLabel(activeArtStyleOptions, artStyle)],
-    ['EROS', optionLabel(EROS_LEVEL_OPTIONS, erosLevel)],
-    ['INTENT', intentLabel],
-  ] as const
+  const pose = forgeDialPose(column, row)
 
   return (
-    <group position={[1.08, 1.0, 0.1]} scale={0.78}>
-      <mesh>
-        <planeGeometry args={[1.76, 1.66]} />
-        <meshStandardMaterial
-          color="#070405"
-          emissive="#1a0906"
-          emissiveIntensity={0.38}
-          transparent
-          opacity={energized ? 0.92 : 0.74}
-          roughness={0.29}
-          metalness={0.68}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh position={[0, 0, 0.012]}>
-        <planeGeometry args={[1.9, 1.8]} />
-        <meshBasicMaterial
-          color="#ff7a1a"
-          transparent
-          opacity={energized ? 0.08 : 0.04}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh position={[0, 0.7, 0.04]}>
-        <planeGeometry args={[1.44, 0.012]} />
-        <meshBasicMaterial
-          color="#ff9a00"
-          transparent
-          opacity={0.38}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <ForgeGlyph glyph="☿" x={-0.76} y={0.68} />
-      <ForgeGlyph glyph="☉" x={0.76} y={0.68} />
-      <ForgeGlyph glyph="♄" x={-0.76} y={-0.7} />
-      <ForgeGlyph glyph="☽" x={0.76} y={-0.7} />
+    <group position={pose.position} rotation={[0, pose.rotationY, 0]}>
+      <TempleText
+        position={[0, 0.035, 0]}
+        fontSize={0.03}
+        color="#c98a4a"
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={0.9}
+      >
+        {label}
+      </TempleText>
 
       <TempleText
-        position={[0, 0.625, 0.07]}
+        position={[0, -0.018, 0]}
         fontSize={0.044}
-        color="#ffd18a"
+        color="#ffe6c2"
         anchorX="center"
         anchorY="middle"
-        maxWidth={1.3}
+        maxWidth={0.92}
       >
-        ACTIVE FORGE CONFIG
+        {`◂  ${value}  ▸`}
       </TempleText>
 
-      <TempleText
-        position={[0, 0.52, 0.07]}
-        fontSize={0.026}
-        color={canForge ? '#ffcf7c' : '#9a6558'}
-        anchorX="center"
-        anchorY="middle"
+      <mesh
+        position={[0, 0, 0.012]}
+        {...pressable((event) => {
+          // Local x of the hit decides direction: left half steps back, right
+          // half steps forward. The arrows are drawn into the value line rather
+          // than being separate targets, which is what makes one hit plane per
+          // dial enough.
+          const local = event.object.worldToLocal(event.point.clone())
+          onStep(local.x < 0 ? -1 : 1)
+        })}
       >
-        {`${forgePhase.toUpperCase()} · ${status}`}
-      </TempleText>
-
-      {rows.map(([label, value], index) => {
-        const y = 0.405 - index * 0.105
-        return (
-          <group key={label}>
-            <mesh position={[0, y - 0.035, 0.03]}>
-              <planeGeometry args={[1.3, 0.0025]} />
-              <meshBasicMaterial
-                color="#ff8a00"
-                transparent
-                opacity={0.12}
-                depthWrite={false}
-                blending={THREE.AdditiveBlending}
-                side={THREE.DoubleSide}
-              />
-            </mesh>
-            <TempleText
-              position={[-0.64, y, 0.07]}
-              fontSize={0.024}
-              color="#8f6742"
-              anchorX="left"
-              anchorY="middle"
-            >
-              {label}
-            </TempleText>
-            <TempleText
-              position={[-0.18, y, 0.07]}
-              fontSize={0.027}
-              color="#f2d4a2"
-              anchorX="left"
-              anchorY="middle"
-              maxWidth={0.84}
-            >
-              {shortText(value, 30)}
-            </TempleText>
-          </group>
-        )
-      })}
+        <planeGeometry args={[0.96, 0.12]} />
+        <meshBasicMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.001}
+          depthWrite={false}
+          side={THREE.DoubleSide}
+        />
+      </mesh>
     </group>
   )
 }
@@ -263,147 +161,123 @@ export function FloatingForgeMenu({
     label: style.label,
   }))
 
+  const status = loading
+    ? 'FORGING THE DECK'
+    : canForge
+      ? 'READY TO FORGE'
+      : 'A SUBJECT IS REQUIRED'
+
   return (
-    <group position={[-1.04, 1.0, 0.1]} scale={0.8}>
-      <mesh>
-        <planeGeometry args={[1.98, 2.22]} />
-        <meshStandardMaterial
-          color="#0a0505"
-          emissive="#241006"
-          emissiveIntensity={0.42}
-          transparent
-          opacity={0.9}
-          roughness={0.28}
-          metalness={0.72}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <mesh position={[0, 0, 0.012]}>
-        <planeGeometry args={[2.12, 2.36]} />
-        <meshBasicMaterial
-          color="#ff9a00"
-          transparent
-          opacity={0.075}
-          depthWrite={false}
-          blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
-
-      <TempleText
-        position={[0, 0.91, 0.07]}
-        fontSize={0.05}
-        color="#ffd18a"
-        anchorX="center"
-        anchorY="middle"
-      >
-        GRIMOIRE ENGINE FORGE
-      </TempleText>
-
-      <TempleText
-        position={[0, 0.83, 0.07]}
-        fontSize={0.026}
-        color="#8f6742"
-        anchorX="center"
-        anchorY="middle"
-        maxWidth={1.5}
-      >
-        Tune the current deliberately. Selection never generates art by itself.
-      </TempleText>
-
-      <FloatingDial
+    <group>
+      {/* The voice the reading speaks in. */}
+      <ForgeDial
         label="SUBJECT"
-        value={activeSubject}
-        y={0.64}
-        onPrevious={() => onSubjectChange(cycleString(SUBJECT_OPTIONS, activeSubject, -1))}
-        onNext={() => onSubjectChange(cycleString(SUBJECT_OPTIONS, activeSubject, 1))}
+        value={shortText(activeSubject.trim() || '—', 22)}
+        column="left"
+        row={0}
+        onStep={(d) => onSubjectChange(cycleString(SUBJECT_OPTIONS, activeSubject, d))}
       />
-
-      <FloatingDial
+      <ForgeDial
         label="TRADITION"
         value={optionLabel(TRADITION_OPTIONS, tradition)}
-        y={0.48}
-        onPrevious={() => onTraditionChange(cycleOption(TRADITION_OPTIONS, tradition, -1))}
-        onNext={() => onTraditionChange(cycleOption(TRADITION_OPTIONS, tradition, 1))}
+        column="left"
+        row={1}
+        onStep={(d) => onTraditionChange(cycleOption(TRADITION_OPTIONS, tradition, d))}
       />
-
-      <FloatingDial
+      <ForgeDial
         label="TAROT SYSTEM"
         value={optionLabel(TAROT_SYSTEM_OPTIONS, tarotSystem)}
-        y={0.32}
-        onPrevious={() => onTarotSystemChange(cycleOption(TAROT_SYSTEM_OPTIONS, tarotSystem, -1))}
-        onNext={() => onTarotSystemChange(cycleOption(TAROT_SYSTEM_OPTIONS, tarotSystem, 1))}
+        column="left"
+        row={2}
+        onStep={(d) => onTarotSystemChange(cycleOption(TAROT_SYSTEM_OPTIONS, tarotSystem, d))}
       />
-
-      <FloatingDial
+      <ForgeDial
         label="TONE"
         value={optionLabel(TONE_OPTIONS, tone)}
-        y={0.16}
-        onPrevious={() => onToneChange(cycleOption(TONE_OPTIONS, tone, -1))}
-        onNext={() => onToneChange(cycleOption(TONE_OPTIONS, tone, 1))}
+        column="left"
+        row={3}
+        onStep={(d) => onToneChange(cycleOption(TONE_OPTIONS, tone, d))}
       />
-
-      <FloatingDial
-        label="LEVEL"
+      <ForgeDial
+        label="TECHNICAL LEVEL"
         value={optionLabel(TECH_LEVEL_OPTIONS, techLevel)}
-        y={0}
-        onPrevious={() => onTechLevelChange(cycleOption(TECH_LEVEL_OPTIONS, techLevel, -1))}
-        onNext={() => onTechLevelChange(cycleOption(TECH_LEVEL_OPTIONS, techLevel, 1))}
+        column="left"
+        row={4}
+        onStep={(d) => onTechLevelChange(cycleOption(TECH_LEVEL_OPTIONS, techLevel, d))}
       />
 
-      <FloatingDial
-        label="STYLE FAMILY"
+      {/* The image the deck is drawn in. */}
+      <ForgeDial
+        label="ART FAMILY"
         value={optionLabel(ART_STYLE_FAMILY_OPTIONS, artStyleFamily)}
-        y={-0.16}
-        onPrevious={() =>
-          onArtStyleFamilyChange(cycleOption(ART_STYLE_FAMILY_OPTIONS, artStyleFamily, -1))
-        }
-        onNext={() =>
-          onArtStyleFamilyChange(cycleOption(ART_STYLE_FAMILY_OPTIONS, artStyleFamily, 1))
+        column="right"
+        row={0}
+        onStep={(d) =>
+          onArtStyleFamilyChange(cycleOption(ART_STYLE_FAMILY_OPTIONS, artStyleFamily, d))
         }
       />
-
-      <FloatingDial
+      <ForgeDial
         label="ART STYLE"
         value={optionLabel(activeArtStyleOptions, artStyle)}
-        y={-0.32}
-        onPrevious={() => onArtStyleChange(cycleOption(activeArtStyleOptions, artStyle, -1))}
-        onNext={() => onArtStyleChange(cycleOption(activeArtStyleOptions, artStyle, 1))}
+        column="right"
+        row={1}
+        onStep={(d) => onArtStyleChange(cycleOption(activeArtStyleOptions, artStyle, d))}
       />
-
-      <FloatingDial
-        label="EROS LEVEL"
+      <ForgeDial
+        label="EROS"
         value={optionLabel(EROS_LEVEL_OPTIONS, erosLevel)}
-        y={-0.48}
-        onPrevious={() => onErosLevelChange(cycleOption(EROS_LEVEL_OPTIONS, erosLevel, -1))}
-        onNext={() => onErosLevelChange(cycleOption(EROS_LEVEL_OPTIONS, erosLevel, 1))}
+        column="right"
+        row={2}
+        onStep={(d) => onErosLevelChange(cycleOption(EROS_LEVEL_OPTIONS, erosLevel, d))}
       />
-
-      <FloatingDial
+      <ForgeDial
         label="INTENT"
-        value={activeIntent}
-        y={-0.64}
-        onPrevious={() => {
-          const next = cycleString(INTENT_OPTIONS, activeIntent, -1)
-          onIntentChange(next)
-          onOracleQuestionChange(next)
-        }}
-        onNext={() => {
-          const next = cycleString(INTENT_OPTIONS, activeIntent, 1)
+        value={shortText(activeIntent.trim() || '—', 22)}
+        column="right"
+        row={3}
+        onStep={(d) => {
+          const next = cycleString(INTENT_OPTIONS, activeIntent, d)
           onIntentChange(next)
           onOracleQuestionChange(next)
         }}
       />
 
-      <FloatingMenuButton
-        label={loading ? 'FORGING DECK…' : 'IGNITE DECK FORGE'}
-        x={0.18}
-        y={-0.91}
-        width={0.98}
-        disabled={!canForge}
-        onClick={onBeginRitual}
-      />
+      {/* Status, where the readout panel used to repeat all nine values. */}
+      <ScriptureArc
+        radius={2.05}
+        y={1.94}
+        fontSize={0.042}
+        color={canForge ? '#ffd18a' : '#a87a52'}
+        maxWidth={2.8}
+        shelfColor="#ff9a3c"
+        shelfOpacity={0.18}
+        outlineOpacity={0.14}
+      >
+        {status}
+      </ScriptureArc>
+
+      {/* A stated invariant of this project, kept verbatim and kept visible. */}
+      <ScriptureArc
+        radius={2.4}
+        y={0.62}
+        fontSize={0.028}
+        color="#8a7358"
+        maxWidth={3.2}
+        shelf={false}
+      >
+        Tune the current deliberately. Selection never generates art by itself.
+      </ScriptureArc>
+
+      <group position={[0, 0.86, -1.55]}>
+        <FloatingMenuButton
+          label={loading ? 'FORGING DECK…' : 'IGNITE DECK FORGE'}
+          x={0}
+          y={0}
+          width={0.98}
+          disabled={!canForge}
+          onClick={onBeginRitual}
+        />
+      </group>
     </group>
   )
 }
