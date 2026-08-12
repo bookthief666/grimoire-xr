@@ -1,0 +1,51 @@
+{
+  "name": "grimoire-app",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "vr:preview": "vite preview --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview",
+    "api": "node server/index.mjs",
+    "test": "vitest run",
+    "check": "npm run test && npm run build",
+    "mobile:sync": "npm run build && cap sync",
+    "mobile:copy": "npm run build && cap copy",
+    "ios:open": "npm run mobile:sync && cap open ios",
+    "android:open": "npm run mobile:sync && cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/filesystem": "^8.1.2",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/ios": "^8.5.0",
+    "@capacitor/keyboard": "^8.0.5",
+    "@capacitor/share": "^8.0.1",
+    "@capacitor/status-bar": "^8.0.3",
+    "@fontsource/press-start-2p": "^5.2.8",
+    "@fontsource/vt323": "^5.2.7",
+    "@react-three/drei": "9.122.0",
+    "@react-three/fiber": "8.18.0",
+    "@react-three/xr": "6.6.30",
+    "framer-motion": "^11.0.0",
+    "lucide-react": "^0.344.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "three": "0.185.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.0",
+    "@types/react": "^18.2.66",
+    "@types/react-dom": "^18.2.22",
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.7.2",
+    "vite": "^5.2.0",
+    "vitest": "^3.2.4"
+  }
+}

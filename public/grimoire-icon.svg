@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Grimoire XR 93 heptagram">
+  <rect width="512" height="512" rx="64" fill="#020102"/>
+  <path fill="#180509" d="M32 32h448v448H32z"/>
+  <path fill="#020102" d="M48 48h416v416H48z"/>
+  <path fill="#ef233c" d="M48 48h128v16H64v112H48zm288 0h128v128h-16V64H336zM48 336h16v112h112v16H48zm400 0h16v128H336v-16h112z"/>
+  <circle cx="256" cy="244" r="166" fill="none" stroke="#8d1728" stroke-width="14"/>
+  <circle cx="256" cy="244" r="142" fill="none" stroke="#b8860b" stroke-width="5"/>
+  <path d="M256 82 352 375 110 194h292L160 375Z" fill="none" stroke="#e5c158" stroke-width="13" stroke-linejoin="bevel"/>
+  <path d="M256 82 160 375 402 194H110l242 181Z" fill="none" stroke="#ef233c" stroke-width="5" stroke-linejoin="bevel" opacity=".72"/>
+  <rect x="178" y="384" width="156" height="72" fill="#020102" stroke="#35c6b4" stroke-width="6"/>
+  <text x="256" y="438" fill="#e5c158" font-family="monospace" font-size="58" font-weight="700" text-anchor="middle">93</text>
+</svg>

@@ -1,0 +1,49 @@
+{
+  "id": "/vr",
+  "name": "Grimoire XR · Temple of the Unremembered Name",
+  "short_name": "Grimoire XR",
+  "description": "A complete 78-archetype spatial Grimoire for ritual composition, image-forging, divination, dialogue, and living archives.",
+  "start_url": "/vr?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["fullscreen", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#020102",
+  "theme_color": "#020102",
+  "categories": ["entertainment", "lifestyle", "utilities"],
+  "icons": [
+    {
+      "src": "/grimoire-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/grimoire-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/grimoire-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Open Phone Demo",
+      "short_name": "Phone Demo",
+      "description": "Rehearse the complete Grimoire without local AI providers.",
+      "url": "/vr?source=pwa&demo=1",
+      "icons": [{ "src": "/grimoire-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Open Original Grimoire",
+      "short_name": "2D Grimoire",
+      "url": "/",
+      "icons": [{ "src": "/grimoire-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}
