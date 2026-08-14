@@ -1,4 +1,14 @@
-import type { CardMetadata, ErosField, VisualStyle } from '../types/grimoire'
+import type {
+  ArtStyle,
+  CardMetadata,
+  ErosField,
+  ErosLevel,
+  TarotSystem,
+  VisualStyle,
+} from '../types/grimoire'
+import { apiUrl } from './apiBase'
+
+export type CardImageQualityMode = 'preview' | 'final'
 
 export type CardImageRequest = {
   deckId: string
@@ -6,9 +16,14 @@ export type CardImageRequest = {
   cardName: string
   sigil: string
   artPrompt: string
+  tarotSystem?: TarotSystem
+  erosLevel?: ErosLevel
+  artStyle?: ArtStyle
   visualStyle?: VisualStyle
   erosField?: ErosField
   metadata?: CardMetadata
+  qualityMode?: CardImageQualityMode
+  seed?: number
 }
 
 type CardImageSuccess = {
@@ -17,7 +32,15 @@ type CardImageSuccess = {
   provider?: string
 }
 
-
+export type CardImageHealth = {
+  ok: boolean
+  provider?: string
+  comfyuiVersion?: string
+  configuredCheckpoint?: string
+  checkpointAvailable?: boolean
+  models?: string[]
+  error?: string
+}
 
 async function parseJsonResponse<T>(response: Response, fallbackMessage: string): Promise<T> {
   try {
@@ -27,15 +50,40 @@ async function parseJsonResponse<T>(response: Response, fallbackMessage: string)
   }
 }
 
+export async function getCardImageHealth(): Promise<CardImageHealth> {
+  const response = await fetch(apiUrl('/api/card-image-health'), {
+    method: 'GET',
+    cache: 'no-store',
+  })
+
+  const payload = await parseJsonResponse<CardImageHealth>(
+    response,
+    'Card image health endpoint returned an unreadable response.',
+  )
+
+  if (!response.ok || !payload.ok) {
+    return {
+      ...payload,
+      ok: false,
+      error: payload.error || `Image service health check failed (${response.status}).`,
+    }
+  }
+
+  return payload
+}
+
 export async function generateCardImage(
   request: CardImageRequest,
 ): Promise<CardImageSuccess> {
-  const startResponse = await fetch('/api/card-image-start', {
+  const startResponse = await fetch(apiUrl('/api/card-image-start'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify(request),
+    body: JSON.stringify({
+      ...request,
+      qualityMode: request.qualityMode ?? 'final',
+    }),
   })
 
   const startPayload = await parseJsonResponse<
@@ -50,10 +98,11 @@ export async function generateCardImage(
   const timeoutMs = 900000
 
   while (Date.now() - startedAt < timeoutMs) {
-    await new Promise((resolve) => window.setTimeout(resolve, 5000))
+    await new Promise((resolve) => window.setTimeout(resolve, 3000))
 
     const statusResponse = await fetch(
-      `/api/card-image-status?promptId=${encodeURIComponent(startPayload.promptId)}&t=${Date.now()}`,
+      apiUrl(`/api/card-image-status?promptId=${encodeURIComponent(startPayload.promptId)}&t=${Date.now()}`),
+      { cache: 'no-store' },
     )
 
     const statusPayload = await parseJsonResponse<
@@ -77,4 +126,3 @@ export async function generateCardImage(
 
   throw new Error('ComfyUI image generation timed out.')
 }
-
