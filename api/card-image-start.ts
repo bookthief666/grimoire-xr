@@ -1,6 +1,24 @@
 /// <reference types="node" />
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+import {
+  DEFAULT_TAROT_SYSTEM,
+  TAROT_SYSTEM_IDS,
+  getTarotSystem,
+  type TarotSystemId,
+} from '../src/constants/tarotSystems.js'
+import {
+  DEFAULT_EROS_LEVEL,
+  EROS_LEVEL_IDS,
+  getErosLevel,
+  type ErosLevelId,
+} from '../src/constants/erosLevels.js'
+import {
+  DEFAULT_ART_STYLE,
+  ART_STYLE_IDS,
+  getArtStyle,
+  type ArtStyleId,
+} from '../src/constants/artStyles.js'
 
 type NodeApiRequest = {
   method?: string
@@ -13,38 +31,91 @@ type NodeApiResponse = {
   json: (body: unknown) => void
 }
 
+type QualityMode = 'preview' | 'final'
+
+const QUALITY_PRESETS: Record<QualityMode, { width: number; height: number; steps: number; cfg: number }> = {
+  preview: { width: 512, height: 768, steps: 16, cfg: 6 },
+  final: { width: 768, height: 1152, steps: 24, cfg: 6.5 },
+}
+
 function readString(value: unknown, fallback = '') {
   return typeof value === 'string' && value.trim() ? value.trim() : fallback
 }
 
+function readEnum<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
+  const text = readString(value)
+  return allowed.includes(text as T) ? (text as T) : fallback
+}
+
+function readTarotSystem(body: Record<string, unknown>): TarotSystemId {
+  return readEnum(body.tarotSystem, TAROT_SYSTEM_IDS, DEFAULT_TAROT_SYSTEM)
+}
+
+function readErosLevel(body: Record<string, unknown>): ErosLevelId {
+  return readEnum(body.erosLevel, EROS_LEVEL_IDS, DEFAULT_EROS_LEVEL)
+}
+
+function readArtStyle(body: Record<string, unknown>): ArtStyleId {
+  return readEnum(body.artStyle, ART_STYLE_IDS, DEFAULT_ART_STYLE)
+}
+
+function readQualityMode(body: Record<string, unknown>): QualityMode {
+  return body.qualityMode === 'preview' ? 'preview' : 'final'
+}
+
+function readSeed(body: Record<string, unknown>) {
+  const value = body.seed
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.max(0, Math.min(2147483647, Math.floor(value)))
+  }
+
+  return Math.floor(Math.random() * 2147483647)
+}
+
 function buildPositivePrompt(body: Record<string, unknown>) {
+  const tarotSystemProfile = getTarotSystem(readTarotSystem(body))
+  const erosLevelProfile = getErosLevel(readErosLevel(body))
+  const artStyleProfile = getArtStyle(readArtStyle(body))
+
   return [
-    'masterpiece, best quality, highly detailed dark occult tarot illustration',
+    'masterpiece, best quality, highly detailed occult tarot illustration',
     'vertical tarot-card-safe composition, central symbolic figure or ritual tableau',
     'hermetic, alchemical, sacred geometry, cinematic lighting, polished fantasy realism',
     'no text, no watermark, no logo',
     readString(body.cardName),
     readString(body.sigil) ? `sigil motif: ${readString(body.sigil)}` : '',
     readString(body.artPrompt),
-    readString(body.visualStyle) ? `visual style: ${readString(body.visualStyle)}` : '',
-    readString(body.erosField) ? `mood: ${readString(body.erosField)}` : '',
+    `tarot system visual grammar: ${tarotSystemProfile.label}; ${tarotSystemProfile.description}`,
+    `tarot system instruction: ${tarotSystemProfile.instruction}`,
+    `art style discipline: ${artStyleProfile.label}; ${artStyleProfile.prompt}`,
+    `eros intensity: ${erosLevelProfile.shortLabel}; ${erosLevelProfile.imagePrompt}`,
+    readString(body.visualStyle) ? `legacy visual atmosphere hint: ${readString(body.visualStyle)}` : '',
+    readString(body.erosField) ? `legacy eros field hint: ${readString(body.erosField)}` : '',
+    'symbolically coherent, devotional, psychologically serious, initiatory composition',
   ].filter(Boolean).join(', ')
 }
 
-function buildNegativePrompt() {
+function buildNegativePrompt(body: Record<string, unknown>) {
+  const artStyleProfile = getArtStyle(readArtStyle(body))
+
   return [
     'text, letters, words, watermark, signature, logo',
     'blurry, low quality, low resolution, bad anatomy, extra fingers, extra limbs',
     'cropped, duplicate, ugly, distorted, malformed face, broken hands',
-  ].join(', ')
+    artStyleProfile.negative,
+  ].filter(Boolean).join(', ')
 }
 
 function chooseCheckpoint(body: Record<string, unknown>) {
-  const erosField = readString(body.erosField)
-  const eros = erosField === 'Charged' || erosField === 'Ecstatic'
+  const erosLevel = readErosLevel(body)
+  const useErosCheckpoint =
+    erosLevel === 'charged' ||
+    erosLevel === 'ecstatic' ||
+    erosLevel === 'transgressive'
 
   return (
-    eros
+    useErosCheckpoint
       ? process.env.COMFYUI_CHECKPOINT_EROS || process.env.COMFYUI_CHECKPOINT_DEFAULT
       : process.env.COMFYUI_CHECKPOINT_DEFAULT
   ) || 'juggernautXL_ragnarokBy.safetensors'
@@ -68,8 +139,11 @@ function comfyHeaders() {
 
 function injectWorkflow(workflow: Record<string, any>, body: Record<string, unknown>) {
   const positivePrompt = buildPositivePrompt(body)
-  const negativePrompt = buildNegativePrompt()
+  const negativePrompt = buildNegativePrompt(body)
   const checkpoint = chooseCheckpoint(body)
+  const qualityMode = readQualityMode(body)
+  const preset = QUALITY_PRESETS[qualityMode]
+  const seed = readSeed(body)
 
   const kSamplerEntry = Object.entries(workflow).find(([, node]) => node.class_type === 'KSampler')
   const kSampler = kSamplerEntry?.[1]
@@ -88,29 +162,27 @@ function injectWorkflow(workflow: Record<string, any>, body: Record<string, unkn
     }
 
     if (node.class_type === 'EmptyLatentImage') {
-      if (node.inputs?.width !== undefined) node.inputs.width = 768
-      if (node.inputs?.height !== undefined) node.inputs.height = 1152
+      if (node.inputs?.width !== undefined) node.inputs.width = preset.width
+      if (node.inputs?.height !== undefined) node.inputs.height = preset.height
       if (node.inputs?.batch_size !== undefined) node.inputs.batch_size = 1
     }
 
     if (node.class_type === 'KSampler') {
-      if (node.inputs?.steps !== undefined) node.inputs.steps = 24
-      if (node.inputs?.cfg !== undefined) node.inputs.cfg = 6.5
+      if (node.inputs?.steps !== undefined) node.inputs.steps = preset.steps
+      if (node.inputs?.cfg !== undefined) node.inputs.cfg = preset.cfg
       if (node.inputs?.sampler_name !== undefined) node.inputs.sampler_name = 'euler'
       if (node.inputs?.scheduler !== undefined) node.inputs.scheduler = 'normal'
-      if (node.inputs?.seed !== undefined) {
-        node.inputs.seed = Math.floor(Math.random() * 2147483647)
-      }
+      if (node.inputs?.seed !== undefined) node.inputs.seed = seed
     }
 
     if (node.class_type === 'SaveImage' && node.inputs?.filename_prefix !== undefined) {
       const deckId = readString(body.deckId, 'deck').replace(/[^a-zA-Z0-9_-]/g, '_')
       const cardId = String(body.cardId ?? 'card').replace(/[^a-zA-Z0-9_-]/g, '_')
-      node.inputs.filename_prefix = `grimoire_${deckId}_${cardId}`
+      node.inputs.filename_prefix = `grimoire_${deckId}_${cardId}_${qualityMode}`
     }
   }
 
-  return workflow
+  return { workflow, qualityMode, preset, seed, checkpoint }
 }
 
 export default async function handler(req: NodeApiRequest, res: NodeApiResponse) {
@@ -125,7 +197,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
 
   try {
     const workflowPath = join(process.cwd(), 'api/comfy/workflow_api.json')
-    const workflow = injectWorkflow(
+    const injected = injectWorkflow(
       JSON.parse(readFileSync(workflowPath, 'utf8')),
       body,
     )
@@ -135,7 +207,7 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       headers: comfyHeaders(),
       body: JSON.stringify({
         client_id: process.env.COMFYUI_CLIENT_ID || 'grimoire-xr',
-        prompt: workflow,
+        prompt: injected.workflow,
       }),
     })
 
@@ -158,11 +230,25 @@ export default async function handler(req: NodeApiRequest, res: NodeApiResponse)
       ok: true,
       provider: 'comfyui',
       promptId: json.prompt_id,
+      qualityMode: injected.qualityMode,
+      width: injected.preset.width,
+      height: injected.preset.height,
+      steps: injected.preset.steps,
+      seed: injected.seed,
+      checkpoint: injected.checkpoint,
     })
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown ComfyUI start failure.'
+    const errorCause =
+      error && typeof error === 'object' && 'cause' in error
+        ? String((error as { cause?: unknown }).cause)
+        : undefined
+
     return res.status(500).json({
       ok: false,
-      error: error instanceof Error ? error.message : 'Unknown ComfyUI start failure.',
+      error: errorMessage,
+      details: errorCause,
+      comfyuiBaseUrl: baseUrl,
     })
   }
 }
