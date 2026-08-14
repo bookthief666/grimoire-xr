@@ -11,6 +11,7 @@ import {
   type RitualConfig,
   type SubjectDossier,
 } from '../types/grimoire'
+import { apiUrl } from './apiBase'
 
 type ForgeSuccess = {
   ok: true
@@ -47,7 +48,7 @@ async function parseJsonResponse<T>(response: Response, fallbackMessage: string)
 export async function generateDeck(config: RitualConfig): Promise<GrimoireDeck> {
   const validatedConfig = ritualConfigSchema.parse(config)
 
-  const response = await fetch('/api/forge', {
+  const response = await fetch(apiUrl('/api/forge'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -77,7 +78,7 @@ export async function consultOracle(
 ): Promise<OracleReading> {
   const validatedRequest = oracleConsultationRequestSchema.parse(request)
 
-  const response = await fetch('/api/oracle', {
+  const response = await fetch(apiUrl('/api/oracle'), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
