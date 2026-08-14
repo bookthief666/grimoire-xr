@@ -1,3 +1,5 @@
+import { lockTarotReferenceMeta } from './tarotReference.js';
+
 export const VR_PALETTE = {
   void: '#020102',
   ink: '#080405',
@@ -200,6 +202,34 @@ export const buildStationPose = index => {
 
 export const PALACE_STATE_VERSION = 3;
 
+const normalizeInvocationSubject = value => String(value || '')
+  .normalize('NFKC')
+  .replace(/\s+/g, ' ')
+  .trim();
+
+// The generated 78-card architecture is governed by the authored subject and
+// the selected Tarot lineage. Aesthetic, Eros, intellect, and atmosphere are
+// deliberately live currents: they may be retuned for later operations without
+// invalidating the already-inscribed deck.
+export const createInvocationBinding = value => ({
+  subject: truncateForPanel(normalizeInvocationSubject(value?.subject), 240),
+  traditionIndex: clampIndex(value?.traditionIndex, VR_TRADITIONS.length),
+});
+
+export const invocationMatchesBinding = (binding, value) => {
+  if (!binding || typeof binding !== 'object') return false;
+  const current = createInvocationBinding(value);
+  const preserved = createInvocationBinding(binding);
+  return current.subject.localeCompare(preserved.subject, undefined, { sensitivity: 'accent' }) === 0
+    && current.traditionIndex === preserved.traditionIndex;
+};
+
+export const resolveArchiveInvocation = ({ binding, stale, subject, traditionIndex }) => {
+  const current = createInvocationBinding({ subject, traditionIndex });
+  const preserved = binding ? createInvocationBinding(binding) : current;
+  return stale ? preserved : current;
+};
+
 export const PROTOTYPE_MEMORY = {
   dossier: 'The Atrium is awake but has not yet received a subject. Name the intelligence, philosopher, artist, deity, or living question whose shadows you wish to arrange. The seven courts will then divide its powers among memory, language, desire, genius, will, synthesis, and shadow.',
   geniusTitle: 'THE UNREMEMBERED NAME',
@@ -235,9 +265,10 @@ export const normalizeRitual = (value, subject) => {
       return {
         id: index,
         name: truncateForPanel(card?.name || archetype.name, 72),
-        arcana: truncateForPanel(card?.arcana || archetype.arcana, 20),
-        suit: truncateForPanel(card?.suit || archetype.suit, 20),
-        rank: truncateForPanel(card?.rank || archetype.rank, 20),
+        // These three fields are inherited Tarot structure, not model opinion.
+        arcana: archetype.arcana,
+        suit: archetype.suit,
+        rank: archetype.rank,
         planet: truncateForPanel(card?.planet || archetype.planet, 20),
         oracle: truncateForPanel(card?.oracle || archetype.oracle, 180),
       };
@@ -272,19 +303,16 @@ const clampIndex = (value, maximum) => {
   return Math.min(Math.max(parsed, 0), Math.max(0, maximum - 1));
 };
 
-const normalizeForgedCard = value => {
+const normalizeForgedCard = (value, tradition) => {
   if (!value || typeof value !== 'object') return null;
+  const id = Math.max(0, Number.isInteger(value.id) ? value.id : 0);
   const sourceMeta = value.meta && typeof value.meta === 'object' ? value.meta : {};
   return {
-    id: Math.max(0, Number.isInteger(value.id) ? value.id : 0),
+    id,
     name: truncateForPanel(value.name || 'THE UNNAMED ARCANUM', 72),
     exegesis: truncateForPanel(value.exegesis || 'No exegesis was preserved.', 620),
     visual: truncateForPanel(value.visual || value.name || 'A symbolic arcanum.', 460),
-    meta: {
-      planet: truncateForPanel(sourceMeta.planet, 24),
-      element: truncateForPanel(sourceMeta.element, 24),
-      operation: truncateForPanel(sourceMeta.operation, 120),
-    },
+    meta: lockTarotReferenceMeta(id, tradition, sourceMeta),
     patina: Math.max(0, Number.isFinite(Number(value.patina)) ? Number(value.patina) : 0),
     // Generated image data can exceed browser storage quotas. The image is
     // always manifested explicitly again when a restored palace needs it.
@@ -292,8 +320,8 @@ const normalizeForgedCard = value => {
   };
 };
 
-const normalizeForgedDeck = value => (Array.isArray(value) ? value : [])
-  .map(normalizeForgedCard)
+const normalizeForgedDeck = (value, tradition) => (Array.isArray(value) ? value : [])
+  .map(card => normalizeForgedCard(card, tradition))
   .filter(Boolean)
   .slice(0, TAROT_ARCHETYPES.length);
 
@@ -307,7 +335,9 @@ const normalizeSpiritMessages = value => (Array.isArray(value) ? value : [])
 
 export const createPalaceSnapshot = value => ({
   version: PALACE_STATE_VERSION,
-  subject: truncateForPanel(value.subject || 'Giordano Bruno', 120),
+  // An intentionally empty field must stay empty. Re-introducing a showcase
+  // name here made the unrestricted invocation feel like a hidden preset.
+  subject: truncateForPanel(value.subject || '', 120),
   traditionIndex: clampIndex(value.traditionIndex, VR_TRADITIONS.length),
   styleIndex: clampIndex(value.styleIndex, VR_STYLES.length),
   erosIndex: clampIndex(value.erosIndex, EROS_MODES.length),
@@ -315,8 +345,13 @@ export const createPalaceSnapshot = value => ({
   spreadIndex: clampIndex(value.spreadIndex, VR_SPREADS.length),
   ritual: normalizeRitual(value.ritual, value.subject || 'the subject'),
   awakened: Boolean(value.awakened),
-  forgedCard: normalizeForgedCard(value.forgedCard),
-  forgedDeck: normalizeForgedDeck(value.forgedDeck),
+  boundInvocation: value.boundInvocation
+    ? createInvocationBinding(value.boundInvocation)
+    : value.awakened
+      ? createInvocationBinding(value)
+      : null,
+  forgedCard: normalizeForgedCard(value.forgedCard, VR_TRADITIONS[clampIndex(value.traditionIndex, VR_TRADITIONS.length)]),
+  forgedDeck: normalizeForgedDeck(value.forgedDeck, VR_TRADITIONS[clampIndex(value.traditionIndex, VR_TRADITIONS.length)]),
   cardIndex: Math.max(0, Number.isInteger(value.cardIndex) ? value.cardIndex : 0),
   oracleQuestion: truncateForPanel(value.oracleQuestion, 240),
   oracleAnswer: truncateForPanel(value.oracleAnswer, 700),

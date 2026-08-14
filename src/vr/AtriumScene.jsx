@@ -28,6 +28,10 @@ import {
   buildSealPoints,
   truncateForPanel,
 } from './vrContent.js';
+import SpatialRitualComposer from './SpatialRitualComposer.jsx';
+import WristGrimoire from './WristGrimoire.jsx';
+import MnemonicEffigy from './MnemonicEffigy.jsx';
+import { buildEffigyParameters } from './spatialRitualModel.js';
 
 const pulsePointer = (event, intensity = 0.32, milliseconds = 32) => {
   const gamepad = event?.pointerState?.inputSource?.gamepad
@@ -679,7 +683,7 @@ const PlanetaryGate = memo(({ station, index, selected, completed, onSelect }) =
 });
 PlanetaryGate.displayName = 'PlanetaryGate';
 
-const RitualAltar = ({ subject, busy, awakened, completedCount, manifestationKey, onBegin }) => {
+const RitualAltar = ({ subject, busy, awakened, invocationStale, completedCount, manifestationKey, composerOpen, onOpenComposer }) => {
   const orb = useRef();
   const rings = useRef();
   const flare = useRef(0);
@@ -739,12 +743,12 @@ const RitualAltar = ({ subject, busy, awakened, completedCount, manifestationKey
         pixel
         position={[0, 0.98, 0.74]}
         fontSize={0.085}
-        color={awakened ? VR_PALETTE.gold : VR_PALETTE.blood}
+        color={invocationStale ? VR_PALETTE.blood : awakened ? VR_PALETTE.gold : VR_PALETTE.blood}
         maxWidth={2.2}
         textAlign="center"
         anchorX="center"
       >
-        {busy ? 'THE PALACE IS THINKING' : awakened ? 'THE MONAD IS AWAKE' : 'BEGIN THE ARRANGEMENT'}
+        {busy ? 'THE PALACE IS THINKING' : composerOpen ? 'THE CURRENT IS OPEN' : invocationStale ? 'INVOCATION UNSEALED · REBIND' : awakened ? 'REVIEW / TUNE THE CURRENT' : 'OPEN INVOCATION DOSSIER'}
       </SacredText>
       <SacredText
         position={[0, 0.8, 0.74]}
@@ -773,7 +777,7 @@ const RitualAltar = ({ subject, busy, awakened, completedCount, manifestationKey
           event.stopPropagation();
           if (!busy) {
             pulsePointer(event, 0.48, 54);
-            onBegin();
+            onOpenComposer();
           }
         }}
         onPointerOver={event => { event.stopPropagation(); setHovered(true); }}
@@ -1259,10 +1263,10 @@ const FrameMonitor = ({ onSample }) => {
 export default function AtriumScene({
   subject,
   awakened,
+  invocationStale = false,
   ritual,
   activeStationId,
   onSelectStation,
-  onBeginRitual,
   codex,
   onCodexAction,
   status,
@@ -1277,9 +1281,28 @@ export default function AtriumScene({
   completedCourtIds = [],
   atmosphereTier = 2,
   onPerformanceSample,
+  composer,
+  composerActions,
+  wrist,
+  wristActions,
 }) {
   const station = PLANETARY_STATIONS.find(entry => entry.id === activeStationId)
     || PLANETARY_STATIONS[1];
+  const currentEffigy = useMemo(() => buildEffigyParameters({
+    subject,
+    traditionIndex: composer?.traditionIndex,
+    styleIndex: composer?.styleIndex,
+    erosIndex: composer?.erosIndex,
+    techIndex: composer?.techIndex,
+    atmosphereMode: composer?.atmosphereMode,
+  }), [
+    composer?.atmosphereMode,
+    composer?.erosIndex,
+    composer?.styleIndex,
+    composer?.techIndex,
+    composer?.traditionIndex,
+    subject,
+  ]);
   return (
     <>
       <color attach="background" args={[VR_PALETTE.void]} />
@@ -1298,6 +1321,15 @@ export default function AtriumScene({
         awakened={awakened}
         completedCount={completedCourtIds.length}
       />
+      {!composer?.open && (
+        <group position={[0, 2.74, -0.05]} scale={0.68}>
+          <MnemonicEffigy
+            parameters={currentEffigy}
+            active={awakened && !invocationStale}
+            busy={status.busy}
+          />
+        </group>
+      )}
       {atmosphereTier > 0 && (
         <>
           <AstralWeather tier={atmosphereTier} busy={status.busy} />
@@ -1309,12 +1341,14 @@ export default function AtriumScene({
         subject={subject}
         busy={status.busy}
         awakened={awakened}
+        invocationStale={invocationStale}
         completedCount={completedCourtIds.length}
         manifestationKey={imageUrl}
-        onBegin={onBeginRitual}
+        composerOpen={composer?.open}
+        onOpenComposer={composerActions.open}
       />
       <PlanetaryArchitecture activeStationId={activeStationId} completedCourtIds={completedCourtIds} />
-      {PLANETARY_STATIONS.map((entry, index) => (
+      {!composer?.open && PLANETARY_STATIONS.map((entry, index) => (
         <PlanetaryGate
           key={entry.id}
           station={entry}
@@ -1324,20 +1358,25 @@ export default function AtriumScene({
           onSelect={onSelectStation}
         />
       ))}
-      <FloatingCodex
-        station={station}
-        title={codex.title}
-        body={codex.body}
-        subject={ritual?.geniusTitle || subject}
-        actionLabel={codex.actionLabel}
-        actionDisabled={codex.actionDisabled}
-        onAction={onCodexAction}
-        status={status}
-        inXR={inXR}
-        imageUrl={imageUrl}
-        relicInspected={relicInspected}
-        onRelicInspect={onRelicInspect}
-      />
+      {composer?.open ? (
+        <SpatialRitualComposer model={composer} actions={composerActions} />
+      ) : (
+        <FloatingCodex
+          station={station}
+          title={codex.title}
+          body={codex.body}
+          subject={ritual?.geniusTitle || subject}
+          actionLabel={codex.actionLabel}
+          actionDisabled={codex.actionDisabled}
+          onAction={onCodexAction}
+          status={status}
+          inXR={inXR}
+          imageUrl={imageUrl}
+          relicInspected={relicInspected}
+          onRelicInspect={onRelicInspect}
+        />
+      )}
+      {!composer?.open && <WristGrimoire model={wrist} actions={wristActions} />}
       <FrameMonitor onSample={onPerformanceSample} />
       <OrbitControls
         makeDefault

@@ -43,6 +43,7 @@ describe('Grimoire XR portable archive', () => {
       ritual: { dossier: 'Living memory', cards: [{ name: 'The Star of Astarte' }] },
       forgedDeck: [
         { id: 0, name: 'First', imageUrl: 'data:image/svg+xml,%3Csvg/%3E', patina: 3 },
+        { id: 3, name: 'Burning Veil', meta: { hebrew: 'Men', planet: 'Sun', gematria: 44, element: 'Fire', alchemical: 'Rubedo' } },
         { id: 1, name: 'Second', imageUrl: 'javascript:alert(1)' },
         { id: 99, name: 'Outside the deck' },
       ],
@@ -51,9 +52,17 @@ describe('Grimoire XR portable archive', () => {
       completedCourtIds: ['scriptorium', 'not-a-court'],
     }));
     expect(archive.ritual.cards).toHaveLength(78);
-    expect(archive.forgedDeck).toHaveLength(2);
+    expect(archive.forgedDeck).toHaveLength(3);
     expect(archive.forgedDeck[0].imageUrl).toMatch(/^data:image\/svg\+xml/);
     expect(archive.forgedDeck[1].imageUrl).toBeNull();
+    expect(archive.forgedDeck[2].meta).toMatchObject({
+      inherited: 'THE EMPRESS · III',
+      hebrew: 'DALETH (ד)',
+      attribution: 'VENUS · PLANETARY TRUMP',
+      gematria: 4,
+      symbolicElement: 'FIRE',
+      validation: 'INHERITED REFERENCE LOCKED',
+    });
     expect(archive.spiritMessages).toHaveLength(1);
     expect(archive.completedCourtIds).toEqual(['scriptorium']);
   });

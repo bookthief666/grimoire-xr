@@ -4,8 +4,8 @@ Verified on 2026-08-10/11 after integrating the complete application:
 
 - Canonical `tarot_grimoire_os.tsx` application logic is present in `src/App.jsx`.
 - `npm install` completed and the lockfile is current.
-- Thirty-seven tests pass under Vitest 3.2.7: three reducer regressions, four Ollama provider tests, three ComfyUI workflow tests, two FIFO resource-scheduler tests, eleven VR content/seal/deck/persistence/layout/atmosphere/manual-placement/batch-target tests, four provider-free Demo Current tests, four VR archive/statistics/HTML/import tests, two PWA manifest/service-worker boundary tests, two VR submit-once polling tests, one shared-catalog parity test, and one preview-proxy configuration test.
-- Vite 5.4.21 produced a clean production build from 2,730 transformed modules, including lazy-separated 2D and WebXR routes.
+- Fifty-nine tests pass under Vitest 3.2.7 across fifteen test files: reducer regressions, providers, FIFO scheduling, complete VR content, invocation binding, spatial composer navigation, wrist state, reference locks, Demo Current, archive restoration, PWA boundaries, submit-once polling, shared-catalog parity, preview proxying, and the guided seven-court circuit.
+- Vite 5.4.21 produced a clean production build from 2,732 transformed modules, including lazy-separated 2D and WebXR routes.
 - Press Start 2P and VT323 are emitted as local font assets.
 - An end-to-end API smoke test passed against controlled Ollama and ComfyUI doubles. It verified `/health`, asynchronous text and image submission/status polling, completed payload retrieval, and the enforced order `Ollama text → Ollama unload → ComfyUI image`.
 - The production preview served the `/vr` history route and its hashed entry asset successfully. Its same-origin `/health` proxy returned the live Node provider and resource-scheduler state.
@@ -28,6 +28,9 @@ Verified on 2026-08-10/11 after integrating the complete application:
 - Coarse-touch devices receive native Capacitor or browser vibration feedback, larger targets, keyboard-aware visual-viewport sizing, closed-screen and unfolded posture layouts, a reduced DPR ceiling, and an Adaptive atmosphere ceiling of tier 2 before performance downshift.
 - Atmosphere intensity has explicit Vivid/Balanced/Veiled/Off overrides plus an Adaptive mode. Adaptive uses the vivid tier on a healthy desktop, a balanced Quest tier, and downshifts when measured frame rate is low.
 - The complete creative catalog is shared between 2D and XR: at least 50 art styles, six Eros levels, three knowledge levels, and eleven traditions including the original nine plus Bruno and Astarte.
+- Reference Lock 0.9.0 derives canonical inherited Tarot correspondences from application-owned data, displays the lock beside each forged card, repairs imported legacy metadata, and permits deliberate re-scribing without allowing model output to overwrite inherited facts.
+- Seven-Court Circuit 0.9.1 adds a tested ritual-order journey model, a responsive Archive checklist with direct court handoffs, provider-free Sol seal and Venus weave controls, and deliberate Luna completion only when a portable archive is exported, shared, or restored.
+- Living Invocation 0.11A keeps unrestricted keyboard authoring authoritative, adds optional voice inscription, carries the current on the wrist, and leaves a generative Mnemonic Effigy above the altar after the menu closes. Subject and Tarot lineage are now a tested deck binding: changing either unseals dependent tools until a deliberate rebind, while visual and atmospheric settings remain live. Empty subjects remain empty rather than reviving a showcase preset, and exports cannot combine an unsealed draft name with an older bound deck.
 - XR ritual normalization guarantees 78 ordered archetypes (22 Major and 56 Minor) even if local-model output is incomplete. Deterministic spread selection is covered for unique ten-card results.
 - Milestone 2 production compilation covers kinetic relic arrival/inspection, optional controller haptics, persistent palace-state normalization, and progress-driven locus illumination.
 - `npx cap sync` copied the current `dist/` into Android and iOS.
@@ -40,5 +43,5 @@ Native compiler notes:
 
 - Xcode cannot run in this Linux workspace; open `ios/App/App.xcodeproj` on macOS to compile/sign.
 - The Android Gradle wrapper could not download its Gradle distribution because this workspace blocks `services.gradle.org`. Android Studio on a normal connected workstation will perform that download and compile the synchronized project.
-- Live generation against the user's Mac was not invoked from this workspace. The controlled provider tests do not replace the required Qwen3 8B/Juggernaut XL device slice on `Arianas-Air` and `SM-F956U`.
+- Live generation has been accepted on the user's Mac: Qwen3 8B awakened the 78-card ritual, wrote exegesis and multi-turn Spirit dialogue, while Juggernaut XL produced a 640x960 card image in approximately 96 seconds on MPS. The remaining device slice is the new seven-court completion flow and headset embodiment.
 - This workspace has no physical Quest or WebGL browser, so immersive session start, controller-ray scale, spatial text comfort, and measured 72 Hz performance remain the first device acceptance test.

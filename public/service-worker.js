@@ -1,4 +1,4 @@
-const CACHE_NAME = 'grimoire-xr-shell-0.8';
+const CACHE_NAME = 'grimoire-xr-shell-0.11a';
 const CORE_SHELL = [
   '/',
   '/vr',

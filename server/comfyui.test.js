@@ -10,6 +10,9 @@ const config = createComfyUiConfig({
   COMFYUI_CFG: '4',
   COMFYUI_SAMPLER: 'dpmpp_2m',
   COMFYUI_SCHEDULER: 'karras',
+  COMFYUI_FINAL_WIDTH: '832',
+  COMFYUI_FINAL_HEIGHT: '1216',
+  COMFYUI_FINAL_STEPS: '28',
 });
 
 describe('ComfyUI SDXL integration', () => {
@@ -20,6 +23,54 @@ describe('ComfyUI SDXL integration', () => {
     expect(workflow['3'].inputs).toMatchObject({
       seed: 42,
       steps: 18,
+      cfg: 4,
+      sampler_name: 'dpmpp_2m',
+      scheduler: 'karras',
+    });
+  });
+
+  it('applies the final preset and preserves an explicit seed', async () => {
+    let submitted;
+
+    const fetchImpl = vi.fn(async (url, options = {}) => {
+      if (url.endsWith('/prompt')) {
+        submitted = JSON.parse(options.body);
+        return new Response(JSON.stringify({ prompt_id: 'final-prompt' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      throw new Error(`Unexpected URL: ${url}`);
+    });
+
+    const client = createComfyUiClient({ config, fetchImpl, clientId: 'test-client' });
+    const started = await client.start({
+      prompt: 'occult tarot',
+      mode: 'final',
+      seed: 424242,
+    });
+
+    expect(started).toMatchObject({
+      providerJobId: 'final-prompt',
+      seed: 424242,
+      mode: 'final',
+      width: 832,
+      height: 1216,
+      steps: 28,
+      cfg: 4,
+      sampler: 'dpmpp_2m',
+      scheduler: 'karras',
+    });
+
+    expect(submitted.prompt['5'].inputs).toMatchObject({
+      width: 832,
+      height: 1216,
+      batch_size: 1,
+    });
+
+    expect(submitted.prompt['3'].inputs).toMatchObject({
+      seed: 424242,
+      steps: 28,
       cfg: 4,
       sampler_name: 'dpmpp_2m',
       scheduler: 'karras',

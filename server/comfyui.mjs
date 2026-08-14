@@ -44,18 +44,46 @@ const requestJson = async (fetchImpl, url, options = {}, timeoutMs = 15_000) => 
   return data;
 };
 
-export const createComfyUiConfig = (environment = process.env) => ({
-  baseUrl: normalizeBaseUrl(environment.COMFYUI_BASE_URL),
-  checkpoint: environment.COMFYUI_CHECKPOINT || '',
-  width: Math.round(asNumber(environment.COMFYUI_WIDTH, 640, 512, 2048) / 8) * 8,
-  height: Math.round(asNumber(environment.COMFYUI_HEIGHT, 960, 512, 2048) / 8) * 8,
-  steps: Math.round(asNumber(environment.COMFYUI_STEPS, 18, 1, 100)),
-  cfg: asNumber(environment.COMFYUI_CFG, 4, 0, 30),
-  sampler: environment.COMFYUI_SAMPLER || 'dpmpp_2m',
-  scheduler: environment.COMFYUI_SCHEDULER || 'karras',
-  negativePrompt: environment.COMFYUI_NEGATIVE_PROMPT || DEFAULT_NEGATIVE_PROMPT,
-  requestTimeoutMs: Math.round(asNumber(environment.COMFYUI_REQUEST_TIMEOUT_MS, 15_000, 1_000, 120_000)),
-});
+export const createComfyUiConfig = (environment = process.env) => {
+  const width = Math.round(asNumber(environment.COMFYUI_WIDTH, 640, 512, 2048) / 8) * 8;
+  const height = Math.round(asNumber(environment.COMFYUI_HEIGHT, 960, 512, 2048) / 8) * 8;
+  const steps = Math.round(asNumber(environment.COMFYUI_STEPS, 18, 1, 100));
+
+  return {
+    baseUrl: normalizeBaseUrl(environment.COMFYUI_BASE_URL),
+    checkpoint: environment.COMFYUI_CHECKPOINT || '',
+    width,
+    height,
+    steps,
+    cfg: asNumber(environment.COMFYUI_CFG, 4, 0, 30),
+    sampler: environment.COMFYUI_SAMPLER || 'dpmpp_2m',
+    scheduler: environment.COMFYUI_SCHEDULER || 'karras',
+    negativePrompt: environment.COMFYUI_NEGATIVE_PROMPT || DEFAULT_NEGATIVE_PROMPT,
+    requestTimeoutMs: Math.round(asNumber(environment.COMFYUI_REQUEST_TIMEOUT_MS, 15_000, 1_000, 120_000)),
+
+    // Higher-quality txt2img preset. Preview remains the measured M2 baseline.
+    finalWidth: Math.round(asNumber(environment.COMFYUI_FINAL_WIDTH, 832, 512, 2048) / 8) * 8,
+    finalHeight: Math.round(asNumber(environment.COMFYUI_FINAL_HEIGHT, 1216, 512, 2048) / 8) * 8,
+    finalSteps: Math.round(asNumber(environment.COMFYUI_FINAL_STEPS, 28, 1, 100)),
+  };
+};
+
+export const resolveComfyUiRenderConfig = (config, mode = 'preview') => {
+  if (mode !== 'final') return { ...config };
+
+  return {
+    ...config,
+    width: config.finalWidth,
+    height: config.finalHeight,
+    steps: config.finalSteps,
+  };
+};
+
+const resolveSeed = value => {
+  const parsed = Number(value);
+  if (Number.isSafeInteger(parsed) && parsed >= 0) return parsed;
+  return Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
+};
 
 export const buildSdxlWorkflow = ({ prompt, seed, config }) => ({
   '3': {
@@ -143,21 +171,47 @@ export const createComfyUiClient = ({
     };
   };
 
-  const start = async prompt => {
+  const start = async input => {
     ensureConfigured();
-    const seed = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
-    const workflow = buildSdxlWorkflow({ prompt, seed, config });
+
+    // Preserve compatibility with existing callers that pass only a prompt string.
+    const request = typeof input === 'string'
+      ? { prompt: input }
+      : (input || {});
+
+    const prompt = String(request.prompt || '').trim();
+    if (!prompt) {
+      throw Object.assign(new Error('Image prompt is required.'), { status: 400 });
+    }
+
+    const mode = request.mode === 'final' ? 'final' : 'preview';
+    const seed = resolveSeed(request.seed);
+    const renderConfig = resolveComfyUiRenderConfig(config, mode);
+    const workflow = buildSdxlWorkflow({ prompt, seed, config: renderConfig });
+
     const data = await requestJson(fetchImpl, `${config.baseUrl}/prompt`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt: workflow, client_id: clientId }),
     }, config.requestTimeoutMs);
+
     const providerJobId = data?.prompt_id;
     if (!providerJobId) {
       const detail = readErrorDetail(data) || 'ComfyUI accepted no prompt ID.';
       throw Object.assign(new Error(detail), { status: 502 });
     }
-    return { providerJobId, seed };
+
+    return {
+      providerJobId,
+      seed,
+      mode,
+      width: renderConfig.width,
+      height: renderConfig.height,
+      steps: renderConfig.steps,
+      cfg: renderConfig.cfg,
+      sampler: renderConfig.sampler,
+      scheduler: renderConfig.scheduler,
+    };
   };
 
   const status = async providerJobId => {

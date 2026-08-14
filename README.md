@@ -2,7 +2,7 @@
 
 This is the complete Tarot/Grimoire React application packaged as a Vite + React + Tailwind + Capacitor app for iOS and Android. The UI remains HTML/CSS, Framer Motion, Web Audio, and Canvas; it has not been converted to React Native.
 
-The web build also contains a Quest-oriented WebXR experience at `/vr`: the **Temple of the Unremembered Name**, with seven planetary courts connected to the same local Ollama/ComfyUI scheduler. Showcase & Continuity 0.8 adds an automatic first-run Showcase Rite, swipeable manifested-card reliquary, validated JSON restoration, and an installable offline phone shell on top of the provider-free Demo Current and Galaxy Z Fold layouts. The 2D and VR experiences are route-split, so the Three.js runtime is not loaded by the original app. Start with [SHOWCASE-CONTINUITY-0.8.md](SHOWCASE-CONTINUITY-0.8.md) and [COMPLETE-INSTRUMENT-GUIDE.md](COMPLETE-INSTRUMENT-GUIDE.md); use [FOLD-6-TEST-GUIDE.md](FOLD-6-TEST-GUIDE.md) and [VR-PROTOTYPE.md](VR-PROTOTYPE.md) for device acceptance.
+The web build also contains a Quest-oriented WebXR experience at `/vr`: the **Temple of the Unremembered Name**, with seven planetary courts connected to the same local Ollama/ComfyUI scheduler. Living Invocation 0.11A restores the original app's unrestricted subject authoring and compact current selection: the user types or optionally dictates any invocation, chooses the complete Tradition and Aesthetic catalogs, moves tactile Eros and Intellect scales, and sets Astral Weather in one keyboard-friendly ritual surface. The same current drives an always-present holographic Mnemonic Effigy, the in-world composer, the wrist, the 78-card forge, and portable archives. A subject or lineage change visibly unseals the old deck until it is deliberately rebound; visual and atmospheric currents remain freely tunable. The 2D and VR experiences are route-split, so the Three.js runtime is not loaded by the original app. Start with [LIVING-INVOCATION-0.11A.md](LIVING-INVOCATION-0.11A.md) and [COMPLETE-INSTRUMENT-GUIDE.md](COMPLETE-INSTRUMENT-GUIDE.md); use [FOLD-6-TEST-GUIDE.md](FOLD-6-TEST-GUIDE.md), [VR-PROTOTYPE.md](VR-PROTOTYPE.md), and [SPATIAL-RITUAL-COMPOSER-PLAN.md](SPATIAL-RITUAL-COMPOSER-PLAN.md) for device acceptance and the forward architecture.
 
 The supplied application source is integrated at `src/App.jsx`. Both native projects are generated and synchronized under `ios/` and `android/`.
 
@@ -17,7 +17,7 @@ npm install
 
 The default development stack is fully local: Qwen3 8B through Ollama for text and Juggernaut XL Ragnarok through ComfyUI for images. Copy the measured Apple-M2 settings from `.env.example`; no provider secret is compiled into the app.
 
-Start Ollama and the existing ComfyUI installation before the API. Browser, PWA, Fold, and Quest testing should expose only the production preview on port 4173, which keeps `/vr`, `/api`, and `/health` on one HTTPS origin. A native Capacitor build instead needs a stable HTTPS deployment of the validated Node API on port 8787. Never expose Ollama or ComfyUI directly. See [LOCAL-AI-SETUP.md](LOCAL-AI-SETUP.md) for the exact commands and health checks.
+Start Ollama and the existing ComfyUI installation before the API. Only the validated Node API on port 8787 should be exposed through the HTTPS tunnel. See [LOCAL-AI-SETUP.md](LOCAL-AI-SETUP.md) for the exact commands and health checks.
 
 Start the API proxy in one terminal:
 

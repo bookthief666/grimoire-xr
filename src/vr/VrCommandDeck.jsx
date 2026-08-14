@@ -7,6 +7,8 @@ import {
   TRADITIONS,
 } from '../grimoireCatalog.js';
 import { ATMOSPHERE_MODES, VR_SPREADS } from './vrContent.js';
+import { buildCourtJourney } from './vrJourney.js';
+import { ART_STYLE_FAMILIES } from './spatialRitualModel.js';
 
 const TABS = [
   { id: 'setup', label: 'RITUAL', station: 'scriptorium' },
@@ -14,14 +16,6 @@ const TABS = [
   { id: 'oracle', label: 'ORACLE', station: 'oracle' },
   { id: 'spirit', label: 'SPIRIT', station: 'spirit' },
   { id: 'archive', label: 'ARCHIVE', station: 'archive' },
-];
-
-const SUBJECT_SUGGESTIONS = [
-  'GIORDANO BRUNO',
-  'BABALON',
-  'ASTARTE',
-  'THE HOLY GUARDIAN ANGEL',
-  'WHAT SEEKS A BODY THROUGH ME?',
 ];
 
 const SHOWCASE_STEPS = [
@@ -62,6 +56,28 @@ const SHOWCASE_STEPS = [
   },
 ];
 const SHOWCASE_STORAGE_KEY = 'grimoire_vr_showcase_seen_v1';
+const META_DISPLAY_FIELDS = [
+  ['inherited', 'INHERITED CARD'],
+  ['hebrew', 'HEBREW PATH'],
+  ['attribution', 'FIXED ATTRIBUTION'],
+  ['gematria', 'LETTER VALUE'],
+  ['symbolicElement', 'SYMBOLIC ELEMENT'],
+  ['alchemical', 'ALCHEMICAL LENS'],
+  ['daimon', 'MNEMONIC INTELLIGENCE'],
+  ['operation', 'OPERATION'],
+];
+
+const TarotMeta = ({ meta, includePatina = false, patina = 0 }) => !meta ? null : (
+  <>
+    <div className="vr-meta-strip">
+      {META_DISPLAY_FIELDS.filter(([key]) => meta[key] !== undefined).map(([key, label]) => (
+        <span key={key}><small>{label}</small>{String(meta[key])}</span>
+      ))}
+      {includePatina && <span><small>PATINA</small>{patina}</span>}
+    </div>
+    {meta.reference && <div className="vr-reference-lock"><strong>◆ REFERENCE LOCKED</strong><span>{meta.reference}</span></div>}
+  </>
+);
 
 const copyText = async value => {
   const text = String(value || '');
@@ -95,6 +111,7 @@ export default function VrCommandDeck({ model, actions }) {
   const [grandForgeArmed, setGrandForgeArmed] = useState(false);
   const [galleryCardId, setGalleryCardId] = useState(null);
   const [importing, setImporting] = useState(false);
+  const [busySeconds, setBusySeconds] = useState(0);
   const importInputRef = useRef(null);
   const galleryTouchStart = useRef(null);
   const filteredCards = useMemo(() => {
@@ -111,20 +128,30 @@ export default function VrCommandDeck({ model, actions }) {
   const galleryCard = useMemo(() => galleryCards.find(card => card.id === galleryCardId) || null, [galleryCardId, galleryCards]);
   const galleryCardIndex = galleryCard ? galleryCards.findIndex(card => card.id === galleryCard.id) : -1;
   const activeShowcase = showcaseStep === null ? null : SHOWCASE_STEPS[showcaseStep];
+  const courtJourney = useMemo(() => buildCourtJourney(model.completedCourtIds), [model.completedCourtIds]);
   const selectedCard = model.ritual.cards[model.cardIndex];
   const textReady = model.demoMode || Boolean(model.health?.textConfigured);
   const imageReady = model.demoMode || Boolean(model.health?.imageConfigured);
   const providerReady = model.demoMode || Boolean(model.health?.textConfigured && model.health?.imageConfigured);
-  const setupSteps = [
-    { label: 'NAME THE SUBJECT', complete: Boolean(model.subject.trim()) },
-    { label: 'TUNE THE CURRENT', complete: true },
-    { label: 'AWAKEN 78 ARCANA', complete: model.awakened },
-  ];
+  const busyClock = `${String(Math.floor(busySeconds / 60)).padStart(2, '0')}:${String(busySeconds % 60).padStart(2, '0')}`;
 
   const selectTab = next => {
     setTab(next);
     const destination = TABS.find(entry => entry.id === next)?.station;
     if (destination) actions.openStation(destination);
+  };
+
+  const openCourt = court => {
+    setTab(court.tab);
+    actions.openStation(court.station);
+  };
+
+  const invokeCourt = court => {
+    if (court.id === 'archive' && !court.complete) {
+      void actions.exportArchive('json');
+      return;
+    }
+    openCourt(court);
   };
 
   const openShowcaseStep = nextStep => {
@@ -194,12 +221,24 @@ export default function VrCommandDeck({ model, actions }) {
     return () => window.removeEventListener('keydown', handleKey);
   }, [galleryCard, galleryCardIndex, galleryCards]);
 
+  useEffect(() => {
+    if (!model.status.busy) {
+      setBusySeconds(0);
+      return undefined;
+    }
+    const startedAt = Date.now();
+    const updateClock = () => setBusySeconds(Math.floor((Date.now() - startedAt) / 1000));
+    updateClock();
+    const timer = window.setInterval(updateClock, 1000);
+    return () => window.clearInterval(timer);
+  }, [model.status.busy]);
+
   return (
     <>
       <button className="vr-console-close" type="button" onClick={() => { if (activeShowcase) endShowcase(); actions.close(); }} aria-label="Hide ritual console">×</button>
       <div className="vr-panel-head">
         <div>
-          <div className="vr-kicker">GRIMOIRE XR · SHOWCASE &amp; CONTINUITY 0.8</div>
+          <div className="vr-kicker">GRIMOIRE XR · LIVING INVOCATION 0.11A</div>
           <div className="vr-panel-subtitle">ONE CONSOLE · SEVEN COURTS · SEVENTY-EIGHT ARCANA</div>
         </div>
         <div className="vr-head-actions">
@@ -233,6 +272,26 @@ export default function VrCommandDeck({ model, actions }) {
         <span>{model.healthLabel}</span>
       </div>
 
+      {model.invocationStale && (
+        <div className="vr-rebind-banner" role="alert">
+          <strong>THE INVOCATION HAS CHANGED</strong>
+          <span>The preserved deck is safe, but it belongs to the previous subject or lineage. Rebind all 78 arcana before using the Forge, Oracle, or Spirit Box.</span>
+          <button type="button" onClick={() => selectTab('setup')} disabled={model.status.busy}>REVIEW + REBIND</button>
+        </div>
+      )}
+
+      {model.status.busy && (
+        <div className="vr-operation-lock" role="status" aria-live="polite">
+          <div>
+            <strong>{model.awakened ? 'ARCANE OPERATION IN PROGRESS' : 'AWAKENING THE COMPLETE 78-CARD PALACE'}</strong>
+            <span>{busyClock} ELAPSED</span>
+          </div>
+          <p>{model.awakened
+            ? 'The active local-AI operation has sole use of the ritual controls. They unlock automatically when its result returns.'
+            : 'Qwen is composing all seventy-eight arcana as one coherent architecture. On an M2 this first rite can take several minutes. Stay on this page; the deck below is placeholder architecture until the result returns.'}</p>
+        </div>
+      )}
+
       {model.demoMode && (
         <div className="vr-demo-banner" role="status">
           <strong>PHONE DEMO ACTIVE</strong>
@@ -261,20 +320,17 @@ export default function VrCommandDeck({ model, actions }) {
 
       {tab === 'setup' && (
         <section className="vr-console-page" aria-label="Ritual setup">
-          <div className="vr-setup-steps">
-            {setupSteps.map((step, index) => (
-              <div key={step.label} className={step.complete ? 'is-complete' : ''}>
-                <span>{step.complete ? '◆' : index + 1}</span>
-                <small>{step.label}</small>
-              </div>
-            ))}
+          <div className="vr-invocation-heading">
+            <span>☿ THE NAMING MIRROR</span>
+            <strong>WHAT SHALL THE GRIMOIRE REMEMBER?</strong>
+            <small>Your words become the governing subject of all seventy-eight cards.</small>
           </div>
 
           <label className="vr-subject-field">
-            SUBJECT, PERSON, DEITY, TEXT, OR LIVING QUESTION
+            INVOKE A PERSON, DEITY, TEXT, DREAM, CONCEPT, OR LIVING QUESTION
             <input
               value={model.subject}
-              maxLength={120}
+              maxLength={240}
               onChange={event => actions.setSubject(event.target.value)}
               onKeyDown={event => {
                 if (event.key === 'Enter' && !event.nativeEvent.isComposing && !model.status.busy) actions.beginRitual();
@@ -282,44 +338,45 @@ export default function VrCommandDeck({ model, actions }) {
               disabled={model.status.busy}
               enterKeyHint="go"
               autoCapitalize="words"
-              placeholder="NAME WHAT THE PALACE SHOULD REMEMBER…"
+              placeholder="TYPE THE SUBJECT OF YOUR GRIMOIRE…"
             />
           </label>
-          <div className="vr-suggestion-row" aria-label="Subject suggestions">
-            {SUBJECT_SUGGESTIONS.map(suggestion => (
-              <button key={suggestion} type="button" onClick={() => actions.setSubject(suggestion)} disabled={model.status.busy}>
-                {suggestion}
-              </button>
-            ))}
-          </div>
+          <button type="button" className="vr-dictate-invocation" onClick={actions.dictateInvocation} disabled={model.status.busy}>
+            ◉ SPEAK INVOCATION
+          </button>
 
-          <div className="vr-config-grid">
-            <label className="vr-select-field">
-              <span>TRADITION · {TRADITIONS.length}</span>
+          <div className="vr-current-table" aria-label="Ritual current settings">
+            <label className="vr-current-row">
+              <i aria-hidden="true">♄</i>
+              <span><small>TRADITION</small><b>{TRADITIONS[model.traditionIndex]?.name}</b></span>
               <select value={model.traditionIndex} onChange={event => actions.setTraditionIndex(Number(event.target.value))} disabled={model.status.busy}>
                 {TRADITIONS.map((entry, index) => <option key={entry.id} value={index}>{entry.name}</option>)}
               </select>
             </label>
-            <label className="vr-select-field">
-              <span>AESTHETIC · {ART_STYLES.length}</span>
+            <label className="vr-current-row vr-current-row-venus">
+              <i aria-hidden="true">♀</i>
+              <span><small>AESTHETIC CURRENT</small><b>{ART_STYLES[model.styleIndex]?.name}</b></span>
               <select value={model.styleIndex} onChange={event => actions.setStyleIndex(Number(event.target.value))} disabled={model.status.busy}>
-                {ART_STYLES.map((entry, index) => <option key={entry.id} value={index}>{entry.name}</option>)}
+                {ART_STYLE_FAMILIES.map(family => (
+                  <optgroup key={family.id} label={family.label}>
+                    {family.styles.map(entry => <option key={entry.id} value={entry.catalogIndex}>{entry.name}</option>)}
+                  </optgroup>
+                ))}
               </select>
             </label>
-            <label className="vr-select-field">
-              <span>EROS · {EROS_LEVELS[model.erosIndex]?.label}</span>
-              <select value={model.erosIndex} onChange={event => actions.setErosIndex(Number(event.target.value))} disabled={model.status.busy}>
-                {EROS_LEVELS.map((entry, index) => <option key={entry.level} value={index}>{entry.label}</option>)}
-              </select>
+            <label className="vr-current-row vr-current-row-range">
+              <i aria-hidden="true">△</i>
+              <span><small>EROS</small><b>{EROS_LEVELS[model.erosIndex]?.label}</b></span>
+              <input type="range" min="0" max={EROS_LEVELS.length - 1} step="1" value={model.erosIndex} onChange={event => actions.setErosIndex(Number(event.target.value))} disabled={model.status.busy} />
             </label>
-            <label className="vr-select-field">
-              <span>INTELLECT · {TECH_LEVELS[model.techIndex]?.label}</span>
-              <select value={model.techIndex} onChange={event => actions.setTechIndex(Number(event.target.value))} disabled={model.status.busy}>
-                {TECH_LEVELS.map((entry, index) => <option key={entry.level} value={index}>{entry.label}</option>)}
-              </select>
+            <label className="vr-current-row vr-current-row-range">
+              <i aria-hidden="true">☉</i>
+              <span><small>INTELLECT</small><b>{TECH_LEVELS[model.techIndex]?.label}</b></span>
+              <input type="range" min="0" max={TECH_LEVELS.length - 1} step="1" value={model.techIndex} onChange={event => actions.setTechIndex(Number(event.target.value))} disabled={model.status.busy} />
             </label>
-            <label className="vr-select-field vr-atmosphere-field">
-              <span>ASTRAL WEATHER · TIER {model.atmosphereTier}</span>
+            <label className="vr-current-row vr-current-row-luna">
+              <i aria-hidden="true">☾</i>
+              <span><small>ASTRAL WEATHER</small><b>{ATMOSPHERE_MODES.find(entry => entry.id === model.atmosphereMode)?.label}</b></span>
               <select value={model.atmosphereMode} onChange={event => actions.setAtmosphereMode(event.target.value)} disabled={model.status.busy}>
                 {ATMOSPHERE_MODES.map(entry => <option key={entry.id} value={entry.id}>{entry.label}</option>)}
               </select>
@@ -344,21 +401,42 @@ export default function VrCommandDeck({ model, actions }) {
               {model.xrSupported === null ? 'CHECKING HEADSET' : model.xrSupported ? 'ENTER IMMERSIVE VR' : 'DESKTOP PREVIEW ACTIVE'}
             </button>
             <button className="vr-awaken" type="button" onClick={actions.beginRitual} disabled={!model.subject.trim() || !textReady || model.status.busy}>
-              {model.awakened ? 'RE-ARRANGE 78 ARCANA' : 'AWAKEN THE COMPLETE GRIMOIRE'}
+              {model.invocationStale ? 'REBIND 78 ARCANA TO THIS INVOCATION' : model.awakened ? 'RE-ARRANGE 78 ARCANA' : 'AWAKEN THE COMPLETE GRIMOIRE'}
             </button>
           </div>
-          <div className="vr-solar-tool">
-            <div><span>SOL · RULING GENIUS</span><strong>{model.ritual.geniusTitle}</strong><p>{model.ritual.geniusCharge}</p></div>
-            <button type="button" onClick={model.portraitUrl ? () => actions.openStation('genius') : actions.manifestPortrait} disabled={!model.awakened || !imageReady || model.status.busy}>
-              {model.portraitUrl ? 'OPEN RULING PORTRAIT' : 'MANIFEST RULING PORTRAIT'}
-            </button>
-          </div>
+          {model.awakened && (
+            <>
+              <div className="vr-solar-tool">
+                <div><span>SOL · RULING GENIUS</span><strong>{model.ritual.geniusTitle}</strong><p>{model.ritual.geniusCharge}</p></div>
+                <div className="vr-solar-actions">
+                  <button type="button" onClick={actions.turnGeniusSeal} disabled={model.status.busy}>TURN SEAL · NO IMAGE</button>
+                  <button type="button" onClick={model.portraitUrl ? () => actions.openStation('genius') : actions.manifestPortrait} disabled={!imageReady || model.status.busy}>
+                    {model.portraitUrl ? 'OPEN RULING PORTRAIT' : 'MANIFEST RULING PORTRAIT'}
+                  </button>
+                </div>
+              </div>
+              <div className="vr-venus-tool">
+                <div><span>VENUS · AESTHETIC LOOM</span><strong>{ART_STYLES[model.styleIndex]?.name}</strong><p>Changing the aesthetic selector consecrates the current weave. Keep this style or pull the next one into the Forge.</p></div>
+                <button type="button" onClick={actions.weaveNextAesthetic} disabled={model.status.busy}>WEAVE NEXT AESTHETIC</button>
+              </div>
+            </>
+          )}
           <p className="vr-help-copy">{model.demoMode ? 'Demo Current keeps every tool available on this phone. Its deterministic rehearsal text and local SVG relics are clearly labeled in the archive.' : 'Text generation comes first. Portraits and card images remain explicit so the M2 never receives an accidental render queue.'}</p>
         </section>
       )}
 
       {tab === 'deck' && (
         <section className="vr-console-page" aria-label="Tarot deck and forge">
+          {!model.awakened && (
+            <div className="vr-deck-lock" role="note">
+              <div>
+                <strong>{model.status.busy ? 'THE 78 ARCANA ARE BEING WRITTEN' : 'THE COMPLETE GRIMOIRE HAS NOT AWAKENED'}</strong>
+                <span>{model.status.busy ? `LOCAL AI ACTIVE · ${busyClock} ELAPSED` : 'RETURN TO RITUAL AND AWAKEN THE COMPLETE GRIMOIRE'}</span>
+              </div>
+              <p>The names visible below are navigation placeholders. Scribe Exegesis, Spatial Forge, Oracle, and Spirit unlock only after the generated ritual replaces them.</p>
+              <button type="button" onClick={() => selectTab('setup')}>VIEW RITUAL STATUS</button>
+            </div>
+          )}
           <div className="vr-page-title"><div><span>MARS · CARD FORGE</span><h2>{selectedCard?.name || 'AWAKEN THE DECK'}</h2></div><strong>{model.cardIndex + 1} / {model.ritual.cards.length}</strong></div>
           <div className="vr-deck-navigator">
             <button type="button" onClick={() => actions.selectCard(model.cardIndex - 1)} disabled={!model.awakened || model.status.busy}>◀</button>
@@ -370,20 +448,21 @@ export default function VrCommandDeck({ model, actions }) {
             {model.forgedCard?.imageUrl && <img src={model.forgedCard.imageUrl} alt="Manifested arcanum" />}
             <div>
               <p>{model.forgedCard?.exegesis || selectedCard?.oracle || 'Awaken the ritual before opening the forge.'}</p>
-              {model.forgedCard?.meta && <div className="vr-meta-strip">{Object.entries(model.forgedCard.meta).slice(0, 6).map(([key, value]) => <span key={key}><small>{key}</small>{String(value)}</span>)}</div>}
+              <TarotMeta meta={model.forgedCard?.meta} />
             </div>
           </div>
 
           <div className="vr-card-actions vr-forge-actions">
             <button type="button" onClick={actions.openForge} disabled={!model.awakened || model.status.busy}>OPEN SPATIAL FORGE</button>
             {!model.forgedCard && <button type="button" onClick={actions.scribeCard} disabled={!model.awakened || !textReady || model.status.busy}>SCRIBE EXEGESIS</button>}
+            {model.forgedCard && <button type="button" onClick={actions.rescribeCard} disabled={!textReady || model.status.busy}>RE-SCRIBE · LOCK REFERENCES</button>}
             {model.forgedCard && !model.forgedCard.imageUrl && <button type="button" onClick={actions.manifestCard} disabled={!imageReady || model.status.busy}>MANIFEST IMAGE</button>}
             {model.forgedCard?.imageUrl && <button type="button" onClick={actions.inspectRelic} disabled={model.status.busy}>INSPECT + ADD PATINA</button>}
             {model.forgedCard && <button type="button" onClick={actions.resetCurrentCard} disabled={model.status.busy}>RETURN TO PRIMA MATERIA</button>}
             {model.forgedCard?.visual && <button type="button" onClick={copyPrompt}>{copied ? 'PROMPT COPIED' : 'COPY VISUAL PROMPT'}</button>}
           </div>
 
-          <label className="vr-deck-search">SEARCH THE 78-CARD ARCHITECTURE<input value={deckSearch} onChange={event => setDeckSearch(event.target.value)} placeholder="NAME, SUIT, PLANET…" /></label>
+          <label className="vr-deck-search">SEARCH THE 78-CARD ARCHITECTURE<input value={deckSearch} onChange={event => setDeckSearch(event.target.value)} placeholder="NAME, SUIT, PLANET…" disabled={!model.awakened || model.status.busy} /></label>
           <div className="vr-mini-deck" aria-label="Complete tarot deck">
             {filteredCards.map(card => (
               <button
@@ -391,6 +470,7 @@ export default function VrCommandDeck({ model, actions }) {
                 type="button"
                 className={`${card.id === model.cardIndex ? 'is-selected' : ''} ${manifestedIds.has(card.id) ? 'is-manifested' : forgedIds.has(card.id) ? 'is-forged' : ''}`}
                 onClick={() => actions.selectCard(card.id)}
+                disabled={!model.awakened || model.status.busy}
               >
                 <span>{String(card.id + 1).padStart(2, '0')}</span>{card.name}
               </button>
@@ -468,6 +548,30 @@ export default function VrCommandDeck({ model, actions }) {
       {tab === 'archive' && (
         <section className="vr-console-page" aria-label="Archive, statistics, and sharing">
           <div className="vr-page-title"><div><span>LUNA · LIVING ARCHIVE</span><h2>{model.subject || 'THE UNREMEMBERED NAME'}</h2></div><strong>{model.completedCourtIds.length}/7 COURTS</strong></div>
+          <div className={`vr-court-circuit ${courtJourney.sealed ? 'is-sealed' : ''}`}>
+            <div className="vr-circuit-head">
+              <div>
+                <span>SEVEN-COURT PILGRIMAGE</span>
+                <strong>{courtJourney.sealed ? 'THE CONSTELLATION IS SEALED' : `${courtJourney.completedCount} OF ${courtJourney.total} LOCI AWAKENED`}</strong>
+                <p>{courtJourney.sealed
+                  ? 'Every planetary instrument has received a deliberate operation. Export again whenever the palace changes.'
+                  : `Next current: ${courtJourney.nextCourt.planet} · ${courtJourney.nextCourt.action}. Progress may also be completed out of order.`}</p>
+              </div>
+              {!courtJourney.sealed && (
+                <button type="button" onClick={() => invokeCourt(courtJourney.nextCourt)}>
+                  {courtJourney.nextCourt.id === 'archive' ? 'SEAL + DOWNLOAD JSON' : `OPEN ${courtJourney.nextCourt.planet}`}
+                </button>
+              )}
+            </div>
+            <div className="vr-court-list">
+              {courtJourney.courts.map(court => (
+                <button key={court.id} type="button" className={court.complete ? 'is-complete' : ''} onClick={() => invokeCourt(court)}>
+                  <b>{court.complete ? '◆' : court.glyph}</b>
+                  <span><small>{court.number} · {court.planet} · {court.concept}</small><strong>{court.complete ? 'COURT AWAKENED' : court.action}</strong><em>{court.instruction}</em></span>
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="vr-stats-grid">
             <div><span>INSCRIBED</span><strong>{model.stats.forgedCount}/78</strong></div>
             <div><span>MANIFESTED</span><strong>{model.stats.manifestedCount}/78</strong></div>
@@ -546,10 +650,7 @@ export default function VrCommandDeck({ model, actions }) {
               <span>ARCANUM {String(galleryCard.id + 1).padStart(2, '0')} · {galleryCardIndex + 1}/{galleryCards.length}</span>
               <h2>{galleryCard.name}</h2>
               <p>{galleryCard.exegesis || 'This manifested arcanum awaits its exegesis.'}</p>
-              <div className="vr-lightbox-meta">
-                {Object.entries(galleryCard.meta || {}).slice(0, 6).map(([key, value]) => <span key={key}><small>{key}</small>{String(value)}</span>)}
-                <span><small>PATINA</small>{galleryCard.patina || 0}</span>
-              </div>
+              <div className="vr-lightbox-meta-wrap"><TarotMeta meta={galleryCard.meta} includePatina patina={galleryCard.patina || 0} /></div>
               <div className="vr-lightbox-actions">
                 <button type="button" onClick={() => { actions.selectCard(galleryCard.id); setGalleryCardId(null); selectTab('deck'); }}>OPEN IN FORGE</button>
                 {(galleryCard.promptUsed || galleryCard.visual) && <button type="button" onClick={copyGalleryPrompt}>{galleryCopied ? 'PROMPT COPIED' : 'COPY PROMPT'}</button>}

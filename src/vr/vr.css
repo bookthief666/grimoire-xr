@@ -531,6 +531,59 @@
   font: 0.85rem/1.1 'VT323', monospace;
 }
 
+.vr-operation-lock,
+.vr-deck-lock {
+  display: grid;
+  gap: 0.42rem;
+  margin-top: 0.45rem;
+  padding: 0.65rem;
+  border: 1px solid rgba(229, 193, 88, 0.62);
+  background:
+    repeating-linear-gradient(135deg, rgba(229, 193, 88, 0.045) 0 5px, transparent 5px 10px),
+    rgba(24, 13, 2, 0.88);
+  box-shadow: inset 3px 0 #e5c158, 0 0 0.9rem rgba(229, 193, 88, 0.12);
+}
+
+.vr-operation-lock > div,
+.vr-deck-lock > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.vr-operation-lock strong,
+.vr-deck-lock strong {
+  color: #e5c158;
+  font: 0.4rem/1.5 'Press Start 2P', monospace;
+}
+
+.vr-operation-lock span,
+.vr-deck-lock span {
+  color: #ef8b91;
+  font: 0.3rem/1.45 'Press Start 2P', monospace;
+  text-align: right;
+}
+
+.vr-command-console .vr-operation-lock p,
+.vr-command-console .vr-deck-lock p {
+  margin: 0;
+  color: #d8c9bd;
+  font: 0.88rem/1.14 'VT323', monospace;
+}
+
+.vr-deck-lock {
+  margin: 0;
+  border-color: rgba(239, 35, 60, 0.56);
+  box-shadow: inset 3px 0 #ef233c, 0 0 0.9rem rgba(239, 35, 60, 0.12);
+}
+
+.vr-command-console .vr-deck-lock button {
+  min-height: 2.35rem;
+  color: #e5c158;
+  border-color: rgba(229, 193, 88, 0.48);
+}
+
 @keyframes vr-signal-pulse {
   50% { opacity: 0.25; transform: scale(0.65); }
 }
@@ -590,11 +643,215 @@
 }
 
 .vr-subject-field input {
+  min-height: 4.25rem;
+  padding: 0.9rem 0.75rem;
   border-width: 2px;
   border-color: rgba(239, 35, 60, 0.7);
   color: #e5c158;
-  font-size: 1.42rem;
-  box-shadow: inset 0 0 1.4rem rgba(239, 35, 60, 0.08);
+  background:
+    linear-gradient(90deg, rgba(239, 35, 60, 0.08), transparent 14% 86%, rgba(239, 35, 60, 0.08)),
+    rgba(0, 0, 0, 0.86);
+  font: 0.73rem/1.65 'Press Start 2P', monospace;
+  text-align: center;
+  box-shadow: inset 0 0 1.4rem rgba(239, 35, 60, 0.08), 0 0 1rem rgba(239, 35, 60, 0.08);
+}
+
+.vr-subject-field input::placeholder {
+  color: rgba(229, 193, 88, 0.38);
+}
+
+.vr-command-console .vr-dictate-invocation {
+  justify-self: center;
+  min-height: 2.35rem;
+  margin-top: -0.2rem;
+  padding-inline: 1.15rem;
+  border-color: rgba(56, 230, 209, 0.55);
+  color: #38e6d1;
+  background: linear-gradient(90deg, rgba(56, 230, 209, 0.06), rgba(229, 193, 88, 0.08), rgba(56, 230, 209, 0.06));
+  box-shadow: inset 0 0 1rem rgba(56, 230, 209, 0.04), 0 0 0.8rem rgba(56, 230, 209, 0.07);
+}
+
+.vr-rebind-banner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.3rem 0.75rem;
+  align-items: center;
+  margin-top: 0.45rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid rgba(239, 35, 60, 0.72);
+  border-left-width: 4px;
+  color: #f5ead7;
+  background:
+    repeating-linear-gradient(135deg, rgba(239, 35, 60, 0.07) 0 8px, transparent 8px 16px),
+    rgba(14, 2, 5, 0.9);
+  box-shadow: inset 0 0 1.4rem rgba(239, 35, 60, 0.08), 0 0 1rem rgba(239, 35, 60, 0.08);
+}
+
+.vr-rebind-banner strong {
+  color: #ef233c;
+  font: 0.46rem/1.5 'Press Start 2P', monospace;
+}
+
+.vr-rebind-banner span {
+  grid-column: 1;
+  color: #d8c9bd;
+  font: 0.9rem/1.1 'VT323', monospace;
+}
+
+.vr-command-console .vr-rebind-banner button {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  min-height: 2.8rem;
+  color: #e5c158;
+  border-color: rgba(229, 193, 88, 0.55);
+}
+
+.vr-invocation-heading {
+  position: relative;
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.15rem 0 0.75rem 1rem;
+  border-bottom: 1px solid rgba(184, 134, 11, 0.35);
+}
+
+.vr-invocation-heading::before {
+  content: '◇';
+  position: absolute;
+  top: 0.05rem;
+  left: 0;
+  color: #38e6d1;
+  font: 0.72rem 'Press Start 2P', monospace;
+  text-shadow: 0 0 0.65rem rgba(56, 230, 209, 0.55);
+}
+
+.vr-invocation-heading span {
+  color: #38e6d1;
+  font: 0.36rem/1.4 'Press Start 2P', monospace;
+  letter-spacing: 0.08em;
+}
+
+.vr-invocation-heading strong {
+  color: #e5c158;
+  font: 1.12rem/1.05 'VT323', monospace;
+  letter-spacing: 0.035em;
+}
+
+.vr-invocation-heading small {
+  color: #a98e88;
+  font: 0.86rem/1.1 'VT323', monospace;
+}
+
+.vr-current-table {
+  position: relative;
+  margin-top: 0.15rem;
+  padding: 0.25rem 0.55rem;
+  border-top: 1px solid rgba(184, 134, 11, 0.46);
+  border-bottom: 1px solid rgba(184, 134, 11, 0.46);
+  background:
+    radial-gradient(circle at 12% 50%, rgba(229, 193, 88, 0.06), transparent 28%),
+    linear-gradient(90deg, rgba(239, 35, 60, 0.035), transparent 38% 62%, rgba(53, 198, 180, 0.035));
+}
+
+.vr-current-table::before,
+.vr-current-table::after {
+  content: '';
+  position: absolute;
+  width: 1rem;
+  height: 1rem;
+  pointer-events: none;
+}
+
+.vr-current-table::before {
+  top: -1px;
+  left: 0;
+  border-top: 2px solid #ef233c;
+  border-left: 2px solid #ef233c;
+}
+
+.vr-current-table::after {
+  right: 0;
+  bottom: -1px;
+  border-right: 2px solid #38e6d1;
+  border-bottom: 2px solid #38e6d1;
+}
+
+.vr-preflight label.vr-current-row {
+  display: grid;
+  grid-template-columns: 1.8rem minmax(7rem, 0.85fr) minmax(0, 1.4fr);
+  gap: 0.55rem;
+  align-items: center;
+  min-height: 3.25rem;
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid rgba(239, 35, 60, 0.15);
+  color: #d8c9bd;
+}
+
+.vr-preflight label.vr-current-row:last-child {
+  border-bottom: 0;
+}
+
+.vr-current-row > i {
+  color: #e5c158;
+  font: normal 1.35rem/1 'VT323', monospace;
+  text-align: center;
+  text-shadow: 0 0 0.7rem rgba(229, 193, 88, 0.45);
+}
+
+.vr-current-row-venus > i {
+  color: #d72f8b;
+  text-shadow: 0 0 0.7rem rgba(215, 47, 139, 0.55);
+}
+
+.vr-current-row-luna > i {
+  color: #38e6d1;
+  text-shadow: 0 0 0.7rem rgba(56, 230, 209, 0.55);
+}
+
+.vr-current-row > span {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.vr-current-row small {
+  color: #8f6c67;
+  font: 0.31rem/1.4 'Press Start 2P', monospace;
+}
+
+.vr-current-row b {
+  overflow: hidden;
+  color: #e5c158;
+  font: 1rem/1 'VT323', monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vr-current-row select {
+  min-width: 0;
+  min-height: 2.35rem;
+  padding: 0.35rem 1.6rem 0.35rem 0.55rem;
+  border: 0;
+  border-left: 1px solid rgba(184, 134, 11, 0.46);
+  border-bottom: 1px solid rgba(184, 134, 11, 0.25);
+  border-radius: 0;
+  outline: none;
+  color: #f5ead7;
+  background-color: rgba(0, 0, 0, 0.42);
+  font: 0.72rem/1.2 'VT323', monospace;
+}
+
+.vr-current-row select:focus-visible {
+  border-color: #ef233c;
+  box-shadow: inset 0 -1px #ef233c;
+}
+
+.vr-current-row input[type='range'] {
+  width: 100%;
+  min-height: 2.1rem;
+  padding: 0;
+  accent-color: #ef233c;
+  background: transparent;
+  cursor: ew-resize;
 }
 
 .vr-suggestion-row {
@@ -749,6 +1006,51 @@
   font-size: 0.34rem;
 }
 
+.vr-solar-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.35rem;
+}
+
+.vr-venus-tool {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.65rem;
+  align-items: center;
+  padding: 0.6rem;
+  border: 1px solid rgba(215, 47, 139, 0.42);
+  background: radial-gradient(circle at 86% 50%, rgba(215, 47, 139, 0.12), transparent 45%), rgba(16, 2, 12, 0.76);
+}
+
+.vr-venus-tool span,
+.vr-circuit-head span {
+  display: block;
+  color: #9d786f;
+  font: 0.34rem/1.45 'Press Start 2P', monospace;
+}
+
+.vr-venus-tool strong {
+  display: block;
+  margin-top: 0.25rem;
+  color: #d72f8b;
+  font: 0.98rem 'VT323', monospace;
+}
+
+.vr-command-console .vr-venus-tool p {
+  margin: 0.2rem 0 0;
+  color: #bda99a;
+  font: 0.78rem/1.05 'VT323', monospace;
+}
+
+.vr-command-console .vr-venus-tool button {
+  max-width: 10rem;
+  min-height: 2.7rem;
+  padding: 0.4rem;
+  border-color: rgba(215, 47, 139, 0.62);
+  color: #e790c4;
+  font-size: 0.34rem;
+}
+
 .vr-page-title {
   display: flex;
   align-items: end;
@@ -807,7 +1109,7 @@
 .vr-meta-strip span {
   display: grid;
   gap: 0.1rem;
-  max-width: 8rem;
+  max-width: 12rem;
   padding: 0.25rem 0.35rem;
   border: 1px solid rgba(239, 35, 60, 0.25);
   color: #e5c158;
@@ -818,6 +1120,27 @@
   color: #9d786f;
   font: 0.28rem 'Press Start 2P', monospace;
   text-transform: uppercase;
+}
+
+.vr-reference-lock {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+  padding: 0.28rem 0.38rem;
+  border-left: 2px solid #35c6b4;
+  color: #35c6b4;
+  background: rgba(53, 198, 180, 0.055);
+  font: 0.58rem/1.15 'VT323', monospace;
+}
+
+.vr-reference-lock strong {
+  font: 0.26rem/1.4 'Press Start 2P', monospace;
+}
+
+.vr-reference-lock span {
+  color: #8ccfc6;
+  text-align: right;
 }
 
 .vr-forge-actions {
@@ -1082,6 +1405,127 @@
   padding: 0.65rem;
   border: 1px solid rgba(184, 134, 11, 0.3);
   background: rgba(184, 134, 11, 0.045);
+}
+
+/* Seven-Court Circuit 0.9.1 */
+.vr-court-circuit {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.65rem;
+  border: 1px solid rgba(239, 35, 60, 0.48);
+  background:
+    repeating-linear-gradient(135deg, rgba(239, 35, 60, 0.028) 0 6px, transparent 6px 12px),
+    radial-gradient(circle at 92% 10%, rgba(229, 193, 88, 0.1), transparent 36%),
+    rgba(10, 2, 4, 0.82);
+  box-shadow: inset 3px 0 #ef233c, 0 0 1rem rgba(239, 35, 60, 0.08);
+}
+
+.vr-court-circuit.is-sealed {
+  border-color: rgba(53, 198, 180, 0.64);
+  box-shadow: inset 3px 0 #35c6b4, 0 0 1.1rem rgba(53, 198, 180, 0.13);
+}
+
+.vr-circuit-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.vr-circuit-head strong {
+  display: block;
+  margin-top: 0.28rem;
+  color: #e5c158;
+  font: 1rem/1.05 'VT323', monospace;
+}
+
+.vr-court-circuit.is-sealed .vr-circuit-head strong {
+  color: #35c6b4;
+  text-shadow: 0 0 0.8rem rgba(53, 198, 180, 0.4);
+}
+
+.vr-command-console .vr-circuit-head p {
+  margin: 0.2rem 0 0;
+  color: #bda99a;
+  font: 0.82rem/1.08 'VT323', monospace;
+}
+
+.vr-command-console .vr-circuit-head > button {
+  max-width: 9.5rem;
+  min-height: 2.65rem;
+  padding: 0.42rem 0.55rem;
+  border-color: #ef233c;
+  color: #f5ead7;
+  background: rgba(239, 35, 60, 0.17);
+  font-size: 0.33rem;
+}
+
+.vr-court-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.32rem;
+}
+
+.vr-command-console .vr-court-list > button {
+  display: grid;
+  grid-template-columns: 1.7rem minmax(0, 1fr);
+  gap: 0.45rem;
+  align-items: center;
+  min-height: 4.25rem;
+  padding: 0.42rem;
+  border-color: rgba(239, 35, 60, 0.24);
+  color: #ef233c;
+  background: rgba(19, 3, 7, 0.64);
+  text-align: left;
+}
+
+.vr-command-console .vr-court-list > button:hover,
+.vr-command-console .vr-court-list > button:focus-visible {
+  border-color: #e5c158;
+  outline: none;
+}
+
+.vr-command-console .vr-court-list > button.is-complete {
+  border-color: rgba(53, 198, 180, 0.32);
+  color: #35c6b4;
+  background: rgba(2, 17, 15, 0.48);
+}
+
+.vr-court-list b {
+  font: 1rem 'Press Start 2P', monospace;
+  text-align: center;
+  text-shadow: 0 0 0.7rem currentColor;
+}
+
+.vr-command-console .vr-court-list > button > span {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+  margin: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
+.vr-command-console .vr-court-list small {
+  display: block;
+  color: #9d786f;
+  font: 0.28rem/1.35 'Press Start 2P', monospace;
+}
+
+.vr-command-console .vr-court-list strong {
+  display: block;
+  color: #e5c158;
+  font: 0.76rem/1 'VT323', monospace;
+}
+
+.vr-command-console .vr-court-list .is-complete strong {
+  color: #35c6b4;
+}
+
+.vr-command-console .vr-court-list em {
+  display: block;
+  color: #a98e84;
+  font: normal 0.73rem/1 'VT323', monospace;
 }
 
 .vr-echo-cloud > span {
@@ -1496,6 +1940,18 @@
   gap: 0.35rem;
 }
 
+.vr-lightbox-meta-wrap .vr-meta-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.vr-lightbox-meta-wrap .vr-meta-strip span {
+  max-width: none;
+  padding: 0.48rem;
+  border-color: rgba(184, 134, 11, 0.34);
+  font-size: 0.92rem;
+}
+
 .vr-lightbox-meta > span {
   display: grid;
   gap: 0.18rem;
@@ -1573,6 +2029,35 @@
     grid-template-columns: 1fr;
   }
 
+  .vr-preflight label.vr-current-row {
+    grid-template-columns: 1.5rem minmax(6rem, 0.85fr) minmax(0, 1.25fr);
+    min-height: 3.6rem;
+    padding: 0.4rem 0.35rem;
+  }
+
+  .vr-current-row small {
+    font-size: 0.28rem;
+  }
+
+  .vr-current-row b {
+    font-size: 0.9rem;
+  }
+
+  .vr-subject-field input {
+    min-height: 4rem;
+    font-size: 0.58rem;
+  }
+
+  .vr-rebind-banner {
+    grid-template-columns: 1fr;
+  }
+
+  .vr-rebind-banner span,
+  .vr-command-console .vr-rebind-banner button {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
   .vr-command-console {
     max-height: min(44rem, 76dvh);
   }
@@ -1638,7 +2123,18 @@
     grid-template-columns: 1fr;
   }
 
+  .vr-venus-tool,
+  .vr-circuit-head,
+  .vr-court-list {
+    grid-template-columns: 1fr;
+  }
+
   .vr-command-console .vr-solar-tool button {
+    max-width: none;
+  }
+
+  .vr-command-console .vr-venus-tool button,
+  .vr-command-console .vr-circuit-head > button {
     max-width: none;
   }
 
@@ -1736,6 +2232,10 @@
 }
 
 @media (max-width: 430px) and (pointer: coarse) {
+  .vr-preflight label.vr-current-row {
+    grid-template-columns: 1.4rem minmax(5.3rem, 0.8fr) minmax(0, 1.15fr);
+  }
+
   .vr-preflight,
   .vr-command-console {
     bottom: 0;

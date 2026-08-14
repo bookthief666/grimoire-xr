@@ -6,6 +6,9 @@ import {
   buildSealPoints,
   buildStationPose,
   createPalaceSnapshot,
+  createInvocationBinding,
+  invocationMatchesBinding,
+  resolveArchiveInvocation,
   normalizeRitual,
   placeSpreadCard,
   restorePalaceSnapshot,
@@ -35,12 +38,13 @@ describe('Grimoire VR content model', () => {
   it('normalizes incomplete model output into the complete 78-card architecture', () => {
     const ritual = normalizeRitual({
       dossier: 'A living thesis',
-      cards: [{ name: 'The First Shadow' }],
+      cards: [{ name: 'The First Shadow', arcana: 'MINOR', suit: 'CUPS', rank: 'KING' }],
       sealWords: ['memory'],
     }, 'Giordano Bruno');
     expect(ritual.dossier).toBe('A living thesis');
     expect(ritual.cards).toHaveLength(78);
     expect(ritual.cards[0].name).toBe('The First Shadow');
+    expect(ritual.cards[0]).toMatchObject({ arcana: 'MAJOR', suit: '', rank: '0' });
     expect(ritual.cards[77].name).toBe('KING OF PENTACLES');
     expect(ritual.sealWords).toEqual(['MEMORY']);
   });
@@ -109,6 +113,42 @@ describe('Grimoire VR content model', () => {
     expect(snapshot.traditionIndex).toBe(10);
     expect(snapshot.forgedCard.imageUrl).toBeNull();
     expect(snapshot.completedCourtIds).toEqual(['scriptorium', 'forge']);
+    expect(snapshot.boundInvocation).toEqual({ subject: 'Giordano Bruno', traditionIndex: 10 });
+  });
+
+  it('preserves a deliberately blank unrestricted invocation without restoring a preset', () => {
+    expect(createPalaceSnapshot({ subject: '' }).subject).toBe('');
+    expect(restorePalaceSnapshot(JSON.stringify(createPalaceSnapshot({ subject: '' })))?.subject).toBe('');
+  });
+
+  it('distinguishes the deck-governing invocation from live visual currents', () => {
+    const binding = createInvocationBinding({ subject: '  Giordano   Bruno ', traditionIndex: 9 });
+    expect(invocationMatchesBinding(binding, {
+      subject: 'Giordano Bruno',
+      traditionIndex: 9,
+      styleIndex: 42,
+      erosIndex: 5,
+      techIndex: 2,
+    })).toBe(true);
+    expect(invocationMatchesBinding(binding, { subject: 'Babalon', traditionIndex: 9 })).toBe(false);
+    expect(invocationMatchesBinding(binding, { subject: 'Giordano Bruno', traditionIndex: 0 })).toBe(false);
+    expect(invocationMatchesBinding(null, { subject: 'Giordano Bruno', traditionIndex: 9 })).toBe(false);
+  });
+
+  it('exports the preserved palace identity while a different invocation is still a draft', () => {
+    const binding = createInvocationBinding({ subject: 'Astarte', traditionIndex: 2 });
+    expect(resolveArchiveInvocation({
+      binding,
+      stale: true,
+      subject: 'The Memory of Rain',
+      traditionIndex: 8,
+    })).toEqual(binding);
+    expect(resolveArchiveInvocation({
+      binding,
+      stale: false,
+      subject: 'The Memory of Rain',
+      traditionIndex: 8,
+    })).toEqual({ subject: 'The Memory of Rain', traditionIndex: 8 });
   });
 
   it('rejects unknown palace versions and restores the current format', () => {

@@ -1,4 +1,5 @@
 import { TAROT_ARCHETYPES } from './vrContent.js';
+import { lockTarotReferenceMeta } from './tarotReference.js';
 
 const DEMO_STAGES = ['NIGREDO', 'ALBEDO', 'CITRINITAS', 'RUBEDO'];
 const DEMO_ELEMENTS = ['FIRE', 'WATER', 'AIR', 'EARTH'];
@@ -64,15 +65,12 @@ export const createDemoForgedCard = ({ seedCard, index = 0, subject, tradition, 
     name,
     exegesis: `${name} preserves its inherited Tarot function while turning it toward ${focus}. In this deterministic rehearsal, the card is treated as a shadow of an idea: not an authority to obey, but a compact scene that can be remembered, questioned, and converted into action. Its ${element.toLowerCase()} current tests what in the subject is moving, resisting, clarifying, or seeking embodiment. Under the ${tradition} lens, the operative task is to identify one concrete correspondence between the card and the living question, then alter behavior rather than merely admire the image. The ${stage} phase names the present condition of the work. ${daimon} is a mnemonic title for the faculty that performs it, not a supernatural authentication. When Live Local AI returns, this rehearsal exegesis can be returned to prima materia and forged again through Qwen.`,
     visual: `${aesthetic} ritual card for ${name}; a geometric ${element.toLowerCase()} emblem suspended above a black and scarlet mnemonic floor, brass orbit, bone-white voltage, pixel fracture, no portrait realism`,
-    meta: {
-      hebrew: String.fromCharCode(0x05D0 + (index % 22)),
-      planet: seedCard?.planet || 'SOL',
-      element,
+    meta: lockTarotReferenceMeta(index, tradition, {
+      symbolicElement: element,
       alchemical: stage,
       daimon,
-      gematria: 93 + (hash % 838),
       operation: ['REMEMBER', 'SEPARATE', 'CONJOIN', 'EMBODY'][hash % 4],
-    },
+    }),
     imageUrl: null,
     promptUsed: null,
     patina: 0,

@@ -12,6 +12,8 @@ import VrCommandDeck from './VrCommandDeck.jsx';
 import { generateVrImage, generateVrText, readVrHealth } from './grimoireVrApi.js';
 import { buildVrHtmlArchive, deriveVrStats, parseVrArchive, safeArchiveName } from './vrArchive.js';
 import { getVrRitualAudio } from './vrAudio.js';
+import { getTarotReference, lockTarotReferenceMeta } from './tarotReference.js';
+import { buildWristGrimoireModel, cycleAtmosphereMode } from './wristGrimoireModel.js';
 import {
   createDemoForgedCard,
   createDemoImage,
@@ -32,6 +34,9 @@ import {
   PROTOTYPE_MEMORY,
   VR_SPREADS,
   createPalaceSnapshot,
+  createInvocationBinding,
+  invocationMatchesBinding,
+  resolveArchiveInvocation,
   normalizeRitual,
   placeSpreadCard as placeCardInSpread,
   resolveAtmosphereTier,
@@ -132,17 +137,17 @@ const findCatalogIndex = (entries, value, fields = ['name', 'label', 'id']) => {
 
 export default function VrApp() {
   const restoredPalace = useMemo(restorePalace, []);
-  const [subject, setSubject] = useState(restoredPalace?.subject || 'Giordano Bruno');
-  const [traditionIndex, setTraditionIndex] = useState(restoredPalace?.traditionIndex
-    ?? Math.max(0, TRADITIONS.findIndex(entry => entry.id === 'bruno')));
+  const [subject, setSubject] = useState(restoredPalace?.subject || '');
+  const [traditionIndex, setTraditionIndex] = useState(restoredPalace?.traditionIndex ?? 0);
   const [styleIndex, setStyleIndex] = useState(restoredPalace?.styleIndex
     ?? Math.max(0, ART_STYLES.findIndex(entry => entry.id === 'pixel')));
-  const [erosIndex, setErosIndex] = useState(restoredPalace?.erosIndex ?? 2);
+  const [erosIndex, setErosIndex] = useState(restoredPalace?.erosIndex ?? 0);
   const [techIndex, setTechIndex] = useState(restoredPalace?.techIndex ?? 1);
   const [spreadIndex, setSpreadIndex] = useState(restoredPalace?.spreadIndex ?? 0);
   const [ritual, setRitual] = useState(restoredPalace?.ritual
     || normalizeRitual(PROTOTYPE_MEMORY, 'THE UNREMEMBERED NAME'));
   const [awakened, setAwakened] = useState(Boolean(restoredPalace?.awakened));
+  const [boundInvocation, setBoundInvocation] = useState(restoredPalace?.boundInvocation || null);
   const [activeStationId, setActiveStationId] = useState('scriptorium');
   const [forgedCard, setForgedCard] = useState(restoredPalace?.forgedCard || null);
   const [forgedDeck, setForgedDeck] = useState(restoredPalace?.forgedDeck || []);
@@ -171,6 +176,8 @@ export default function VrApp() {
   const [xrSupported, setXrSupported] = useState(null);
   const [inXR, setInXR] = useState(false);
   const [preflightOpen, setPreflightOpen] = useState(true);
+  const [composerOpen, setComposerOpen] = useState(false);
+  const [wristOpen, setWristOpen] = useState(false);
   const [atmosphereMode, setAtmosphereMode] = useState(restoreAtmosphereMode);
   const [demoMode, setDemoMode] = useState(restoreDemoMode);
   const [audioEnabled, setAudioEnabled] = useState(false);
@@ -191,6 +198,8 @@ export default function VrApp() {
   const eros = EROS_LEVELS[erosIndex] || EROS_LEVELS[0];
   const tech = TECH_LEVELS[techIndex] || TECH_LEVELS[1];
   const spread = VR_SPREADS[spreadIndex] || VR_SPREADS[0];
+  const ritualReady = awakened && invocationMatchesBinding(boundInvocation, { subject, traditionIndex });
+  const invocationStale = awakened && !ritualReady;
   const touchFirst = useMemo(() => typeof window !== 'undefined'
     && (window.matchMedia?.('(pointer: coarse)').matches || false), []);
   const activeStation = PLANETARY_STATIONS.find(entry => entry.id === activeStationId)
@@ -245,6 +254,7 @@ export default function VrApp() {
           spreadIndex,
           ritual,
           awakened,
+          boundInvocation,
           forgedCard,
           forgedDeck,
           cardIndex,
@@ -263,6 +273,7 @@ export default function VrApp() {
     return () => window.clearTimeout(timer);
   }, [
     awakened,
+    boundInvocation,
     cardIndex,
     completedCourtIds,
     erosIndex,
@@ -280,10 +291,6 @@ export default function VrApp() {
     techIndex,
     traditionIndex,
   ]);
-
-  useEffect(() => {
-    if (archive.length) completeCourt('archive');
-  }, [archive.length, completeCourt]);
 
   useEffect(() => {
     try {
@@ -307,8 +314,8 @@ export default function VrApp() {
   }, [spread.count]);
 
   useEffect(() => {
-    ritualAudio?.setIntensity(status.busy ? 1 : awakened ? 0.38 : 0.12);
-  }, [awakened, status.busy]);
+    ritualAudio?.setIntensity(status.busy ? 1 : ritualReady ? 0.38 : 0.12);
+  }, [ritualReady, status.busy]);
 
   useEffect(() => () => ritualAudio?.stop(), []);
 
@@ -464,8 +471,8 @@ export default function VrApp() {
       `Role: You are the living mnemonic intelligence of a Giordano Bruno inspired VR memory palace. Subject: "${subject.trim()}". Tradition: ${tradition.name}. Aesthetic: ${style.name}. ${tech.instruction} ${eros.context}
 
 Construct a rigorous but evocative initiation suitable for spatial display. Transform the complete traditional 78-card Tarot architecture into a subject-specific archetype deck: 22 Major Arcana followed by 14 cards for each suit (Wands, Cups, Swords, Pentacles). Preserve each traditional card's recognizable function while giving it a new subject-specific name. Erotic or transgressive imagery must function as a shadow of an idea—an instrument of memory and transformation—rather than an empty idol. Return only JSON with this exact shape:
-{"dossier":"160-210 words","geniusTitle":"short title for the subject's ruling genius","geniusCharge":"one potent sentence","sealWords":["seven","single","mnemonic","words","in","uppercase","form"],"cards":[{"name":"subject-specific card name","arcana":"MAJOR or MINOR","suit":"blank for Major or WANDS/CUPS/SWORDS/PENTACLES","rank":"number or court rank","planet":"LUNA|MERCURY|VENUS|SOL|MARS|JUPITER|SATURN","oracle":"one question"}],"questions":["three profound questions"]}
-The cards array must contain exactly 78 entries in canonical order. Do not add commentary outside JSON.`,
+{"dossier":"160-210 words","geniusTitle":"short title for the subject's ruling genius","geniusCharge":"one potent sentence","sealWords":["seven","single","mnemonic","words","in","uppercase","form"],"cards":[{"name":"subject-specific card name","planet":"LUNA|MERCURY|VENUS|SOL|MARS|JUPITER|SATURN","oracle":"one question"}],"questions":["three profound questions"]}
+The cards array must contain exactly 78 entries in canonical Tarot order. The application supplies and locks arcana, suit, and rank; do not repeat or reinterpret those inherited facts. Do not add commentary outside JSON.`,
       onStatus,
       true,
     ));
@@ -473,6 +480,7 @@ The cards array must contain exactly 78 entries in canonical order. Do not add c
     const normalized = normalizeRitual(result, subject.trim());
     setRitual(normalized);
     setAwakened(true);
+    setBoundInvocation(createInvocationBinding({ subject: subject.trim(), traditionIndex }));
     setForgedCard(null);
     setForgedDeck([]);
     setPortraitUrl(null);
@@ -490,7 +498,7 @@ The cards array must contain exactly 78 entries in canonical order. Do not add c
     addArchiveEntry({ type: 'ritual', subject: subject.trim(), title: normalized.geniusTitle });
     pulseFeedback('success');
     void ritualAudio?.cue('success');
-  }, [addArchiveEntry, demoMode, eros.context, runOperation, spread.count, style.name, subject, tech.instruction, tradition.name]);
+  }, [addArchiveEntry, demoMode, eros.context, runOperation, spread.count, style.name, subject, tech.instruction, tradition.name, traditionIndex]);
 
   const storeForgedCard = useCallback(next => {
     if (!next) return;
@@ -501,10 +509,11 @@ The cards array must contain exactly 78 entries in canonical order. Do not add c
     ].sort((left, right) => left.id - right.id));
   }, [cardIndex]);
 
-  const forgeCardAtIndex = useCallback(async (targetIndex, onStatus, includeImage = false) => {
+  const forgeCardAtIndex = useCallback(async (targetIndex, onStatus, includeImage = false, forceText = false) => {
     const seedCard = ritual.cards[targetIndex % ritual.cards.length] || PROTOTYPE_MEMORY.cards[0];
+    const inheritedReference = getTarotReference(targetIndex, tradition.name);
     let next = forgedDeck.find(card => card.id === targetIndex) || null;
-    if (!next?.exegesis) {
+    if (forceText || !next?.exegesis) {
       const result = demoMode
         ? await runDemoJob(() => createDemoForgedCard({
             seedCard,
@@ -514,22 +523,30 @@ The cards array must contain exactly 78 entries in canonical order. Do not add c
             aesthetic: style.name,
           }), onStatus)
         : await generateVrText(
-        `Role: Master of the ${tradition.name} card forge. Subject: "${subject}". Card ${targetIndex + 1} of 78: "${seedCard.name}" (${seedCard.arcana}${seedCard.suit ? ` · ${seedCard.rank} OF ${seedCard.suit}` : ''}) under ${seedCard.planet}. Aesthetic: ${style.name}. ${tech.instruction} ${eros.context}
+        `Role: Master of the ${tradition.name} card forge. Subject: "${subject}". Subject-specific title: "${seedCard.name}". Inherited card ${targetIndex + 1} of 78: ${inheritedReference.inherited}. Fixed reference: Hebrew ${inheritedReference.hebrew}; attribution ${inheritedReference.attribution}; ${inheritedReference.gematria === null ? 'no Major-Arcana Hebrew gematria applies' : `letter value ${inheritedReference.gematria}`}. Planetary memory-palace court: ${seedCard.planet}. Aesthetic: ${style.name}. ${tech.instruction} ${eros.context}
 
-Explain how this card transforms its traditional Tarot function into a useful mnemonic shadow of an idea and not an idol. Return only JSON:
-{"name":"card name","exegesis":"160-220 words","visual":"precise symbolic image description without readable lettering","meta":{"hebrew":"letter or path","planet":"planet or zodiacal ruler","element":"element","alchemical":"stage","daimon":"grimoire intelligence","gematria":0,"operation":"single magical or psychological operation"}}`,
+Explain how the subject-specific card transforms its inherited Tarot function into a useful mnemonic shadow of an idea and not an idol. Treat the fixed reference above as authoritative; do not contradict it or invent replacement correspondences. Return only JSON:
+{"name":"card name","exegesis":"160-220 words","visual":"precise symbolic image description without readable lettering","meta":{"symbolicElement":"FIRE|WATER|AIR|EARTH|SPIRIT","alchemical":"PRIMA MATERIA|NIGREDO|ALBEDO|CITRINITAS|RUBEDO|CONIUNCTIO","daimon":"subject-specific mnemonic intelligence","operation":"single magical or psychological operation"}}`,
         onStatus,
         true,
       );
-      next = demoMode ? result : {
+      const interpreted = demoMode ? result : {
         id: targetIndex,
         name: truncateForPanel(result.name || seedCard.name, 72),
         exegesis: truncateForPanel(result.exegesis || 'No exegesis returned.', 620),
         visual: truncateForPanel(result.visual || seedCard.name, 460),
-        meta: result.meta || { planet: seedCard.planet },
+        meta: lockTarotReferenceMeta(targetIndex, tradition.name, result.meta),
         imageUrl: null,
         promptUsed: null,
-        patina: next?.patina || 0,
+        patina: 0,
+      };
+      next = {
+        ...interpreted,
+        name: next?.imageUrl ? next.name : interpreted.name,
+        visual: next?.imageUrl ? next.visual : interpreted.visual,
+        imageUrl: next?.imageUrl || interpreted.imageUrl || null,
+        promptUsed: next?.promptUsed || interpreted.promptUsed || null,
+        patina: next?.patina || interpreted.patina || 0,
       };
     }
     if (includeImage && !next.imageUrl) {
@@ -543,15 +560,31 @@ Explain how this card transforms its traditional Tarot function into a useful mn
   }, [demoMode, eros.context, eros.prompt, forgedDeck, ritual.cards, style.name, style.prompt, subject, tech.instruction, tradition.name]);
 
   const scribeCard = useCallback(async () => {
+    if (!ritualReady) {
+      setStatus({ busy: false, error: true, label: 'THE INVOCATION CHANGED · REBIND THE 78 ARCANA BEFORE SCRIBING' });
+      return;
+    }
     const next = await runOperation('SCRIBING THE ARCANUM', onStatus => forgeCardAtIndex(cardIndex, onStatus, false));
     if (!next) return;
     storeForgedCard(next);
     addArchiveEntry({ type: 'card', subject, title: next.name });
     void ritualAudio?.cue('forge');
-  }, [addArchiveEntry, cardIndex, forgeCardAtIndex, runOperation, storeForgedCard, subject]);
+  }, [addArchiveEntry, cardIndex, forgeCardAtIndex, ritualReady, runOperation, storeForgedCard, subject]);
+
+  const rescribeCard = useCallback(async () => {
+    if (!forgedCard || !ritualReady) return;
+    const next = await runOperation(
+      'RE-SCRIBING WITH LOCKED REFERENCES',
+      onStatus => forgeCardAtIndex(cardIndex, onStatus, false, true),
+    );
+    if (!next) return;
+    storeForgedCard(next);
+    addArchiveEntry({ type: 'card-revision', subject, title: `${next.name} · REFERENCE LOCKED` });
+    void ritualAudio?.cue('forge');
+  }, [addArchiveEntry, cardIndex, forgeCardAtIndex, forgedCard, ritualReady, runOperation, storeForgedCard, subject]);
 
   const manifestCard = useCallback(async () => {
-    if (!forgedCard) return;
+    if (!forgedCard || !ritualReady) return;
     const promptUsed = `${style.prompt} Tarot card "${forgedCard.name}". ${forgedCard.visual}. ${eros.prompt} Portrait orientation, centered symbolic figure, black scarlet brass and bone ritual atmosphere, no readable text, no logo, masterpiece.`;
     const imageUrl = await runOperation('MANIFESTING THE SYMBOLIC SHADOW', onStatus => demoMode
       ? runDemoJob(() => createDemoImage({
@@ -569,7 +602,7 @@ Explain how this card transforms its traditional Tarot function into a useful mn
     setRelicInspected(false);
     setStatus({ busy: false, error: false, label: 'THE RELIC HAS ARRIVED — POINT AT IT TO OPEN THE SHADOW' });
     void ritualAudio?.cue('forge');
-  }, [demoMode, eros.prompt, forgedCard, runOperation, style.prompt]);
+  }, [demoMode, eros.prompt, forgedCard, ritualReady, runOperation, style.prompt]);
 
   const pauseBatchForge = useCallback(() => {
     batchStopRequested.current = true;
@@ -581,7 +614,7 @@ Explain how this card transforms its traditional Tarot function into a useful mn
   }, []);
 
   const startBatchForge = useCallback(async limit => {
-    if (!awakened || status.busy) return;
+    if (!ritualReady || status.busy) return;
     const missing = selectForgeTargets(ritual.cards, forgedDeck, cardIndex, limit);
     if (!missing.length) {
       setStatus({ busy: false, error: false, label: 'THE COMPLETE DECK IS ALREADY MANIFESTED' });
@@ -629,10 +662,10 @@ Explain how this card transforms its traditional Tarot function into a useful mn
         ? `GRAND FORGE PAUSED AFTER ${outcome.completed} CARD${outcome.completed === 1 ? '' : 'S'}`
         : `GRAND FORGE COMPLETED ${outcome.completed} CARD${outcome.completed === 1 ? '' : 'S'}`,
     });
-  }, [addArchiveEntry, awakened, cardIndex, forgeCardAtIndex, forgedDeck, ritual.cards, runOperation, status.busy, storeForgedCard, subject]);
+  }, [addArchiveEntry, cardIndex, forgeCardAtIndex, forgedDeck, ritual.cards, ritualReady, runOperation, status.busy, storeForgedCard, subject]);
 
   const manifestPortrait = useCallback(async () => {
-    if (!awakened) return;
+    if (!ritualReady) return;
     const portraitPrompt = `${style.prompt} Iconic ritual portrait of ${subject} as ${ritual.geniusTitle}. ${ritual.geniusCharge}. ${eros.prompt} Thelemic black scarlet brass and bone palette, frontal archetypal presence, no readable lettering, no logo, masterpiece.`;
     const imageUrl = await runOperation('MANIFESTING THE RULING GENIUS', onStatus => demoMode
       ? runDemoJob(() => createDemoImage({ title: ritual.geniusTitle, subtitle: 'SOL · RULING GENIUS', seed: portraitPrompt }), onStatus, 180)
@@ -642,9 +675,13 @@ Explain how this card transforms its traditional Tarot function into a useful mn
     completeCourt('genius');
     addArchiveEntry({ type: 'portrait', subject, title: ritual.geniusTitle });
     setStatus({ busy: false, error: false, label: 'THE RULING IMAGE HAS ENTERED THE SOLAR SHRINE' });
-  }, [addArchiveEntry, awakened, completeCourt, demoMode, eros.prompt, ritual.geniusCharge, ritual.geniusTitle, runOperation, style.prompt, subject]);
+  }, [addArchiveEntry, completeCourt, demoMode, eros.prompt, ritual.geniusCharge, ritual.geniusTitle, ritualReady, runOperation, style.prompt, subject]);
 
   const drawOracleSpread = useCallback(() => {
+    if (!ritualReady) {
+      setStatus({ busy: false, error: true, label: 'REBIND THE 78 ARCANA BEFORE DRAWING THE ORACLE' });
+      return;
+    }
     const drawn = selectSpreadCards(
       ritual.cards,
       spread.count,
@@ -658,7 +695,7 @@ Explain how this card transforms its traditional Tarot function into a useful mn
     setStatus({ busy: false, error: false, label: `${spread.id} DRAWN · REARRANGE THE CLOTH OR CAST` });
     pulseFeedback('medium');
     void ritualAudio?.cue('oracle');
-  }, [oracleQuestion, ritual.cards, spread.count, spread.id, subject]);
+  }, [oracleQuestion, ritual.cards, ritualReady, spread.count, spread.id, subject]);
 
   const clearOracleSpread = useCallback(() => {
     setOracleDraftIds(Array(spread.count).fill(null));
@@ -677,6 +714,10 @@ Explain how this card transforms its traditional Tarot function into a useful mn
   }, [oracleSelectedId]);
 
   const consultOracle = useCallback(async () => {
+    if (!ritualReady) {
+      setStatus({ busy: false, error: true, label: 'REBIND THE 78 ARCANA TO THIS INVOCATION BEFORE CASTING' });
+      return;
+    }
     const question = oracleQuestion.trim() || ritual.questions[0] || PROTOTYPE_MEMORY.questions[0];
     const manuallyArranged = oracleDraftIds.length === spread.count
       && oracleDraftIds.every(cardId => Number.isInteger(cardId));
@@ -704,9 +745,13 @@ Explain how this card transforms its traditional Tarot function into a useful mn
     completeCourt('oracle');
     addArchiveEntry({ type: 'oracle', subject, title: `${spread.id}: ${question}` });
     void ritualAudio?.cue('oracle');
-  }, [addArchiveEntry, completeCourt, demoMode, eros.context, oracleDraftIds, oracleQuestion, ritual.cards, ritual.questions, runOperation, spread, subject, tech.instruction, tradition.name]);
+  }, [addArchiveEntry, completeCourt, demoMode, eros.context, oracleDraftIds, oracleQuestion, ritual.cards, ritual.questions, ritualReady, runOperation, spread, subject, tech.instruction, tradition.name]);
 
   const communeSpirit = useCallback(async (questionOverride = '') => {
+    if (!ritualReady) {
+      setStatus({ busy: false, error: true, label: 'REBIND THE 78 ARCANA BEFORE OPENING THE SPIRIT BOX' });
+      return;
+    }
     const question = typeof questionOverride === 'string' && questionOverride.trim()
       ? questionOverride.trim()
       : ritual.questions[1] || 'Which image has become an idol?';
@@ -739,7 +784,7 @@ Answer in 120-180 words, in a distinct but historically and philosophically info
     completeCourt('spirit');
     addArchiveEntry({ type: 'spirit', subject, title: question });
     void ritualAudio?.cue('spirit');
-  }, [addArchiveEntry, completeCourt, demoMode, ritual.questions, runOperation, spiritMessages, subject, tech.instruction, tradition.name]);
+  }, [addArchiveEntry, completeCourt, demoMode, ritual.questions, ritualReady, runOperation, spiritMessages, subject, tech.instruction, tradition.name]);
 
   const clearSpirit = useCallback(() => {
     setSpiritMessages([]);
@@ -764,6 +809,7 @@ Answer in 120-180 words, in a distinct but historically and philosophically info
   }, [completeCourt, forgedCard?.id, forgedCard?.imageUrl, status.busy]);
 
   const selectCard = useCallback(nextIndex => {
+    if (!ritualReady || status.busy) return;
     const length = Math.max(1, ritual.cards.length);
     const normalizedIndex = ((nextIndex % length) + length) % length;
     setCardIndex(normalizedIndex);
@@ -771,15 +817,16 @@ Answer in 120-180 words, in a distinct but historically and philosophically info
     setRelicInspected(false);
     setStatus({ busy: false, error: false, label: `ARCANUM ${normalizedIndex + 1} OF ${length} SELECTED` });
     pulseFeedback('light');
-  }, [forgedDeck, ritual.cards.length]);
+  }, [forgedDeck, ritual.cards.length, ritualReady, status.busy]);
 
   const resetCurrentCard = useCallback(() => {
+    if (!ritualReady || status.busy) return;
     setForgedDeck(previous => previous.filter(card => card.id !== cardIndex));
     setForgedCard(null);
     setRelicInspected(false);
     setActiveStationId('forge');
     setStatus({ busy: false, error: false, label: `ARCANUM ${cardIndex + 1} HAS RETURNED TO PRIMA MATERIA` });
-  }, [cardIndex]);
+  }, [cardIndex, ritualReady, status.busy]);
 
   const temperNextCard = useCallback(() => {
     selectCard(cardIndex + 1);
@@ -792,16 +839,29 @@ Answer in 120-180 words, in a distinct but historically and philosophically info
   }, [completeCourt]);
 
   const turnGeniusSeal = useCallback(() => {
+    if (!ritualReady || status.busy) return;
     completeCourt('genius');
     setStatus({ busy: false, error: false, label: ritual.geniusCharge });
-  }, [completeCourt, ritual.geniusCharge]);
+  }, [completeCourt, ritual.geniusCharge, ritualReady, status.busy]);
 
-  const createArchivePayload = useCallback(() => ({
+  // If a new subject or lineage is being drafted, exports must still describe
+  // the palace that actually generated the preserved 78-card architecture.
+  // Live visual/Eros/intellect currents remain intentionally exportable.
+  const archiveInvocation = resolveArchiveInvocation({
+    binding: boundInvocation,
+    stale: invocationStale,
+    subject,
+    traditionIndex,
+  });
+  const archiveSubject = archiveInvocation.subject;
+  const archiveTradition = TRADITIONS[archiveInvocation.traditionIndex]?.name || tradition.name;
+
+  const createArchivePayload = useCallback((sealArchive = false) => ({
       format: 'grimoire-xr-archive-v1',
       exportedAt: new Date().toISOString(),
       operationMode: demoMode ? 'provider-free-demo' : 'live-local-ai',
-      subject,
-      tradition: tradition.name,
+      subject: archiveSubject,
+      tradition: archiveTradition,
       aesthetic: style.name,
       eros: eros.label,
       intellect: tech.label,
@@ -812,15 +872,21 @@ Answer in 120-180 words, in a distinct but historically and philosophically info
       oracle: { question: oracleQuestion, spread: spread.id, cards: oracleCards, answer: oracleAnswer },
       spiritMessages,
       operations: archive,
-      completedCourtIds,
-    }), [archive, atmosphereMode, completedCourtIds, demoMode, eros.label, forgedDeck, oracleAnswer, oracleCards, oracleQuestion, portraitUrl, ritual, spiritMessages, spread.id, style.name, subject, tech.label, tradition.name]);
+      completedCourtIds: sealArchive
+        ? [...new Set([...completedCourtIds, 'archive'])]
+        : completedCourtIds,
+      draftInvocation: invocationStale ? {
+        subject,
+        tradition: tradition.name,
+      } : null,
+    }), [archive, archiveSubject, archiveTradition, atmosphereMode, completedCourtIds, demoMode, eros.label, forgedDeck, invocationStale, oracleAnswer, oracleCards, oracleQuestion, portraitUrl, ritual, spiritMessages, spread.id, style.name, subject, tech.label, tradition.name]);
 
-  const downloadArchiveFile = useCallback((contents, type, extension) => {
+  const downloadArchiveFile = useCallback((contents, type, extension, archiveName = subject) => {
     const blob = new Blob([contents], { type });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `${safeArchiveName(subject)}.${extension}`;
+    anchor.download = `${safeArchiveName(archiveName)}.${extension}`;
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
@@ -835,12 +901,12 @@ Answer in 120-180 words, in a distinct but historically and philosophically info
   }, [addArchiveEntry, completeCourt, subject]);
 
   const exportArchive = useCallback(async (format = 'json') => {
-    const payload = createArchivePayload();
+    const payload = createArchivePayload(true);
     const html = format === 'html';
     const contents = html ? buildVrHtmlArchive(payload) : JSON.stringify(payload, null, 2);
     const extension = html ? 'html' : 'json';
     const mimeType = html ? 'text/html' : 'application/json';
-    const fileName = `${safeArchiveName(subject)}.${extension}`;
+    const fileName = `${safeArchiveName(payload.subject)}.${extension}`;
     try {
       if (Capacitor.isNativePlatform()) {
         const saved = await Filesystem.writeFile({
@@ -850,12 +916,12 @@ Answer in 120-180 words, in a distinct but historically and philosophically info
           encoding: Encoding.UTF8,
         });
         await Share.share({
-          title: `${subject || 'Grimoire'} XR Archive`,
+          title: `${payload.subject || 'Grimoire'} XR Archive`,
           dialogTitle: 'Save or share the Grimoire archive',
           files: [saved.uri],
         });
       } else {
-        downloadArchiveFile(contents, mimeType, extension);
+        downloadArchiveFile(contents, mimeType, extension, payload.subject);
       }
       finalizeArchiveAction('export', `${html ? 'HTML GRIMOIRE' : 'JSON ARCHIVE'} EXPORTED`);
     } catch (error) {
@@ -864,19 +930,19 @@ Answer in 120-180 words, in a distinct but historically and philosophically info
   }, [createArchivePayload, downloadArchiveFile, finalizeArchiveAction, subject]);
 
   const shareArchive = useCallback(async () => {
-    const payload = createArchivePayload();
+    const payload = createArchivePayload(true);
     const contents = buildVrHtmlArchive(payload);
-    const fileName = `${safeArchiveName(subject)}.html`;
+    const fileName = `${safeArchiveName(payload.subject)}.html`;
     try {
       if (Capacitor.isNativePlatform()) {
         const saved = await Filesystem.writeFile({ path: fileName, data: contents, directory: Directory.Cache, encoding: Encoding.UTF8 });
-        await Share.share({ title: `${subject || 'Grimoire'} XR Archive`, dialogTitle: 'Share the living Grimoire', files: [saved.uri] });
+        await Share.share({ title: `${payload.subject || 'Grimoire'} XR Archive`, dialogTitle: 'Share the living Grimoire', files: [saved.uri] });
       } else {
         const file = new File([contents], fileName, { type: 'text/html' });
         if (navigator.share && navigator.canShare?.({ files: [file] })) {
-          await navigator.share({ title: `${subject || 'Grimoire'} XR Archive`, files: [file] });
+          await navigator.share({ title: `${payload.subject || 'Grimoire'} XR Archive`, files: [file] });
         } else {
-          downloadArchiveFile(contents, 'text/html', 'html');
+          downloadArchiveFile(contents, 'text/html', 'html', payload.subject);
         }
       }
       finalizeArchiveAction('share', 'PORTABLE GRIMOIRE SHARED OR SAVED');
@@ -915,6 +981,10 @@ Answer in 120-180 words, in a distinct but historically and philosophically info
       setDemoMode(restored.operationMode === 'provider-free-demo');
       setRitual(restored.ritual);
       setAwakened(true);
+      setBoundInvocation(createInvocationBinding({
+        subject: restored.subject,
+        traditionIndex: nextTradition >= 0 ? nextTradition : 0,
+      }));
       setPortraitUrl(restored.portraitUrl);
       setForgedDeck(restored.forgedDeck);
       setForgedCard(firstCard);
@@ -972,14 +1042,14 @@ Answer in 120-180 words, in a distinct but historically and philosophically info
         setStatus(previous => previous.busy ? previous : { busy: false, error: false, label: 'RITUAL AUDIO SILENCED' });
       } else {
         await ritualAudio?.start();
-        ritualAudio?.setIntensity(status.busy ? 1 : awakened ? 0.38 : 0.12);
+        ritualAudio?.setIntensity(status.busy ? 1 : ritualReady ? 0.38 : 0.12);
         setAudioEnabled(true);
         setStatus(previous => previous.busy ? previous : { busy: false, error: false, label: 'RITUAL AUDIO AWAKENED' });
       }
     } catch (error) {
       setStatus({ busy: false, error: true, label: truncateForPanel(error.message, 100) });
     }
-  }, [awakened, status.busy]);
+  }, [ritualReady, status.busy]);
 
   const toggleDemoMode = useCallback(() => {
     if (status.busy) return;
@@ -1008,6 +1078,46 @@ Answer in 120-180 words, in a distinct but historically and philosophically info
     recognition.start();
   }, []);
 
+  const dictateInvocation = useCallback(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setStatus({ busy: false, error: true, label: 'VOICE INVOCATION IS NOT SUPPORTED BY THIS BROWSER' });
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    recognition.onresult = event => {
+      const transcript = String(event.results?.[0]?.[0]?.transcript || '').trim();
+      if (!transcript) return;
+      setSubject(transcript);
+      setStatus({ busy: false, error: false, label: 'VOICE INVOCATION CAPTURED · REVIEW BEFORE AWAKENING' });
+      pulseFeedback('medium');
+    };
+    recognition.onerror = () => setStatus({ busy: false, error: true, label: 'THE NAMING MIRROR COULD NOT HEAR THE INVOCATION' });
+    recognition.start();
+  }, []);
+
+  const selectStation = useCallback(stationId => {
+    setActiveStationId(stationId);
+    const selected = PLANETARY_STATIONS.find(station => station.id === stationId);
+    if (selected) {
+      setStatus(previous => previous.busy
+        ? previous
+        : { busy: false, error: false, label: `${selected.planet} LOCUS — ${selected.concept}` });
+    }
+  }, []);
+
+  const openComposer = useCallback(() => {
+    setActiveStationId('scriptorium');
+    setWristOpen(false);
+    setComposerOpen(inXR);
+    if (!inXR) setPreflightOpen(true);
+    setStatus(previous => previous.busy
+      ? previous
+      : { busy: false, error: false, label: inXR ? 'SPATIAL CURRENT READY' : 'INVOCATION DOSSIER READY' });
+  }, [inXR]);
+
   const codex = useMemo(() => {
     const baseDisabled = status.busy;
     switch (activeStationId) {
@@ -1032,16 +1142,18 @@ Answer in 120-180 words, in a distinct but historically and philosophically info
       case 'genius':
         return {
           title: activeStation.title,
-          body: awakened
+          body: ritualReady
             ? `${ritual.geniusCharge}\n\nSeal: ${ritual.sealWords.join(' · ')}. ${portraitUrl ? 'The ruling portrait is present as a generated mnemonic image.' : 'Manifest the ruling portrait explicitly, or turn the mnemonic seal without generating an image.'}`
-            : 'The Genius Gate has no ruling image yet. Initiate the central arrangement so the seven courts can converge upon a title, charge, and mnemonic seal.',
-          actionLabel: !awakened
-            ? 'AWAKEN THE MONAD FIRST'
+            : invocationStale
+              ? 'The authored invocation no longer matches the preserved 78-card architecture. Rebind it at the altar before invoking this ruling genius.'
+              : 'The Genius Gate has no ruling image yet. Initiate the central arrangement so the seven courts can converge upon a title, charge, and mnemonic seal.',
+          actionLabel: !ritualReady
+            ? invocationStale ? 'REBIND THE 78 ARCANA' : 'AWAKEN THE MONAD FIRST'
             : portraitUrl
               ? 'TURN THE MNEMONIC SEAL'
               : 'MANIFEST THE RULING PORTRAIT',
-          actionDisabled: baseDisabled || !awakened,
-          action: portraitUrl ? turnGeniusSeal : manifestPortrait,
+          actionDisabled: baseDisabled,
+          action: ritualReady ? (portraitUrl ? turnGeniusSeal : manifestPortrait) : openComposer,
         };
       case 'forge': {
         const seedCard = ritual.cards[cardIndex % ritual.cards.length] || PROTOTYPE_MEMORY.cards[0];
@@ -1050,8 +1162,8 @@ Answer in 120-180 words, in a distinct but historically and philosophically info
           body: forgedCard
             ? `ARCANUM ${cardIndex + 1} / ${ritual.cards.length} · ${forgedCard.name} — ${forgedCard.meta?.planet || seedCard.planet}. ${forgedCard.exegesis}${forgedCard.imageUrl ? ' The manifested relic is now a spatial mnemonic object: point and release upon it to open the shadow.' : ''}`
             : `ARCANUM ${cardIndex + 1} / ${ritual.cards.length} · ${seedCard.name} · ${seedCard.arcana}${seedCard.suit ? ` · ${seedCard.rank} OF ${seedCard.suit}` : ''}. ${seedCard.oracle} Scribe its intellectual operation, then explicitly manifest its visual shadow through ComfyUI.`,
-          actionLabel: !awakened
-            ? 'AWAKEN THE MONAD FIRST'
+          actionLabel: !ritualReady
+            ? invocationStale ? 'REBIND THE 78 ARCANA' : 'AWAKEN THE MONAD FIRST'
             : !forgedCard
               ? 'SCRIBE THIS ARCANUM'
               : !forgedCard.imageUrl
@@ -1059,8 +1171,10 @@ Answer in 120-180 words, in a distinct but historically and philosophically info
                 : relicInspected
                   ? 'RETURN AND TEMPER THE NEXT'
                   : 'INSPECT THE MANIFESTED RELIC',
-          actionDisabled: baseDisabled || !awakened,
-          action: !forgedCard
+          actionDisabled: baseDisabled,
+          action: !ritualReady
+            ? openComposer
+            : !forgedCard
             ? scribeCard
             : !forgedCard.imageUrl
               ? manifestCard
@@ -1075,26 +1189,28 @@ Answer in 120-180 words, in a distinct but historically and philosophically info
           body: oracleAnswer
             ? `${spread.id}: ${oracleCards.map(card => card.name).join(' · ')}\n\n${oracleAnswer}`
             : `Question: ${oracleQuestion || ritual.questions[0]} Spread: ${spread.id} — ${spread.label}. Arrange ${spread.count} cards manually on the command-console cloth or draw them automatically, then cast the relational reading.`,
-          actionLabel: awakened ? (oracleAnswer ? `CAST ${spread.id} AGAIN` : `CAST THE ${spread.id}`) : 'AWAKEN THE MONAD FIRST',
-          actionDisabled: baseDisabled || !awakened,
-          action: consultOracle,
+          actionLabel: ritualReady ? (oracleAnswer ? `CAST ${spread.id} AGAIN` : `CAST THE ${spread.id}`) : invocationStale ? 'REBIND THE 78 ARCANA' : 'AWAKEN THE MONAD FIRST',
+          actionDisabled: baseDisabled,
+          action: ritualReady ? consultOracle : openComposer,
         };
       case 'spirit':
         return {
           title: activeStation.title,
           body: spiritAnswer || `The Spirit Box creates an explicitly imaginative simulation of ${subject}'s intellectual voice and preserves a local dialogue history. It does not manufacture false quotations or claim supernatural authentication. Configure a message or dictate it in the Arcane Workbench.`,
-          actionLabel: awakened ? (spiritAnswer ? 'RETUNE THE VOICE' : 'COMMUNE WITH THE ARCHIVE') : 'AWAKEN THE MONAD FIRST',
-          actionDisabled: baseDisabled || !awakened,
-          action: communeSpirit,
+          actionLabel: ritualReady ? (spiritAnswer ? 'RETUNE THE VOICE' : 'COMMUNE WITH THE ARCHIVE') : invocationStale ? 'REBIND THE 78 ARCANA' : 'AWAKEN THE MONAD FIRST',
+          actionDisabled: baseDisabled,
+          action: ritualReady ? communeSpirit : openComposer,
         };
       case 'scriptorium':
       default:
         return {
           title: activeStation.title,
-          body: awakened
+          body: ritualReady
             ? `${ritual.dossier}\n\nDECK: ${ritual.cards.length} ARCHETYPES · ${forgedDeck.length} FORGED · INTELLECT: ${tech.label}`
-            : PROTOTYPE_MEMORY.dossier,
-          actionLabel: awakened ? 'RE-ARRANGE THE SEVEN COURTS' : 'BEGIN THE RITUAL',
+            : invocationStale
+              ? `THE INVOCATION HAS CHANGED. The preserved deck remains in the archive, but its subject or lineage no longer matches the Naming Mirror. Review the current and rebind all 78 arcana before using the Forge, Oracle, or Spirit Box.`
+              : PROTOTYPE_MEMORY.dossier,
+          actionLabel: ritualReady ? 'REVIEW / TUNE THE CURRENT' : invocationStale ? 'REBIND THE 78 ARCANA' : 'OPEN THE INVOCATION DOSSIER',
           actionDisabled: baseDisabled,
           action: beginRitual,
         };
@@ -1113,6 +1229,7 @@ Answer in 120-180 words, in a distinct but historically and philosophically info
     forgedCard,
     forgedDeck.length,
     inspectRelic,
+    invocationStale,
     manifestCard,
     manifestPortrait,
     oracleAnswer,
@@ -1121,6 +1238,7 @@ Answer in 120-180 words, in a distinct but historically and philosophically info
     portraitUrl,
     relicInspected,
     ritual,
+    ritualReady,
     scribeCard,
     spiritAnswer,
     spread,
@@ -1132,17 +1250,109 @@ Answer in 120-180 words, in a distinct but historically and philosophically info
     tech.label,
     turnGeniusSeal,
     weaveNextAesthetic,
+    openComposer,
   ]);
 
-  const selectStation = useCallback(stationId => {
-    setActiveStationId(stationId);
-    const selected = PLANETARY_STATIONS.find(station => station.id === stationId);
-    if (selected) {
-      setStatus(previous => previous.busy
-        ? previous
-        : { busy: false, error: false, label: `${selected.planet} LOCUS — ${selected.concept}` });
-    }
-  }, []);
+  const composerModel = useMemo(() => ({
+    open: composerOpen,
+    subject,
+    traditionIndex,
+    styleIndex,
+    erosIndex,
+    techIndex,
+    atmosphereMode,
+    demoMode,
+    health,
+    status,
+    awakened,
+    ritualReady,
+    invocationStale,
+  }), [
+    atmosphereMode,
+    awakened,
+    composerOpen,
+    demoMode,
+    erosIndex,
+    health,
+    status,
+    styleIndex,
+    subject,
+    techIndex,
+    traditionIndex,
+    ritualReady,
+    invocationStale,
+  ]);
+
+  const composerActions = useMemo(() => ({
+    open: openComposer,
+    close: () => setComposerOpen(false),
+    openConsole: () => {
+      setComposerOpen(false);
+      setWristOpen(false);
+      setPreflightOpen(true);
+      const session = vrStore.getState().session;
+      if (session) void session.end().catch(() => {});
+    },
+    setSubject,
+    dictateInvocation,
+    setTraditionIndex,
+    setStyleIndex: nextIndex => {
+      setStyleIndex(nextIndex);
+      if (awakened) completeCourt('loom');
+    },
+    setErosIndex,
+    setTechIndex,
+    setAtmosphereMode,
+    awaken: () => { void beginRitual(); },
+  }), [awakened, beginRitual, completeCourt, dictateInvocation, openComposer]);
+
+  const wristModel = useMemo(() => buildWristGrimoireModel({
+    open: wristOpen,
+    activeStationId,
+    completedCourtIds,
+    demoMode,
+    audioEnabled,
+    atmosphereMode,
+    health,
+    status,
+    subject,
+    tradition,
+    style,
+    eros,
+    tech,
+    ritualReady,
+    invocationStale,
+  }), [
+    activeStationId,
+    atmosphereMode,
+    audioEnabled,
+    completedCourtIds,
+    demoMode,
+    health,
+    status,
+    subject,
+    tradition,
+    style,
+    eros,
+    tech,
+    ritualReady,
+    invocationStale,
+    wristOpen,
+  ]);
+
+  const wristActions = useMemo(() => ({
+    open: () => setWristOpen(true),
+    close: () => setWristOpen(false),
+    openCourt: courtId => {
+      setComposerOpen(false);
+      setWristOpen(false);
+      selectStation(courtId);
+    },
+    openComposer,
+    toggleDemoMode,
+    toggleAudio,
+    cycleAtmosphere: () => setAtmosphereMode(previous => cycleAtmosphereMode(previous, 1)),
+  }), [openComposer, selectStation, toggleAudio, toggleDemoMode]);
 
   const enterVr = async () => {
     try {
@@ -1177,13 +1387,13 @@ Answer in 120-180 words, in a distinct but historically and philosophically info
             <XROrigin position={[0, 0, 5.2]} />
             <AtriumScene
               subject={subject}
-              awakened={awakened}
+              awakened={ritualReady}
+              invocationStale={invocationStale}
               ritual={ritual}
               activeStationId={activeStationId}
               onSelectStation={selectStation}
-              onBeginRitual={beginRitual}
               codex={codex}
-              onCodexAction={codex.action}
+              onCodexAction={activeStationId === 'scriptorium' ? openComposer : codex.action}
               status={status}
               inXR={inXR}
               imageUrl={activeStationId === 'forge'
@@ -1200,6 +1410,10 @@ Answer in 120-180 words, in a distinct but historically and philosophically info
               completedCourtIds={completedCourtIds}
               atmosphereTier={atmosphereTier}
               onPerformanceSample={setPerformance}
+              composer={composerModel}
+              composerActions={composerActions}
+              wrist={wristModel}
+              wristActions={wristActions}
             />
           </XR>
         </Canvas>
@@ -1219,7 +1433,9 @@ Answer in 120-180 words, in a distinct but historically and philosophically info
               atmosphereMode,
               atmosphereTier,
               audioEnabled,
-              awakened,
+              awakened: ritualReady,
+              ritualReady,
+              invocationStale,
               batchProgress,
               cardIndex,
               completedCourtIds,
@@ -1257,6 +1473,7 @@ Answer in 120-180 words, in a distinct but historically and philosophically info
               close: () => setPreflightOpen(false),
               consultOracle: () => { setActiveStationId('oracle'); void consultOracle(); },
               dictateSpirit,
+              dictateInvocation,
               drawOracleSpread,
               enterVr,
               exportArchive,
@@ -1271,6 +1488,7 @@ Answer in 120-180 words, in a distinct but historically and philosophically info
               placeOracleCard,
               refreshHealth,
               resetCurrentCard,
+              rescribeCard,
               scribeCard,
               selectCard,
               selectOracleCard: setOracleSelectedId,
@@ -1280,14 +1498,19 @@ Answer in 120-180 words, in a distinct but historically and philosophically info
               setOracleQuestion,
               setSpreadIndex,
               setSpiritDraft,
-              setStyleIndex,
+              setStyleIndex: nextIndex => {
+                setStyleIndex(nextIndex);
+                if (awakened) completeCourt('loom');
+              },
               setSubject,
               setTechIndex,
               setTraditionIndex,
               shareArchive,
               startBatchForge,
+              turnGeniusSeal,
               toggleDemoMode,
               toggleAudio,
+              weaveNextAesthetic,
             }}
           />
         </section>

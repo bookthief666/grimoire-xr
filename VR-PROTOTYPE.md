@@ -101,10 +101,32 @@ Use one controller ray and complete this sequence:
 
 ## Next creative build sequence
 
-1. Validate Electric Babalon's ceiling height, particle comfort, portal scale, controller rays, text legibility, color separation, and frame timing on the target Quest.
-2. Add teleport anchors and comfort turning, then expand each gate into a short planetary chamber rather than a decorative menu.
-3. Turn the existing ritual drone and operation cues into accessible positional court motifs.
-4. Turn mnemonic seal construction into a gesture ritual with deterministic saved geometry.
-5. Give the ruling Genius a restrained companion presence whose form is derived from the seven-card constellation.
-6. Add optional encrypted cross-device synchronization on top of the validated portable JSON handoff.
-7. Evaluate native Unity/Godot OpenXR only after the WebXR prototype proves which embodied mechanics deserve the higher implementation cost.
+The interaction architecture and acceptance gates for the next slice are specified in [SPATIAL-RITUAL-COMPOSER-PLAN.md](SPATIAL-RITUAL-COMPOSER-PLAN.md).
+
+### Spatial Composer 0.10B implemented slice
+
+- Touching the central altar now opens an in-world composer instead of immediately spending an AI operation.
+- Mercury, Saturn, Venus, Babalon, Sol, Luna, and Monad stages edit the same authoritative values used by the flat console.
+- Venus uses a seven-family constellation layer before exposing the complete 51-style catalog.
+- The deterministic Mnemonic Effigy changes form, orbit, pulse, inscription density, and color as the ritual current changes.
+- The Central Seal is the sole guarded awakening action and reports whether Demo Current or the local text provider is ready.
+- The composer replaces the floating codex while open, preserving the altar sightline and keeping the scene reversible.
+
+Spatial Composer 0.10D now includes a fixed-world ritual compass using the Wrist Grimoire state model. It opens with Fold touch or a controller ray, navigates all seven courts, returns to the altar composer, and exposes honest provider gems, queue state, Demo/Live mode, audio, and Astral Weather. Physical wrist attachment, dominant-hand calibration, and controller-button shortcuts remain intentionally deferred to the Quest acceptance pass.
+
+Spatial Composer 0.10E replaces the mandatory seven-screen corridor with a Ritual Lattice. Every court is a persistent direct-access tab; each surface shows several immediately selectable values; the complete Bound Current remains visible; Venus combines family and style selection; and the Naming Mirror can hand keyboard entry to the full 2D console. Sequential Back/Next controls remain as an optional ceremonial path rather than the only path.
+
+Invocation Dossier 0.10F makes the original-style 2D ritual surface authoritative again. A fresh palace begins with a blank, unrestricted subject field rather than preset names. Tradition, the grouped complete Aesthetic catalog, Eros, Intellect, and Astral Weather are inscribed together in one compact dossier, with scales for continuous-feeling adjustments and fewer boxed panels. On Fold and desktop, touching the altar reopens this same console directly. Immersive VR's Naming Mirror only reflects the invocation authored there; choosing Edit Invocation ends the immersive session and returns to the browser keyboard instead of substituting a preset carousel.
+
+Living Invocation 0.11A makes that current structurally present throughout the room. The deterministic Mnemonic Effigy remains above the altar after the menu closes; its form, color, orbit, pulse, inscriptions, and weather react to the authored subject and all live settings. Optional speech recognition can inscribe an unrestricted invocation into the same field. The Wrist Grimoire carries a compact current summary. Subject and Tradition now bind the generated 78-card architecture: changing either clearly unseals the palace and routes all dependent tools to a deliberate rebind, while Aesthetic, Eros, Intellect, and Astral Weather remain live tunable currents. Portable export cannot accidentally label an older deck with a newer draft subject.
+
+The next implementation slice is physical Quest controller-ray comfort testing, wrist attachment and dominant-hand calibration, then direct embodied court tools.
+
+1. Build the pure Spatial Ritual Composer model, shared-state adapter, and desktop-testable altar loop.
+2. Add the deterministic Mnemonic Genius Effigy and Wrist Grimoire without exceeding the authored call/triangle budget.
+3. Validate the complete setup/awakening/navigation loop on Quest, including Electric Babalon's ceiling height, particle comfort, portal scale, controller rays, text legibility, color separation, and frame timing.
+4. Add teleport anchors and comfort turning, then expand each gate into a short planetary chamber rather than a decorative menu.
+5. Embody Mars, Jupiter, Saturn, Sol, and Luna operations while preserving the precision console as an accessible fallback.
+6. Turn the existing ritual drone and operation cues into accessible positional court motifs.
+7. Add optional encrypted cross-device synchronization on top of the validated portable JSON handoff.
+8. Evaluate native Unity/Godot OpenXR only after the WebXR prototype proves which embodied mechanics deserve the higher implementation cost.

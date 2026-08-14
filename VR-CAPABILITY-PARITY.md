@@ -1,6 +1,6 @@
 # XR capability parity
 
-Showcase & Continuity 0.8 establishes one Grimoire vocabulary and a deliberate console and spatial equivalent for the original 2D systems, including provider-free mobile rehearsal, guided discovery, and portable restoration.
+Seven-Court Circuit 0.9.1 establishes one Grimoire vocabulary and a deliberate console and spatial equivalent for the original 2D systems, including reference-locked Tarot inheritance, provider-free mobile rehearsal, guided discovery, portable restoration, and an explicit completion path through all seven planetary instruments.
 
 | Original Grimoire faculty | XR transformation | Status |
 | --- | --- | --- |
@@ -25,7 +25,8 @@ Showcase & Continuity 0.8 establishes one Grimoire vocabulary and a deliberate c
 | Native share sheet | JSON or HTML files saved to Capacitor cache and passed to the iOS/Android system share sheet | Working |
 | Provider-free phone use | Explicit Demo Current exercises the real 78-card, Forge, Oracle, Spirit, statistics, patina, archive, and share state with deterministic labeled output and local SVG relics | Working |
 | Foldable ergonomics | Closed bottom sheet, unfolded portrait/landscape arrangements, sticky tabs, keyboard-aware sizing, coarse-touch haptics, and balanced mobile atmosphere | Working |
-| Guided presentation | Five-step first-run Showcase Rite moves the console and temple together without silently invoking generation | Working |
+| Guided presentation | Five-step first-run Showcase Rite plus a persistent seven-court checklist, next-action guidance, and direct tool handoff | Working |
+| Deliberate planetary completion | Mercury awakening, Venus weave, Sol seal, Mars patina, Jupiter reading, Saturn reply, and Luna export each have an explicit completion event | Working |
 | Manifested-card gallery | Lazy reliquary thumbnails, full-screen swipe/keyboard inspection, metadata, prompt copy, and Forge handoff | Working |
 | Archive restore | Validated JSON import restores the creative current, complete ritual, portrait, deck/images, Oracle, Spirit, operations, and court progress | Working |
 | Installable offline phone shell | Standalone PWA, maskable launcher art, static-shell cache, provider-route bypass, and a Phone Demo shortcut | Working |

@@ -1,4 +1,4 @@
-# Showcase & Continuity 0.8 · Complete Instrument
+# Seven-Court Circuit 0.9.1 · Complete Instrument
 
 The `/vr` route now contains a complete flat command console for every original Grimoire tool. It is the readable control surface for desktop and mobile; selecting a tab also turns the spatial temple toward its matching planetary court.
 
@@ -78,6 +78,8 @@ Grand Forge is sequential so Ollama and ComfyUI never compete for Metal resource
 
 ### Archive
 
+- The **Seven-Court Pilgrimage** shows every planetary instrument, its exact completion requirement, and the next unfinished court. Select any court to move both the console and spatial temple to its tool.
+- The constellation seals only after a deliberate Mercury awakening, Venus weave, Sol seal/portrait, Mars relic inspection, Jupiter reading, Saturn reply, and Luna export/share. Ordinary background archive entries no longer complete Luna.
 - Arcane Statistics show inscribed and manifested counts, patina, operations, the dominant card, the dominant alchemical current, and recurring Spirit echoes.
 - The Manifested Reliquary presents every image as a thumbnail. Open it for a full-screen card, swipe or use arrow keys, copy its prompt, or return that exact arcanum to the Forge.
 - **Download JSON** preserves structured data.

@@ -1,4 +1,5 @@
 import { PLANETARY_STATIONS, normalizeRitual, truncateForPanel } from './vrContent.js';
+import { lockTarotReferenceMeta } from './tarotReference.js';
 
 const escapeHtml = value => String(value ?? '')
   .replace(/&/g, '&amp;')
@@ -15,7 +16,7 @@ const STOP_WORDS = new Set([
 
 const ARCHIVE_FORMAT = 'grimoire-xr-archive-v1';
 const MAX_ARCHIVE_CHARACTERS = 220 * 1024 * 1024;
-const META_FIELDS = ['hebrew', 'planet', 'element', 'alchemical', 'daimon', 'gematria', 'operation'];
+const INTERPRETIVE_META_FIELDS = ['symbolicElement', 'element', 'alchemical', 'daimon', 'operation'];
 
 const safeImageUrl = value => {
   const url = String(value || '');
@@ -24,11 +25,11 @@ const safeImageUrl = value => {
     : null;
 };
 
-const normalizeImportedCard = (value, ritual) => {
+const normalizeImportedCard = (value, ritual, tradition) => {
   const id = Number(value?.id);
   if (!Number.isInteger(id) || id < 0 || id >= 78) return null;
   const seed = ritual.cards[id];
-  const meta = Object.fromEntries(META_FIELDS
+  const interpretiveMeta = Object.fromEntries(INTERPRETIVE_META_FIELDS
     .filter(key => value?.meta?.[key] !== undefined)
     .map(key => [key, typeof value.meta[key] === 'number'
       ? value.meta[key]
@@ -38,7 +39,7 @@ const normalizeImportedCard = (value, ritual) => {
     name: truncateForPanel(value?.name || seed?.name || `ARCANUM ${id + 1}`, 72),
     exegesis: truncateForPanel(value?.exegesis, 1800),
     visual: truncateForPanel(value?.visual, 900),
-    meta,
+    meta: lockTarotReferenceMeta(id, tradition, interpretiveMeta),
     imageUrl: safeImageUrl(value?.imageUrl),
     promptUsed: truncateForPanel(value?.promptUsed, 1400) || null,
     patina: Math.max(0, Math.min(9999, Number(value?.patina) || 0)),
@@ -68,7 +69,7 @@ export const parseVrArchive = rawValue => {
   const ritual = normalizeRitual(value.ritual, subject);
   const deckById = new Map();
   (Array.isArray(value.forgedDeck) ? value.forgedDeck : []).forEach(card => {
-    const normalized = normalizeImportedCard(card, ritual);
+    const normalized = normalizeImportedCard(card, ritual, value.tradition);
     if (normalized) deckById.set(normalized.id, normalized);
   });
   const oracleCards = (Array.isArray(value.oracle?.cards) ? value.oracle.cards : [])
