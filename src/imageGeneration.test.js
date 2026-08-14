@@ -25,6 +25,7 @@ describe('image generation client contract', () => {
   it('normalizes provider metadata beside the returned image', () => {
     expect(readImageGenerationResult({
       imageUrl: 'data:image/png;base64,AQID',
+      provider: 'comfyui',
       mode: 'final',
       seed: 424242,
       width: 832,
@@ -36,6 +37,7 @@ describe('image generation client contract', () => {
     })).toEqual({
       imageUrl: 'data:image/png;base64,AQID',
       generation: {
+        provider: 'comfyui',
         mode: IMAGE_MODES.final,
         seed: 424242,
         width: 832,
@@ -48,14 +50,18 @@ describe('image generation client contract', () => {
     });
   });
 
-  it('only allows finalization when a preview has a reproducible prompt and seed', () => {
+  it('only allows finalization for a reproducible ComfyUI preview', () => {
     expect(canFinalizeCard({
       promptUsed: 'occult tarot',
-      generation: { mode: 'preview', seed: 7 },
+      generation: { provider: 'comfyui', mode: 'preview', seed: 7 },
     })).toBe(true);
     expect(canFinalizeCard({
       promptUsed: 'occult tarot',
-      generation: { mode: 'final', seed: 7 },
+      generation: { provider: 'comfyui', mode: 'final', seed: 7 },
+    })).toBe(false);
+    expect(canFinalizeCard({
+      promptUsed: 'occult tarot',
+      generation: { provider: 'gemini', mode: 'preview', seed: 7 },
     })).toBe(false);
     expect(canFinalizeCard({ promptUsed: 'occult tarot' })).toBe(false);
   });
