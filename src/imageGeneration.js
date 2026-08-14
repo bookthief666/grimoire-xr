@@ -44,6 +44,7 @@ export const readImageGenerationResult = result => {
   return {
     imageUrl: result.imageUrl,
     generation: {
+      provider: typeof result.provider === 'string' && result.provider ? result.provider : null,
       mode: normalizeImageMode(result.mode),
       seed: asSeed(result.seed),
       width: asPositiveInteger(result.width),
@@ -58,6 +59,7 @@ export const readImageGenerationResult = result => {
 
 export const canFinalizeCard = card => Boolean(
   card?.promptUsed
+  && card?.generation?.provider === 'comfyui'
   && card?.generation?.mode !== IMAGE_MODES.final
   && asSeed(card?.generation?.seed) !== null,
 );
