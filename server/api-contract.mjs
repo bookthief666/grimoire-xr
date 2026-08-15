@@ -1,5 +1,6 @@
 export const GRIMOIRE_AI_PROTOCOL_VERSION = 1;
 export const GRIMOIRE_PROMPT_SCHEMA = 'tarot-structured-v1';
+export const GRIMOIRE_STRUCTURED_TEXT_TASKS = Object.freeze(['ritual', 'card', 'oracle']);
 
 export const buildApiContract = ({
   textProvider = 'unknown',
@@ -13,6 +14,7 @@ export const buildApiContract = ({
     queueTelemetry: true,
     timingTelemetry: true,
     promptSchema: GRIMOIRE_PROMPT_SCHEMA,
+    structuredTextTasks: [...GRIMOIRE_STRUCTURED_TEXT_TASKS],
     textProvider,
     imageProvider,
     imageModes: comfy ? ['preview', 'final', 'refine'] : ['preview'],

@@ -1,3 +1,10 @@
+import {
+  getTextSchema,
+  inferTextTask,
+  normalizeTextTask,
+  validateStructuredTextResult,
+} from './text-contract.mjs';
+
 const asNumber = (value, fallback, minimum, maximum) => {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
@@ -76,6 +83,13 @@ export const createOllamaConfig = (environment = process.env) => ({
   )),
 });
 
+const withSchemaGrounding = (prompt, schema) => {
+  if (!schema) return prompt;
+  return `${prompt}\n\nReturn only JSON matching this JSON Schema exactly:\n${JSON.stringify(schema)}`;
+};
+
+const withRepairInstruction = (prompt, error) => `${prompt}\n\nYour previous structured result failed validation: ${String(error?.message || error)} Regenerate the complete result from scratch. Correct the validation failure; do not omit required fields or duplicate values that must be unique.`;
+
 export const createOllamaClient = ({
   config = createOllamaConfig(),
   fetchImpl = fetch,
@@ -90,32 +104,51 @@ export const createOllamaClient = ({
     };
   };
 
-  const generate = async ({ prompt, isJson = true }) => {
-    const data = await requestJson(fetchImpl, `${config.baseUrl}/api/generate`, {
+  const generate = async ({ prompt, isJson = true, schema = null, task = null }) => {
+    const structuredTask = normalizeTextTask(task) || (isJson ? inferTextTask(prompt) : null);
+    const activeSchema = isJson ? (schema || getTextSchema(structuredTask)) : null;
+    const structured = Boolean(activeSchema);
+
+    const requestGeneration = async promptText => requestJson(fetchImpl, `${config.baseUrl}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: config.model,
-        prompt,
+        prompt: withSchemaGrounding(promptText, activeSchema),
         stream: false,
         think: false,
         keep_alive: config.keepAlive,
-        ...(isJson ? { format: 'json' } : {}),
+        ...(isJson ? { format: activeSchema || 'json' } : {}),
         options: {
           num_ctx: config.contextLength,
-          temperature: isJson ? 0.2 : 0.7,
+          temperature: structured ? 0 : (isJson ? 0.2 : 0.7),
         },
       }),
     }, config.requestTimeoutMs);
 
-    const text = String(data?.response || '').trim();
-    if (!text) throw Object.assign(new Error('Ollama returned no text.'), { status: 502 });
-    if (!isJson) return text;
-    try {
-      return parseOllamaJson(text);
-    } catch (error) {
-      throw Object.assign(error, { status: 502 });
+    let promptText = prompt;
+    const maximumAttempts = structuredTask ? 2 : 1;
+    let lastError = null;
+    for (let attempt = 1; attempt <= maximumAttempts; attempt += 1) {
+      const data = await requestGeneration(promptText);
+      const text = String(data?.response || '').trim();
+      if (!text) throw Object.assign(new Error('Ollama returned no text.'), { status: 502 });
+      if (!isJson) return text;
+      try {
+        const parsed = parseOllamaJson(text);
+        return structuredTask ? validateStructuredTextResult(structuredTask, parsed) : parsed;
+      } catch (error) {
+        lastError = error;
+        if (attempt < maximumAttempts) {
+          promptText = withRepairInstruction(prompt, error);
+          continue;
+        }
+      }
     }
+
+    throw Object.assign(lastError || new Error('Ollama structured output validation failed.'), {
+      status: lastError?.status || 502,
+    });
   };
 
   const unload = async () => {
