@@ -76,6 +76,11 @@ export const createOllamaConfig = (environment = process.env) => ({
   )),
 });
 
+const withSchemaGrounding = (prompt, schema) => {
+  if (!schema) return prompt;
+  return `${prompt}\n\nReturn only JSON matching this JSON Schema exactly:\n${JSON.stringify(schema)}`;
+};
+
 export const createOllamaClient = ({
   config = createOllamaConfig(),
   fetchImpl = fetch,
@@ -90,20 +95,21 @@ export const createOllamaClient = ({
     };
   };
 
-  const generate = async ({ prompt, isJson = true }) => {
+  const generate = async ({ prompt, isJson = true, schema = null }) => {
+    const structured = Boolean(isJson && schema);
     const data = await requestJson(fetchImpl, `${config.baseUrl}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: config.model,
-        prompt,
+        prompt: withSchemaGrounding(prompt, structured ? schema : null),
         stream: false,
         think: false,
         keep_alive: config.keepAlive,
-        ...(isJson ? { format: 'json' } : {}),
+        ...(isJson ? { format: schema || 'json' } : {}),
         options: {
           num_ctx: config.contextLength,
-          temperature: isJson ? 0.2 : 0.7,
+          temperature: structured ? 0 : (isJson ? 0.2 : 0.7),
         },
       }),
     }, config.requestTimeoutMs);
