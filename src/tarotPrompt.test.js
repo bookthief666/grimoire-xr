@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { compileTarotImagePrompt } from './tarotPrompt.js';
+import { TAROT_PROMPT_SCHEMA, compileTarotImagePrompt } from './tarotPrompt.js';
 
 describe('structured tarot image prompt compiler', () => {
+  it('exposes a stable prompt schema version', () => {
+    expect(TAROT_PROMPT_SCHEMA).toBe('tarot-structured-v1');
+  });
+
   it('organizes semantic, symbolic, aesthetic, framing, and constraint layers', () => {
     const prompt = compileTarotImagePrompt({
       cardName: 'The High Priestess',
