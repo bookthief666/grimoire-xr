@@ -6,7 +6,7 @@ on:
       target_ref:
         description: 'Trusted branch or commit to test'
         required: true
-        default: 'agent/fold6-ai-qa-resume'
+        default: 'agent/fold6-ci-automation'
   push:
     branches:
       - 'automation/local-ai'
@@ -25,7 +25,7 @@ jobs:
   local-ai:
     if: github.actor == github.repository_owner
     runs-on: [self-hosted, macOS, ARM64, grimoire-m2]
-    timeout-minutes: 90
+    timeout-minutes: 120
     env:
       TEXT_PROVIDER: ollama
       IMAGE_PROVIDER: comfyui
@@ -57,6 +57,10 @@ jobs:
             echo 'Invalid target ref.' >&2
             exit 1
           fi
+          case "$TARGET_REF" in
+            agent/fold6-*|checkpoint/*) ;;
+            *) echo "Refusing untrusted target ref: $TARGET_REF" >&2; exit 1 ;;
+          esac
           echo "ref=$TARGET_REF" >> "$GITHUB_OUTPUT"
           echo "Testing trusted ref: $TARGET_REF"
 
@@ -116,6 +120,23 @@ jobs:
           else
             npm run qa:ai
           fi
+
+      - name: Optional connected Fold smoke QA
+        shell: bash
+        run: |
+          if [[ ! -f scripts/qa-fold-adb.sh ]]; then
+            echo 'Target ref does not contain the Fold smoke harness; skipping.'
+            exit 0
+          fi
+          if ! command -v adb >/dev/null 2>&1; then
+            echo 'adb is unavailable on this runner; skipping Fold smoke QA.'
+            exit 0
+          fi
+          if ! adb devices | awk 'NR > 1 && $2 == "device" { found=1 } END { exit found ? 0 : 1 }'; then
+            echo 'No authorized Android device connected; skipping Fold smoke QA.'
+            exit 0
+          fi
+          npm run qa:fold:smoke
 
       - name: Stop isolated API
         if: always()
