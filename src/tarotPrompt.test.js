@@ -6,9 +6,10 @@ describe('structured tarot image prompt compiler', () => {
     expect(TAROT_PROMPT_SCHEMA).toBe('tarot-structured-v1');
   });
 
-  it('organizes semantic, symbolic, aesthetic, framing, and constraint layers', () => {
+  it('organizes semantic, symbolic, invocation, aesthetic, framing, and constraint layers', () => {
     const prompt = compileTarotImagePrompt({
       cardName: 'The High Priestess',
+      invocationSubject: 'Giordano Bruno',
       traditionName: 'Thoth',
       styleName: '16-Bit Sovereign',
       stylePrompt: 'ornate pixel-art mysticism',
@@ -23,6 +24,7 @@ describe('structured tarot image prompt compiler', () => {
     });
 
     expect(prompt).toContain('SUBJECT: Tarot card "The High Priestess".');
+    expect(prompt).toContain('INVOCATION SUBJECT: Giordano Bruno.');
     expect(prompt).toContain('TAROT SYSTEM: Thoth.');
     expect(prompt).toContain('COMPOSITION AND ICONOGRAPHY: A veiled priestess');
     expect(prompt).toContain('Hebrew letter: Gimel');
@@ -41,6 +43,7 @@ describe('structured tarot image prompt compiler', () => {
 
     expect(prompt).toContain('Tarot card "The Fool"');
     expect(prompt).toContain('COMPOSITION AND ICONOGRAPHY: traveler at the precipice.');
+    expect(prompt).not.toContain('INVOCATION SUBJECT:');
     expect(prompt).not.toContain('TAROT SYSTEM:');
     expect(prompt).not.toContain('CORRESPONDENCES:');
   });
