@@ -61,15 +61,16 @@ export const createComfyUiConfig = (environment = process.env) => {
     negativePrompt: environment.COMFYUI_NEGATIVE_PROMPT || DEFAULT_NEGATIVE_PROMPT,
     requestTimeoutMs: Math.round(asNumber(environment.COMFYUI_REQUEST_TIMEOUT_MS, 15_000, 1_000, 120_000)),
 
-    // Higher-quality txt2img preset. Preview remains the measured M2 baseline.
+    // Higher-quality output presets. Preview remains the measured M2 baseline.
     finalWidth: Math.round(asNumber(environment.COMFYUI_FINAL_WIDTH, 832, 512, 2048) / 8) * 8,
     finalHeight: Math.round(asNumber(environment.COMFYUI_FINAL_HEIGHT, 1216, 512, 2048) / 8) * 8,
     finalSteps: Math.round(asNumber(environment.COMFYUI_FINAL_STEPS, 28, 1, 100)),
+    refineDenoise: asNumber(environment.COMFYUI_REFINE_DENOISE, 0.28, 0.05, 0.95),
   };
 };
 
 export const resolveComfyUiRenderConfig = (config, mode = 'preview') => {
-  if (mode !== 'final') return { ...config };
+  if (!['final', 'refine'].includes(mode)) return { ...config };
 
   return {
     ...config,
@@ -127,6 +128,62 @@ export const buildSdxlWorkflow = ({ prompt, seed, config }) => ({
   },
 });
 
+export const buildSdxlImg2ImgWorkflow = ({ prompt, seed, denoise, config, inputImage }) => ({
+  '3': {
+    class_type: 'KSampler',
+    inputs: {
+      cfg: config.cfg,
+      denoise,
+      latent_image: ['11', 0],
+      model: ['4', 0],
+      negative: ['7', 0],
+      positive: ['6', 0],
+      sampler_name: config.sampler,
+      scheduler: config.scheduler,
+      seed,
+      steps: config.steps,
+    },
+  },
+  '4': {
+    class_type: 'CheckpointLoaderSimple',
+    inputs: { ckpt_name: config.checkpoint },
+  },
+  '5': {
+    class_type: 'LoadImage',
+    inputs: { image: inputImage },
+  },
+  '6': {
+    class_type: 'CLIPTextEncode',
+    inputs: { clip: ['4', 1], text: prompt },
+  },
+  '7': {
+    class_type: 'CLIPTextEncode',
+    inputs: { clip: ['4', 1], text: config.negativePrompt },
+  },
+  '8': {
+    class_type: 'VAEDecode',
+    inputs: { samples: ['3', 0], vae: ['4', 2] },
+  },
+  '9': {
+    class_type: 'SaveImage',
+    inputs: { filename_prefix: 'GrimoireRefined', images: ['8', 0] },
+  },
+  '10': {
+    class_type: 'ImageScale',
+    inputs: {
+      crop: 'disabled',
+      height: config.height,
+      image: ['5', 0],
+      upscale_method: 'lanczos',
+      width: config.width,
+    },
+  },
+  '11': {
+    class_type: 'VAEEncode',
+    inputs: { pixels: ['10', 0], vae: ['4', 2] },
+  },
+});
+
 const findHistoryError = history => {
   for (const message of history?.status?.messages || []) {
     if (!Array.isArray(message) || message[0] !== 'execution_error') continue;
@@ -168,7 +225,49 @@ export const createComfyUiClient = ({
       width: config.width,
       height: config.height,
       steps: config.steps,
+      final: {
+        width: config.finalWidth,
+        height: config.finalHeight,
+        steps: config.finalSteps,
+      },
+      refine: {
+        width: config.finalWidth,
+        height: config.finalHeight,
+        steps: config.finalSteps,
+        denoise: config.refineDenoise,
+      },
     };
+  };
+
+  const stageSourceImage = async sourceImage => {
+    const query = new URLSearchParams({
+      filename: sourceImage.filename,
+      subfolder: sourceImage.subfolder || '',
+      type: sourceImage.type || 'output',
+    });
+    const sourceResponse = await fetchImpl(`${config.baseUrl}/view?${query}`, {
+      signal: AbortSignal.timeout(config.requestTimeoutMs),
+    });
+    if (!sourceResponse.ok) {
+      throw Object.assign(new Error(`ComfyUI source image retrieval failed (${sourceResponse.status}).`), { status: 502 });
+    }
+
+    const mimeType = sourceResponse.headers.get('content-type') || 'image/png';
+    const bytes = await sourceResponse.arrayBuffer();
+    const uploadName = `GrimoireRefine-${clientId}.png`;
+    const form = new FormData();
+    form.append('image', new Blob([bytes], { type: mimeType }), uploadName);
+    form.append('type', 'input');
+    form.append('overwrite', 'true');
+
+    const uploaded = await requestJson(fetchImpl, `${config.baseUrl}/upload/image`, {
+      method: 'POST',
+      body: form,
+    }, config.requestTimeoutMs);
+
+    const name = uploaded?.name || uploadName;
+    const subfolder = uploaded?.subfolder || '';
+    return subfolder ? `${subfolder}/${name}` : name;
   };
 
   const start = async input => {
@@ -184,10 +283,32 @@ export const createComfyUiClient = ({
       throw Object.assign(new Error('Image prompt is required.'), { status: 400 });
     }
 
-    const mode = request.mode === 'final' ? 'final' : 'preview';
+    const mode = request.mode === 'final'
+      ? 'final'
+      : request.mode === 'refine'
+        ? 'refine'
+        : 'preview';
     const seed = resolveSeed(request.seed);
     const renderConfig = resolveComfyUiRenderConfig(config, mode);
-    const workflow = buildSdxlWorkflow({ prompt, seed, config: renderConfig });
+    let denoise = null;
+    let workflow;
+
+    if (mode === 'refine') {
+      if (!request.sourceImage?.filename) {
+        throw Object.assign(new Error('A ComfyUI source image reference is required for refine mode.'), { status: 400 });
+      }
+      denoise = asNumber(request.denoise, config.refineDenoise, 0.05, 0.95);
+      const inputImage = await stageSourceImage(request.sourceImage);
+      workflow = buildSdxlImg2ImgWorkflow({
+        prompt,
+        seed,
+        denoise,
+        config: renderConfig,
+        inputImage,
+      });
+    } else {
+      workflow = buildSdxlWorkflow({ prompt, seed, config: renderConfig });
+    }
 
     const data = await requestJson(fetchImpl, `${config.baseUrl}/prompt`, {
       method: 'POST',
@@ -211,6 +332,7 @@ export const createComfyUiClient = ({
       cfg: renderConfig.cfg,
       sampler: renderConfig.sampler,
       scheduler: renderConfig.scheduler,
+      ...(denoise !== null ? { denoise } : {}),
     };
   };
 
@@ -248,7 +370,15 @@ export const createComfyUiClient = ({
     }
     const mimeType = response.headers.get('content-type') || 'image/png';
     const bytes = Buffer.from(await response.arrayBuffer());
-    return { status: 'ready', imageUrl: `data:${mimeType};base64,${bytes.toString('base64')}` };
+    return {
+      status: 'ready',
+      imageUrl: `data:${mimeType};base64,${bytes.toString('base64')}`,
+      providerImage: {
+        filename: output.filename,
+        subfolder: output.subfolder || '',
+        type: output.type || 'output',
+      },
+    };
   };
 
   return { config, health, start, status };
