@@ -46,7 +46,7 @@ describe('image generation client contract', () => {
     });
   });
 
-  it('normalizes provider metadata beside the returned image', () => {
+  it('normalizes provider metadata and timing beside the returned image', () => {
     expect(readImageGenerationResult({
       imageUrl: 'data:image/png;base64,AQID',
       provider: 'comfyui',
@@ -63,6 +63,15 @@ describe('image generation client contract', () => {
         filename: 'GrimoireRefined_00001_.png',
         subfolder: '',
         type: 'output',
+      },
+      timing: {
+        createdAt: 1000,
+        startedAt: 1200,
+        completedAt: 4200,
+        queuedForMs: 200,
+        runningForMs: 3000,
+        elapsedMs: 3200,
+        terminal: true,
       },
     })).toEqual({
       imageUrl: 'data:image/png;base64,AQID',
@@ -81,6 +90,15 @@ describe('image generation client contract', () => {
           filename: 'GrimoireRefined_00001_.png',
           subfolder: '',
           type: 'output',
+        },
+        timing: {
+          createdAt: 1000,
+          startedAt: 1200,
+          completedAt: 4200,
+          queuedForMs: 200,
+          runningForMs: 3000,
+          elapsedMs: 3200,
+          terminal: true,
         },
       },
     });

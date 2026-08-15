@@ -22,6 +22,7 @@ import {
 } from './grimoireCatalog.js';
 import { IMAGE_MODES, buildImageJobBody, canFinalizeCard, canRefineCard, readImageGenerationResult } from './imageGeneration.js';
 import { createGrimoireApiError, isTerminalJobPollError, jobInterruptedMessage, jobKindFromStatusPath } from './jobPolling.js';
+import { describeJobProgress, formatJobTiming } from './jobProgress.js';
 import { TAROT_PROMPT_SCHEMA, compileTarotImagePrompt } from './tarotPrompt.js';
 
 // ============================================================================
@@ -61,11 +62,13 @@ const runGrimoireJob = async ({
   timeoutMs = 15 * 60 * 1000,
   pollMs = 2000,
   readResult,
+  onProgress = null,
 }) => {
   // Submission is intentionally attempted once: a lost tunnel response may hide a
   // job that the Mac is still running, and resubmission would duplicate GPU work.
   const started = await callGrimoireApi(startPath, body);
   if (!started.jobId) throw new Error('The Grimoire API returned no job ID.');
+  if (onProgress) onProgress(started);
 
   const deadline = Date.now() + timeoutMs;
   let consecutivePollFailures = 0;
@@ -79,6 +82,7 @@ const runGrimoireJob = async ({
         'GET',
       );
       consecutivePollFailures = 0;
+      if (onProgress) onProgress(result);
     } catch (error) {
       if (isTerminalJobPollError(error)) {
         const interrupted = Object.assign(
@@ -88,6 +92,7 @@ const runGrimoireJob = async ({
         throw interrupted;
       }
       consecutivePollFailures += 1;
+      if (onProgress) onProgress({ status: 'reconnecting', attempt: consecutivePollFailures });
       if (consecutivePollFailures >= 5) throw error;
       continue;
     }
@@ -513,13 +518,14 @@ const fetchGemini = async (prompt, isJson = true) => {
   });
 };
 
-const fetchImageGeneration = async (prompt, options = {}) => {
+const fetchImageGeneration = async (prompt, options = {}, onProgress = null) => {
   return runGrimoireJob({
     startPath: '/api/image/start',
     statusPath: '/api/image/status',
     body: buildImageJobBody(prompt, options),
     pollMs: 4000,
     readResult: readImageGenerationResult,
+    onProgress,
   });
 };
 
@@ -954,10 +960,13 @@ export default function App() {
     const hasStoredPrompt = Boolean(imageOptions.prompt || card.promptUsed);
     const fullPrompt = imageOptions.prompt || card.promptUsed || compiledPrompt;
     const promptSchema = hasStoredPrompt ? (card.promptSchema || 'legacy-flat-v1') : TAROT_PROMPT_SCHEMA;
-    if (setStatusCb) setStatusCb(imageOptions.mode === IMAGE_MODES.refine ? "REFINING IMAGE..." : imageOptions.mode === IMAGE_MODES.final ? "FINALIZING IMAGE..." : "MANIFESTING PREVIEW...");
+    const renderMode = imageOptions.mode || IMAGE_MODES.preview;
+    if (setStatusCb) setStatusCb(describeJobProgress({ status: 'queued' }, { kind: 'image', mode: renderMode }));
     // Do not auto-retry a local render. It may still be running after a tunnel
     // interruption; the explicit retry action is the safe place to submit again.
-    const rendered = await fetchImageGeneration(fullPrompt, imageOptions);
+    const rendered = await fetchImageGeneration(fullPrompt, imageOptions, snapshot => {
+      if (setStatusCb) setStatusCb(describeJobProgress(snapshot, { kind: 'image', mode: renderMode }));
+    });
     return {
       ...card,
       ...data,
@@ -1535,6 +1544,7 @@ export default function App() {
                           {state.focusedCard.generation.steps ? ` · ${state.focusedCard.generation.steps} STEPS` : ''}
                           {Number.isSafeInteger(state.focusedCard.generation.seed) ? ` · SEED ${state.focusedCard.generation.seed}` : ''}
                           {Number.isFinite(state.focusedCard.generation.denoise) ? ` · DENOISE ${state.focusedCard.generation.denoise}` : ''}
+                          {formatJobTiming(state.focusedCard.generation.timing) ? ` · ${formatJobTiming(state.focusedCard.generation.timing)}` : ''}
                         </>
                       ) : (
                         <>LEGACY MANIFESTATION · RE-MANIFEST TO CAPTURE SEED</>

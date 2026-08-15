@@ -14,6 +14,11 @@ const asFiniteNumber = value => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
+const asNonNegativeNumber = value => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+};
+
 const asSeed = value => {
   const parsed = Number(value);
   return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
@@ -22,6 +27,21 @@ const asSeed = value => {
 const asDenoise = value => {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed >= 0.05 && parsed <= 0.95 ? parsed : null;
+};
+
+const normalizeTiming = value => {
+  if (!value || typeof value !== 'object') return null;
+  const timing = {
+    createdAt: asNonNegativeNumber(value.createdAt),
+    startedAt: asNonNegativeNumber(value.startedAt),
+    completedAt: asNonNegativeNumber(value.completedAt),
+    queuedForMs: asNonNegativeNumber(value.queuedForMs),
+    runningForMs: asNonNegativeNumber(value.runningForMs),
+    elapsedMs: asNonNegativeNumber(value.elapsedMs),
+    terminal: Boolean(value.terminal),
+  };
+  if (timing.elapsedMs === null) return null;
+  return timing;
 };
 
 export const normalizeImageMode = value => {
@@ -89,6 +109,7 @@ export const readImageGenerationResult = result => {
       scheduler: typeof result.scheduler === 'string' && result.scheduler ? result.scheduler : null,
       denoise: asDenoise(result.denoise),
       providerImage: normalizeProviderImage(result.providerImage),
+      timing: normalizeTiming(result.timing),
     },
   };
 };
