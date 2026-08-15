@@ -48,6 +48,14 @@ export const normalizeTextTask = value => {
   return Object.values(TEXT_TASKS).includes(task) ? task : null;
 };
 
+export const inferTextTask = prompt => {
+  const text = String(prompt || '').toLowerCase();
+  if (text.includes('list 78 card names') && text.includes('oracle suggestions')) return TEXT_TASKS.ritual;
+  if (text.includes('card interpretation for') && text.includes('meta: hebrew letter')) return TEXT_TASKS.card;
+  if (text.includes('synthesize a 300-word divinatory answer') && text.includes('elemental dignities')) return TEXT_TASKS.oracle;
+  return null;
+};
+
 export const getTextSchema = task => TEXT_SCHEMAS[normalizeTextTask(task)] || null;
 
 const fail = message => {
