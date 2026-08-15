@@ -44,6 +44,15 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
+      - name: Normalize M2 tool PATH
+        shell: bash
+        run: |
+          for entry in /opt/homebrew/bin /usr/local/bin "$HOME/Library/Android/sdk/platform-tools"; do
+            if [[ -d "$entry" ]]; then
+              echo "$entry" >> "$GITHUB_PATH"
+            fi
+          done
+
       - name: Resolve trusted target ref
         id: target
         shell: bash
