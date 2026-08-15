@@ -13,6 +13,7 @@
     "check": "npm run test && npm run build",
     "qa:ai:contracts": "node scripts/qa-local-ai.mjs --contracts-only",
     "qa:ai": "node scripts/qa-local-ai.mjs",
+    "qa:ai:resume": "node scripts/qa-local-ai.mjs --resume-latest",
     "mobile:sync": "npm run build && cap sync",
     "mobile:copy": "npm run build && cap copy",
     "ios:open": "npm run mobile:sync && cap open ios",
