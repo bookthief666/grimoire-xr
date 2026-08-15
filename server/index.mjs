@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
 import { createComfyUiClient, createComfyUiConfig } from './comfyui.mjs';
+import { normalizeImageJobRequest } from './image-request.mjs';
 import { createOllamaClient, createOllamaConfig } from './ollama.mjs';
 import { createResourceScheduler } from './resource-scheduler.mjs';
 
@@ -259,6 +260,8 @@ const serializeImageJob = job => ({
   ...(Number.isFinite(job.cfg) ? { cfg: job.cfg } : {}),
   ...(job.sampler ? { sampler: job.sampler } : {}),
   ...(job.scheduler ? { scheduler: job.scheduler } : {}),
+  ...(Number.isFinite(job.denoise) ? { denoise: job.denoise } : {}),
+  ...(job.providerImage ? { providerImage: job.providerImage } : {}),
   ...(job.status === 'queued' && queuePosition(job) ? { queuePosition: queuePosition(job) } : {}),
   ...(job.status === 'ready' ? { imageUrl: job.imageUrl } : {}),
   ...(job.status === 'failed' ? { error: job.error } : {}),
@@ -322,12 +325,13 @@ const runComfyUiImage = async (job, request) => {
   job.cfg = started.cfg;
   job.sampler = started.sampler;
   job.scheduler = started.scheduler;
+  job.denoise = started.denoise;
   job.status = 'running';
 
   while (Date.now() < job.expiresAt) {
     const result = await comfyUi.status(job.providerJobId);
     if (result.status === 'ready') {
-      markReady(job, { imageUrl: result.imageUrl });
+      markReady(job, { imageUrl: result.imageUrl, providerImage: result.providerImage });
       return;
     }
     if (result.status === 'failed') {
@@ -340,24 +344,23 @@ const runComfyUiImage = async (job, request) => {
 
 const startImageJob = body => {
   const prompt = validateImagePrompt(body?.prompt);
-  const mode = body?.mode === 'final' ? 'final' : 'preview';
-
-  const requestedSeed = Number(body?.seed);
-  const seed = Number.isSafeInteger(requestedSeed) && requestedSeed >= 0
-    ? requestedSeed
-    : Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
-
   if (!['comfyui', 'gemini'].includes(IMAGE_PROVIDER)) {
     throw Object.assign(new Error(`Unsupported IMAGE_PROVIDER: ${IMAGE_PROVIDER}`), { status: 503 });
   }
+
+  const imageRequest = normalizeImageJobRequest(
+    { ...body, prompt },
+    { provider: IMAGE_PROVIDER },
+  );
   if (IMAGE_PROVIDER === 'comfyui') ensureQueueCapacity();
   pruneJobs(imageJobs);
   const id = randomUUID();
   const job = {
     id,
     provider: IMAGE_PROVIDER,
-    mode,
-    seed,
+    mode: imageRequest.mode,
+    seed: imageRequest.seed,
+    ...(Number.isFinite(imageRequest.denoise) ? { denoise: imageRequest.denoise } : {}),
     status: 'queued',
     createdAt: Date.now(),
     expiresAt: Date.now() + IMAGE_JOB_TTL_MS,
@@ -366,11 +369,11 @@ const startImageJob = body => {
 
   const work = async () => {
     if (IMAGE_PROVIDER === 'comfyui') {
-      return runComfyUiImage(job, { prompt, mode, seed });
+      return runComfyUiImage(job, imageRequest);
     }
     job.status = 'running';
     job.startedAt = Date.now();
-    const imageUrl = await generateGeminiImage({ prompt });
+    const imageUrl = await generateGeminiImage({ prompt: imageRequest.prompt });
     markReady(job, { imageUrl });
   };
   const task = IMAGE_PROVIDER === 'comfyui'

@@ -20,7 +20,7 @@ import {
   getErosContext,
   getErosPrompt,
 } from './grimoireCatalog.js';
-import { IMAGE_MODES, buildImageJobBody, canFinalizeCard, readImageGenerationResult } from './imageGeneration.js';
+import { IMAGE_MODES, buildImageJobBody, canFinalizeCard, canRefineCard, readImageGenerationResult } from './imageGeneration.js';
 
 // ============================================================================
 // 1. CONFIGURATION & STYLES
@@ -934,7 +934,7 @@ export default function App() {
     }
     const compiledPrompt = `${state.selectedStyle.prompt} Tarot card "${card.name}". ${data.visual}. ${erosPrompt}. Masterpiece.`;
     const fullPrompt = imageOptions.prompt || card.promptUsed || compiledPrompt;
-    if (setStatusCb) setStatusCb(imageOptions.mode === IMAGE_MODES.final ? "FINALIZING IMAGE..." : "MANIFESTING PREVIEW...");
+    if (setStatusCb) setStatusCb(imageOptions.mode === IMAGE_MODES.refine ? "REFINING IMAGE..." : imageOptions.mode === IMAGE_MODES.final ? "FINALIZING IMAGE..." : "MANIFESTING PREVIEW...");
     // Do not auto-retry a local render. It may still be running after a tunnel
     // interruption; the explicit retry action is the safe place to submit again.
     const rendered = await fetchImageGeneration(fullPrompt, imageOptions);
@@ -1003,6 +1003,32 @@ export default function App() {
     } catch (e) {
       dispatch({ type: 'FORGE_CARD_FAILURE', payload: e.message });
       dispatch({ type: 'SET_ERROR_MESSAGE', payload: `Finalize Failed: ${e.message}` });
+    }
+  }, [state.author, state.selectedStyle, state.selectedTradition, state.erosLevel, state.techLevel]);
+
+  const handleRefineCard = useCallback(async (card) => {
+    if (!canRefineCard(card)) {
+      dispatch({ type: 'SET_ERROR_MESSAGE', payload: 'Re-manifest this card once so the Mac can retain its ComfyUI source reference before refining.' });
+      return;
+    }
+    dispatch({ type: 'FORGE_CARD_START', payload: card });
+    dispatch({ type: 'SET_REFORGE_STATUS', payload: 'REFINING IMAGE...' });
+    try {
+      const full = await generateCardData(
+        card,
+        (msg) => dispatch({ type: 'SET_REFORGE_STATUS', payload: msg }),
+        {
+          mode: IMAGE_MODES.refine,
+          seed: card.generation.seed,
+          prompt: card.promptUsed,
+          sourceImage: card.generation.providerImage,
+        },
+      );
+      forgeBuzz();
+      dispatch({ type: 'FORGE_CARD_SUCCESS', payload: full });
+    } catch (e) {
+      dispatch({ type: 'FORGE_CARD_FAILURE', payload: e.message });
+      dispatch({ type: 'SET_ERROR_MESSAGE', payload: `Refine Failed: ${e.message}` });
     }
   }, [state.author, state.selectedStyle, state.selectedTradition, state.erosLevel, state.techLevel]);
 
@@ -1487,6 +1513,7 @@ export default function App() {
                           {state.focusedCard.generation.width && state.focusedCard.generation.height ? ` · ${state.focusedCard.generation.width}×${state.focusedCard.generation.height}` : ''}
                           {state.focusedCard.generation.steps ? ` · ${state.focusedCard.generation.steps} STEPS` : ''}
                           {Number.isSafeInteger(state.focusedCard.generation.seed) ? ` · SEED ${state.focusedCard.generation.seed}` : ''}
+                          {Number.isFinite(state.focusedCard.generation.denoise) ? ` · DENOISE ${state.focusedCard.generation.denoise}` : ''}
                         </>
                       ) : (
                         <>LEGACY MANIFESTATION · RE-MANIFEST TO CAPTURE SEED</>
@@ -1503,7 +1530,15 @@ export default function App() {
                       >
                         <Check size={12}/> FINALIZE
                       </button>
+                      <button
+                        onClick={() => handleRefineCard(state.focusedCard)}
+                        className="flex items-center gap-2 px-4 py-2 border border-white/50 text-[10px] font-header hover:bg-white hover:text-black transition-all text-white disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-white"
+                        disabled={state.isForging || !canRefineCard(state.focusedCard)}
+                      >
+                        <RefreshCw size={12}/> {state.focusedCard.generation?.mode === IMAGE_MODES.refine ? "REFINE AGAIN" : "REFINE FINAL"}
+                      </button>
                     </div>
+                    <p className="text-center md:text-left text-[9px] font-body text-white/40">REFINE FINAL uses the current ComfyUI image as img2img input at the final preset, preserving composition more strongly than seed-only finalization.</p>
                   </div>
                   
                   {state.isForging && !state.focusedCard.exegesis ? <div className="text-center font-header text-red-600 text-xs animate-pulse mt-10">INSCRIBING TRUTH...</div> : state.focusedCard.exegesis && (
