@@ -15,6 +15,7 @@ export const normalizeComfyOutputRef = value => {
   if (
     !filename
     || filename.length > 255
+    || !filename.startsWith('Grimoire')
     || filename.includes('/')
     || filename.includes('\\')
     || filename.includes('..')
@@ -53,7 +54,7 @@ export const normalizeImageJobRequest = (
 
   const sourceImage = normalizeComfyOutputRef(body?.sourceImage);
   if (!sourceImage) {
-    throw Object.assign(new Error('Refine mode requires a valid generated ComfyUI output reference.'), { status: 400 });
+    throw Object.assign(new Error('Refine mode requires a valid generated Grimoire ComfyUI output reference.'), { status: 400 });
   }
   request.sourceImage = sourceImage;
 
