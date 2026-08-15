@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
 import { createComfyUiClient, createComfyUiConfig } from './comfyui.mjs';
+import { buildApiContract, serializeJobTiming } from './api-contract.mjs';
 import { normalizeImageJobRequest } from './image-request.mjs';
 import { createMissingJobError, serializeApiError } from './job-errors.mjs';
 import { createOllamaClient, createOllamaConfig } from './ollama.mjs';
@@ -245,6 +246,7 @@ const ensureQueueCapacity = () => {
 const serializeTextJob = job => ({
   status: job.status,
   provider: job.provider,
+  ...serializeJobTiming(job),
   ...(job.status === 'queued' && queuePosition(job) ? { queuePosition: queuePosition(job) } : {}),
   ...(job.status === 'ready' ? { output: job.output } : {}),
   ...(job.status === 'failed' ? { error: job.error } : {}),
@@ -253,6 +255,7 @@ const serializeTextJob = job => ({
 const serializeImageJob = job => ({
   status: job.status,
   provider: job.provider,
+  ...serializeJobTiming(job),
   ...(job.mode ? { mode: job.mode } : {}),
   ...(Number.isSafeInteger(job.seed) ? { seed: job.seed } : {}),
   ...(job.width ? { width: job.width } : {}),
@@ -418,6 +421,7 @@ const getHealth = async () => {
   return {
     ok: true,
     configured: textConfigured && imageConfigured,
+    api: buildApiContract({ textProvider: TEXT_PROVIDER, imageProvider: IMAGE_PROVIDER }),
     textProvider: TEXT_PROVIDER,
     textConfigured,
     imageProvider: IMAGE_PROVIDER,
