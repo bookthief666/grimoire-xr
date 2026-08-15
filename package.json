@@ -14,6 +14,7 @@
     "qa:ai:contracts": "node scripts/qa-local-ai.mjs --contracts-only",
     "qa:ai": "node scripts/qa-local-ai.mjs",
     "qa:ai:resume": "node scripts/qa-local-ai.mjs --resume-latest",
+    "qa:fold:smoke": "bash scripts/qa-fold-adb.sh",
     "mobile:sync": "npm run build && cap sync",
     "mobile:copy": "npm run build && cap copy",
     "ios:open": "npm run mobile:sync && cap open ios",

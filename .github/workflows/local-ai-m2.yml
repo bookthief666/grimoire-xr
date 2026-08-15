@@ -1,0 +1,167 @@
+name: Trusted M2 local AI QA
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_ref:
+        description: 'Trusted branch or commit to test'
+        required: true
+        default: 'agent/fold6-ci-automation'
+  push:
+    branches:
+      - 'automation/local-ai'
+    paths:
+      - '.automation/target-ref'
+      - '.automation/kick'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: trusted-m2-local-ai
+  cancel-in-progress: false
+
+jobs:
+  local-ai:
+    if: github.actor == github.repository_owner
+    runs-on: [self-hosted, macOS, ARM64, grimoire-m2]
+    timeout-minutes: 120
+    env:
+      TEXT_PROVIDER: ollama
+      IMAGE_PROVIDER: comfyui
+      OLLAMA_BASE_URL: http://127.0.0.1:11434
+      OLLAMA_MODEL: qwen3:8b
+      COMFYUI_BASE_URL: http://127.0.0.1:8188
+      COMFYUI_CHECKPOINT: juggernautXL_ragnarokBy.safetensors
+      PORT: '8788'
+      GRIMOIRE_QA_API_URL: http://127.0.0.1:8788
+      GRIMOIRE_QA_TIMEOUT_MS: '1800000'
+    steps:
+      - name: Checkout automation controller
+        uses: actions/checkout@v6
+        with:
+          clean: false
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Normalize M2 tool PATH
+        shell: bash
+        run: |
+          for entry in /opt/homebrew/bin /usr/local/bin "$HOME/Library/Android/sdk/platform-tools"; do
+            if [[ -d "$entry" ]]; then
+              echo "$entry" >> "$GITHUB_PATH"
+            fi
+          done
+
+      - name: Resolve trusted target ref
+        id: target
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            TARGET_REF='${{ inputs.target_ref }}'
+          else
+            TARGET_REF="$(tr -d '\r\n' < .automation/target-ref)"
+          fi
+          if [[ -z "$TARGET_REF" || "$TARGET_REF" == *$'\n'* ]]; then
+            echo 'Invalid target ref.' >&2
+            exit 1
+          fi
+          case "$TARGET_REF" in
+            agent/fold6-*|checkpoint/*) ;;
+            *) echo "Refusing untrusted target ref: $TARGET_REF" >&2; exit 1 ;;
+          esac
+          echo "ref=$TARGET_REF" >> "$GITHUB_OUTPUT"
+          echo "Testing trusted ref: $TARGET_REF"
+
+      - name: Checkout target without destroying QA checkpoints
+        shell: bash
+        run: |
+          git reset --hard
+          git clean -fd -e qa-output/ -e automation-logs/
+          git fetch --no-tags --depth=1 origin "${{ steps.target.outputs.ref }}"
+          git checkout --detach FETCH_HEAD
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '26'
+          cache: npm
+          package-manager-cache: false
+
+      - name: Install exact dependencies
+        run: npm ci
+
+      - name: Unit tests and production build
+        run: npm run check
+
+      - name: Ensure local model services
+        shell: bash
+        run: bash scripts/qa-ensure-local-ai.sh
+
+      - name: Start isolated branch API
+        shell: bash
+        run: |
+          mkdir -p automation-logs
+          node server/index.mjs > automation-logs/api.log 2>&1 &
+          echo $! > automation-logs/api.pid
+          for attempt in {1..60}; do
+            if curl --fail --silent "$GRIMOIRE_QA_API_URL/health" > automation-logs/health.json; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo 'Branch API did not become healthy.' >&2
+          cat automation-logs/api.log >&2 || true
+          exit 1
+
+      - name: Local AI contract QA
+        run: npm run qa:ai:contracts
+
+      - name: Preview Final Refine QA with checkpoint resume
+        shell: bash
+        run: |
+          MODE=$(node --input-type=module -e "import { findLatestIncompleteRun } from './scripts/qaRunState.mjs'; const run = await findLatestIncompleteRun('qa-output'); process.stdout.write(run ? 'resume' : 'fresh');")
+          if [[ "$MODE" == 'resume' ]]; then
+            echo 'Incomplete QA checkpoint found; resuming deliberately.'
+            npm run qa:ai:resume
+          else
+            npm run qa:ai
+          fi
+
+      - name: Optional connected Fold smoke QA
+        shell: bash
+        run: |
+          if [[ ! -f scripts/qa-fold-adb.sh ]]; then
+            echo 'Target ref does not contain the Fold smoke harness; skipping.'
+            exit 0
+          fi
+          if ! command -v adb >/dev/null 2>&1; then
+            echo 'adb is unavailable on this runner; skipping Fold smoke QA.'
+            exit 0
+          fi
+          if ! adb devices | awk 'NR > 1 && $2 == "device" { found=1 } END { exit found ? 0 : 1 }'; then
+            echo 'No authorized Android device connected; skipping Fold smoke QA.'
+            exit 0
+          fi
+          npm run qa:fold:smoke
+
+      - name: Stop isolated API and workflow-started model services
+        if: always()
+        shell: bash
+        run: |
+          for pidfile in automation-logs/api.pid automation-logs/comfyui.pid automation-logs/ollama.pid; do
+            if [[ -f "$pidfile" ]]; then
+              kill "$(cat "$pidfile")" 2>/dev/null || true
+            fi
+          done
+
+      - name: Upload QA evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: grimoire-local-ai-${{ github.run_id }}
+          path: |
+            qa-output/
+            automation-logs/
+          if-no-files-found: warn
+          retention-days: 14
