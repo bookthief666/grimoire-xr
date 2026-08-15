@@ -21,6 +21,8 @@ import {
   getErosPrompt,
 } from './grimoireCatalog.js';
 import { IMAGE_MODES, buildImageJobBody, canFinalizeCard, canRefineCard, readImageGenerationResult } from './imageGeneration.js';
+import { createGrimoireApiError, isTerminalJobPollError, jobInterruptedMessage, jobKindFromStatusPath } from './jobPolling.js';
+import { TAROT_PROMPT_SCHEMA, compileTarotImagePrompt } from './tarotPrompt.js';
 
 // ============================================================================
 // 1. CONFIGURATION & STYLES
@@ -45,7 +47,7 @@ const callGrimoireApi = async (path, body = null, method = 'POST') => {
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(payload.error || `Grimoire API failed (${response.status})`);
+    throw createGrimoireApiError({ payload, status: response.status });
   }
   return payload;
 };
@@ -78,6 +80,13 @@ const runGrimoireJob = async ({
       );
       consecutivePollFailures = 0;
     } catch (error) {
+      if (isTerminalJobPollError(error)) {
+        const interrupted = Object.assign(
+          new Error(jobInterruptedMessage(jobKindFromStatusPath(statusPath))),
+          { status: error.status, code: error.code || 'JOB_MISSING' },
+        );
+        throw interrupted;
+      }
       consecutivePollFailures += 1;
       if (consecutivePollFailures >= 5) throw error;
       continue;
@@ -932,8 +941,19 @@ export default function App() {
     } else {
         data = await fetchGemini(`Role: Grand Master of ${state.selectedTradition.name}. Task: Card interpretation for "${card.name}" linked to "${state.author}". Instructions: - Exegesis: 200-word analysis. - Meta: Hebrew Letter, Astrological Ruler, Alchemical Stage, Grimoire Spirit. - Visual: Description for art generation (${state.selectedStyle.name}). - TONE: ${techContext} ${erosContext} Return JSON: {"exegesis": "string", "meta": { "hebrew": "string", "planet": "string", "alchemical": "string", "daimon": "string", "gematria": number }, "visual": "string"}`);
     }
-    const compiledPrompt = `${state.selectedStyle.prompt} Tarot card "${card.name}". ${data.visual}. ${erosPrompt}. Masterpiece.`;
+    const compiledPrompt = compileTarotImagePrompt({
+      cardName: card.name,
+      invocationSubject: state.author,
+      traditionName: state.selectedTradition.name,
+      styleName: state.selectedStyle.name,
+      stylePrompt: state.selectedStyle.prompt,
+      visual: data.visual,
+      erosPrompt,
+      meta: data.meta,
+    });
+    const hasStoredPrompt = Boolean(imageOptions.prompt || card.promptUsed);
     const fullPrompt = imageOptions.prompt || card.promptUsed || compiledPrompt;
+    const promptSchema = hasStoredPrompt ? (card.promptSchema || 'legacy-flat-v1') : TAROT_PROMPT_SCHEMA;
     if (setStatusCb) setStatusCb(imageOptions.mode === IMAGE_MODES.refine ? "REFINING IMAGE..." : imageOptions.mode === IMAGE_MODES.final ? "FINALIZING IMAGE..." : "MANIFESTING PREVIEW...");
     // Do not auto-retry a local render. It may still be running after a tunnel
     // interruption; the explicit retry action is the safe place to submit again.
@@ -943,6 +963,7 @@ export default function App() {
       ...data,
       imageUrl: rendered.imageUrl,
       promptUsed: fullPrompt,
+      promptSchema,
       generation: rendered.generation,
     };
   };
