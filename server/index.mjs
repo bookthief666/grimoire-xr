@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
 import { createComfyUiClient, createComfyUiConfig } from './comfyui.mjs';
 import { normalizeImageJobRequest } from './image-request.mjs';
+import { createMissingJobError, serializeApiError } from './job-errors.mjs';
 import { createOllamaClient, createOllamaConfig } from './ollama.mjs';
 import { createResourceScheduler } from './resource-scheduler.mjs';
 
@@ -297,7 +298,7 @@ const startTextJob = body => {
 const getTextJob = id => {
   pruneJobs(textJobs);
   const job = textJobs.get(id);
-  if (!job) throw Object.assign(new Error('Text job was not found or has expired.'), { status: 404 });
+  if (!job) throw createMissingJobError('Text');
   return serializeTextJob(job);
 };
 
@@ -386,7 +387,7 @@ const startImageJob = body => {
 const getImageJob = id => {
   pruneJobs(imageJobs);
   const job = imageJobs.get(id);
-  if (!job) throw Object.assign(new Error('Image job was not found or has expired.'), { status: 404 });
+  if (!job) throw createMissingJobError('Image');
   return serializeImageJob(job);
 };
 
@@ -485,9 +486,9 @@ const server = createServer(async (request, response) => {
     }
     return sendJson(response, 200, { imageUrl: await generateGeminiImage(body) }, origin);
   } catch (error) {
-    const status = Number(error.status) || 500;
-    console.error(`${request.method} ${request.url} failed (${status}): ${error.message || 'Unexpected server error.'}`);
-    return sendJson(response, status, { error: error.message || 'Unexpected server error.' }, origin);
+    const { status, payload } = serializeApiError(error);
+    console.error(`${request.method} ${request.url} failed (${status}): ${payload.error}`);
+    return sendJson(response, status, payload, origin);
   }
 });
 
