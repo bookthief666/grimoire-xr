@@ -28,6 +28,9 @@ COMFYUI_FINAL_WIDTH=832
 COMFYUI_FINAL_HEIGHT=1216
 COMFYUI_FINAL_STEPS=28
 
+# Refine Final: img2img strength. Lower values preserve more of the chosen image.
+COMFYUI_REFINE_DENOISE=0.28
+
 COMFYUI_CFG=4
 COMFYUI_SAMPLER=dpmpp_2m
 COMFYUI_SCHEDULER=karras
@@ -38,7 +41,7 @@ AI_PROVIDER_POLL_MS=2000
 
 `OLLAMA_KEEP_ALIVE=0` causes Ollama to unload Qwen immediately after each completed text response. The scheduler also requests an unload before handing the machine to ComfyUI. The 8,192-token context reduces the Metal context cache.
 
-The preview preset is the known-good default. A final request may reuse the preview prompt and seed at 832×1216 / 28 steps. Reusing a seed across resolutions improves provenance and repeatability but does not guarantee a pixel-identical composition; a later img2img/refine path will be the stronger composition-preserving finalizer.
+The preview preset is the known-good default. `FINALIZE` reruns txt2img at 832×1216 / 28 steps with the stored prompt and seed. `REFINE FINAL` instead retrieves the exact generated ComfyUI output on the Mac, stages it into ComfyUI input, scales it to the final preset, VAE-encodes it, and runs img2img at the configured denoise value. This is the stronger composition-preserving path.
 
 ## 2. Restart the native Fold stack
 
@@ -116,11 +119,11 @@ curl -sS http://127.0.0.1:8188/system_stats | python3 -m json.tool
 curl -sS http://127.0.0.1:8787/health | python3 -m json.tool
 ```
 
-The health response should report the selected providers as configured, `qwen3:8b` ready, ComfyUI ready on MPS, the Juggernaut checkpoint, the 640×960 / 18-step preview baseline, and an idle scheduler when no job is running.
+The health response should report the selected providers as configured, `qwen3:8b` ready, ComfyUI ready on MPS, the Juggernaut checkpoint, the 640×960 / 18-step preview baseline, plus the final/refine dimensions and refine denoise. An idle scheduler should report no active job.
 
 After changing `server/*.mjs`, restart only `npm run api`; Ollama, ComfyUI, and an existing Quick Tunnel can remain running.
 
-## 4. Preview and final image contract
+## 4. Preview, final, and refine contracts
 
 The asynchronous image endpoint accepts the legacy request:
 
@@ -137,7 +140,7 @@ which defaults to preview, or an explicit request:
 }
 ```
 
-A reproducible final request uses:
+A reproducible seed-only final request uses:
 
 ```json
 {
@@ -147,7 +150,24 @@ A reproducible final request uses:
 }
 ```
 
-Status responses can include `provider`, `mode`, `seed`, `width`, `height`, `steps`, `cfg`, `sampler`, and `scheduler` alongside the ready `imageUrl`. The Fold client should persist this generation object with the card instead of discarding it.
+A composition-preserving refine request uses only the small server-side Comfy reference, not the base64 image payload:
+
+```json
+{
+  "prompt": "...",
+  "mode": "refine",
+  "seed": 424242,
+  "sourceImage": {
+    "filename": "Grimoire_00001_.png",
+    "subfolder": "",
+    "type": "output"
+  }
+}
+```
+
+The server validates that refine references point only to generated ComfyUI outputs. It fetches the source internally from ComfyUI, uploads it back to a single overwriteable staging input, then builds the img2img workflow. This avoids sending a large data URL back through the Fold tunnel and avoids accumulating one staging file per refine operation.
+
+Status responses can include `provider`, `mode`, `seed`, `width`, `height`, `steps`, `cfg`, `sampler`, `scheduler`, `denoise`, and `providerImage` alongside the ready `imageUrl`. The Fold client persists this generation object with the card.
 
 ## 5. Build and test on the Galaxy Z Fold 6
 
@@ -161,11 +181,14 @@ npm run mobile:sync
 In Android Studio, select `SM-F956U` and the `app` configuration. Test in this order:
 
 1. EROS OFF and one ritual.
-2. One preview card forge and confirm generation metadata is retained.
+2. Forge one preview card and confirm generation metadata is retained.
 3. Re-manifest the preview and confirm it does not unnecessarily rescribe the exegesis.
-4. Finalize that preview with its stored prompt and seed.
-5. Spirit Box after image generation completes.
-6. One Oracle triad while watching `/health`; queue depth may grow, but `resourceScheduler.active` must show only one job.
-7. Grand Forge only after the earlier slices complete reliably.
+4. Confirm `FINALIZE` still produces the seed-only 832×1216 / 28-step render.
+5. Re-manifest a preview after the refine-capable API is running, then choose `REFINE FINAL`.
+6. Confirm the refined card reports `REFINE`, 832×1216, 28 steps, the retained seed, and the configured denoise value.
+7. Visually compare the source Preview and Refine result: the latter should preserve pose/layout more strongly than `FINALIZE` while adding final-size detail.
+8. Spirit Box after image generation completes.
+9. One Oracle triad while watching `/health`; queue depth may grow, but `resourceScheduler.active` must show only one job.
+10. Grand Forge only after the earlier slices complete reliably.
 
 The client never automatically resubmits a lost text or image job. Five consecutive status-poll failures surface an error; an explicit user retry is then required. This prevents hidden work on the Mac from being duplicated after a transient tunnel interruption.

@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { buildSdxlWorkflow, createComfyUiClient, createComfyUiConfig } from './comfyui.mjs';
+import {
+  buildSdxlImg2ImgWorkflow,
+  buildSdxlWorkflow,
+  createComfyUiClient,
+  createComfyUiConfig,
+} from './comfyui.mjs';
 
 const config = createComfyUiConfig({
   COMFYUI_BASE_URL: 'http://127.0.0.1:8188/',
@@ -13,6 +18,7 @@ const config = createComfyUiConfig({
   COMFYUI_FINAL_WIDTH: '832',
   COMFYUI_FINAL_HEIGHT: '1216',
   COMFYUI_FINAL_STEPS: '28',
+  COMFYUI_REFINE_DENOISE: '0.28',
 });
 
 describe('ComfyUI SDXL integration', () => {
@@ -26,6 +32,34 @@ describe('ComfyUI SDXL integration', () => {
       cfg: 4,
       sampler_name: 'dpmpp_2m',
       scheduler: 'karras',
+    });
+  });
+
+  it('builds a final-size img2img workflow from an uploaded source', () => {
+    const workflow = buildSdxlImg2ImgWorkflow({
+      prompt: 'occult tarot',
+      seed: 42,
+      denoise: 0.28,
+      config: { ...config, width: 832, height: 1216, steps: 28 },
+      inputImage: 'GrimoireRefine-test-client.png',
+    });
+
+    expect(workflow['5']).toEqual({
+      class_type: 'LoadImage',
+      inputs: { image: 'GrimoireRefine-test-client.png' },
+    });
+    expect(workflow['10'].inputs).toMatchObject({
+      width: 832,
+      height: 1216,
+      upscale_method: 'lanczos',
+      crop: 'disabled',
+    });
+    expect(workflow['11'].inputs).toEqual({ pixels: ['10', 0], vae: ['4', 2] });
+    expect(workflow['3'].inputs).toMatchObject({
+      latent_image: ['11', 0],
+      denoise: 0.28,
+      seed: 42,
+      steps: 28,
     });
   });
 
@@ -77,7 +111,67 @@ describe('ComfyUI SDXL integration', () => {
     });
   });
 
-  it('queues, polls, and retrieves a generated image', async () => {
+  it('stages an existing Comfy output and submits a refine workflow', async () => {
+    let submitted;
+    let uploadedWithFormData = false;
+
+    const fetchImpl = vi.fn(async (url, options = {}) => {
+      if (url.includes('/view?')) {
+        return new Response(Uint8Array.from([1, 2, 3]), {
+          status: 200,
+          headers: { 'Content-Type': 'image/png' },
+        });
+      }
+      if (url.endsWith('/upload/image')) {
+        uploadedWithFormData = options.body instanceof FormData;
+        return new Response(JSON.stringify({
+          name: 'GrimoireRefine-test-client.png',
+          subfolder: '',
+          type: 'input',
+        }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      if (url.endsWith('/prompt')) {
+        submitted = JSON.parse(options.body);
+        return new Response(JSON.stringify({ prompt_id: 'refine-prompt' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      throw new Error(`Unexpected URL: ${url}`);
+    });
+
+    const client = createComfyUiClient({ config, fetchImpl, clientId: 'test-client' });
+    const started = await client.start({
+      prompt: 'occult tarot',
+      mode: 'refine',
+      seed: 424242,
+      denoise: 0.28,
+      sourceImage: {
+        filename: 'Grimoire_00001_.png',
+        subfolder: '',
+        type: 'output',
+      },
+    });
+
+    expect(uploadedWithFormData).toBe(true);
+    expect(started).toMatchObject({
+      providerJobId: 'refine-prompt',
+      seed: 424242,
+      mode: 'refine',
+      width: 832,
+      height: 1216,
+      steps: 28,
+      denoise: 0.28,
+    });
+    expect(submitted.prompt['5'].inputs.image).toBe('GrimoireRefine-test-client.png');
+    expect(submitted.prompt['10'].inputs).toMatchObject({ width: 832, height: 1216 });
+    expect(submitted.prompt['3'].inputs).toMatchObject({ denoise: 0.28, seed: 424242 });
+  });
+
+  it('queues, polls, and retrieves a generated image with its provider reference', async () => {
     const fetchImpl = vi.fn(async (url, options = {}) => {
       if (url.endsWith('/prompt')) {
         const body = JSON.parse(options.body);
@@ -112,6 +206,11 @@ describe('ComfyUI SDXL integration', () => {
     await expect(client.status(started.providerJobId)).resolves.toEqual({
       status: 'ready',
       imageUrl: 'data:image/png;base64,AQID',
+      providerImage: {
+        filename: 'card.png',
+        subfolder: '',
+        type: 'output',
+      },
     });
   });
 
