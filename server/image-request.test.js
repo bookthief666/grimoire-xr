@@ -24,7 +24,7 @@ describe('image job request normalization', () => {
     })).toMatchObject({ mode: 'final', seed: 0 });
   });
 
-  it('accepts a generated Comfy output for refine mode', () => {
+  it('accepts a generated Grimoire Comfy output for refine mode', () => {
     expect(normalizeImageJobRequest({
       prompt: 'occult tarot',
       mode: 'refine',
@@ -48,16 +48,17 @@ describe('image job request normalization', () => {
     });
   });
 
-  it('rejects traversal and non-output references', () => {
-    expect(normalizeComfyOutputRef({ filename: '../secret.png', type: 'output' })).toBeNull();
-    expect(normalizeComfyOutputRef({ filename: 'card.png', type: 'input' })).toBeNull();
+  it('rejects traversal, arbitrary output names, and non-output references', () => {
+    expect(normalizeComfyOutputRef({ filename: '../Grimoire.png', type: 'output' })).toBeNull();
+    expect(normalizeComfyOutputRef({ filename: 'OtherTool_00001_.png', type: 'output' })).toBeNull();
+    expect(normalizeComfyOutputRef({ filename: 'Grimoire_00001_.png', type: 'input' })).toBeNull();
   });
 
   it('rejects refine when ComfyUI is not the image provider', () => {
     expect(() => normalizeImageJobRequest({
       prompt: 'occult tarot',
       mode: 'refine',
-      sourceImage: { filename: 'card.png', type: 'output' },
+      sourceImage: { filename: 'Grimoire_00001_.png', type: 'output' },
     }, { provider: 'gemini' })).toThrow('Refine mode requires the ComfyUI image provider.');
   });
 
@@ -66,7 +67,7 @@ describe('image job request normalization', () => {
       prompt: 'occult tarot',
       mode: 'refine',
       denoise: 1.2,
-      sourceImage: { filename: 'card.png', type: 'output' },
+      sourceImage: { filename: 'Grimoire_00001_.png', type: 'output' },
     })).toThrow('Refine denoise must be between 0.05 and 0.95.');
   });
 });
