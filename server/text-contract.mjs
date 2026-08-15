@@ -19,6 +19,7 @@ export const TEXT_SCHEMAS = Object.freeze({
       items: { type: 'string', minLength: 1 },
       minItems: 78,
       maxItems: 78,
+      uniqueItems: true,
     },
     questions: {
       type: 'array',
