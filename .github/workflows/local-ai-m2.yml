@@ -71,6 +71,11 @@ jobs:
             *) echo "Refusing untrusted target ref: $TARGET_REF" >&2; exit 1 ;;
           esac
           echo "ref=$TARGET_REF" >> "$GITHUB_OUTPUT"
+          if [[ "$TARGET_REF" == 'agent/fold6-local-ai-qualification' ]]; then
+            echo 'qualification=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'qualification=false' >> "$GITHUB_OUTPUT"
+          fi
           echo "Testing trusted ref: $TARGET_REF"
 
       - name: Checkout target without destroying QA checkpoints
@@ -117,7 +122,8 @@ jobs:
       - name: Local AI contract QA
         run: npm run qa:ai:contracts
 
-      - name: Preview Final Refine QA with checkpoint resume
+      - name: Preview Final Refine baseline QA with checkpoint resume
+        if: steps.target.outputs.qualification != 'true'
         shell: bash
         run: |
           MODE=$(node --input-type=module -e "import { findLatestIncompleteRun } from './scripts/qaRunState.mjs'; const run = await findLatestIncompleteRun('qa-output'); process.stdout.write(run ? 'resume' : 'fresh');")
@@ -127,6 +133,22 @@ jobs:
           else
             npm run qa:ai
           fi
+
+      - name: Structured local text qualification
+        if: steps.target.outputs.qualification == 'true'
+        run: npm run qa:ai:text
+
+      - name: Refine denoise qualification sweep
+        if: steps.target.outputs.qualification == 'true'
+        run: npm run qa:ai:refine-sweep
+
+      - name: Install verified LCM-LoRA benchmark adapter
+        if: steps.target.outputs.qualification == 'true'
+        run: npm run qa:ai:lcm-install
+
+      - name: LCM fast-preview qualification benchmark
+        if: steps.target.outputs.qualification == 'true'
+        run: npm run qa:ai:lcm
 
       - name: Optional connected Fold smoke QA
         shell: bash
