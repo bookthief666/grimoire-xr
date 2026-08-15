@@ -1,6 +1,6 @@
 # Fold 6 Recovery + Structured Prompt Quality Pass
 
-This stacked slice sits on top of the device-validated Preview/Final and img2img Refine work. It addresses two quality problems without changing the measured ComfyUI render presets.
+This stacked slice sits on top of the device-validated Preview/Final work and the current img2img Refine branch. It addresses two quality problems without changing the measured ComfyUI render presets.
 
 ## 1. Interrupted-job recovery
 
@@ -64,3 +64,7 @@ The guarded patcher performs every exact-match transformation in memory before w
 2. Confirm Preview, Re-Manifest, Finalize, and Refine still behave as before and retain the exact stored prompt for the card.
 3. Start one text or image operation, restart only the Node API while the Fold is polling, and confirm the client fails that operation promptly with an interrupted/expired message instead of emitting the same 404 five times.
 4. Deliberately retry the operation and confirm a new job is submitted only after that explicit user action.
+
+## Review boundary
+
+PR #33 remains the Refine slice and stays pinned to its current source head. This recovery/prompt work is intentionally stacked separately so prompt quality and restart behavior can be accepted without rewriting the Refine review history.
