@@ -1,3 +1,10 @@
+import {
+  getTextSchema,
+  inferTextTask,
+  normalizeTextTask,
+  validateStructuredTextResult,
+} from './text-contract.mjs';
+
 const asNumber = (value, fallback, minimum, maximum) => {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
@@ -95,18 +102,20 @@ export const createOllamaClient = ({
     };
   };
 
-  const generate = async ({ prompt, isJson = true, schema = null }) => {
-    const structured = Boolean(isJson && schema);
+  const generate = async ({ prompt, isJson = true, schema = null, task = null }) => {
+    const structuredTask = normalizeTextTask(task) || (isJson ? inferTextTask(prompt) : null);
+    const activeSchema = isJson ? (schema || getTextSchema(structuredTask)) : null;
+    const structured = Boolean(activeSchema);
     const data = await requestJson(fetchImpl, `${config.baseUrl}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: config.model,
-        prompt: withSchemaGrounding(prompt, structured ? schema : null),
+        prompt: withSchemaGrounding(prompt, activeSchema),
         stream: false,
         think: false,
         keep_alive: config.keepAlive,
-        ...(isJson ? { format: schema || 'json' } : {}),
+        ...(isJson ? { format: activeSchema || 'json' } : {}),
         options: {
           num_ctx: config.contextLength,
           temperature: structured ? 0 : (isJson ? 0.2 : 0.7),
@@ -118,9 +127,10 @@ export const createOllamaClient = ({
     if (!text) throw Object.assign(new Error('Ollama returned no text.'), { status: 502 });
     if (!isJson) return text;
     try {
-      return parseOllamaJson(text);
+      const parsed = parseOllamaJson(text);
+      return structuredTask ? validateStructuredTextResult(structuredTask, parsed) : parsed;
     } catch (error) {
-      throw Object.assign(error, { status: 502 });
+      throw Object.assign(error, { status: error?.status || 502 });
     }
   };
 
