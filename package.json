@@ -14,6 +14,8 @@
     "qa:ai:contracts": "node scripts/qa-local-ai.mjs --contracts-only",
     "qa:ai": "node scripts/qa-local-ai.mjs",
     "qa:ai:resume": "node scripts/qa-local-ai.mjs --resume-latest",
+    "qa:ai:refine-sweep": "node scripts/qa-refine-sweep.mjs",
+    "qa:ai:text": "node scripts/qa-text-tasks.mjs",
     "qa:fold:smoke": "bash scripts/qa-fold-adb.sh",
     "mobile:sync": "npm run build && cap sync",
     "mobile:copy": "npm run build && cap copy",
