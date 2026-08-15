@@ -2,12 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   GRIMOIRE_AI_PROTOCOL_VERSION,
   GRIMOIRE_PROMPT_SCHEMA,
+  GRIMOIRE_STRUCTURED_TEXT_TASKS,
   buildApiContract,
   serializeJobTiming,
 } from './api-contract.mjs';
 
 describe('Grimoire AI API contract', () => {
-  it('advertises the local ComfyUI feature surface explicitly', () => {
+  it('advertises the local ComfyUI and structured-text feature surface explicitly', () => {
     expect(buildApiContract({ textProvider: 'ollama', imageProvider: 'comfyui' })).toEqual({
       protocolVersion: GRIMOIRE_AI_PROTOCOL_VERSION,
       asyncJobs: true,
@@ -15,6 +16,7 @@ describe('Grimoire AI API contract', () => {
       queueTelemetry: true,
       timingTelemetry: true,
       promptSchema: GRIMOIRE_PROMPT_SCHEMA,
+      structuredTextTasks: [...GRIMOIRE_STRUCTURED_TEXT_TASKS],
       textProvider: 'ollama',
       imageProvider: 'comfyui',
       imageModes: ['preview', 'final', 'refine'],
