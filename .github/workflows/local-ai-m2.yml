@@ -85,11 +85,9 @@ jobs:
       - name: Unit tests and production build
         run: npm run check
 
-      - name: Verify local model services
+      - name: Ensure local model services
         shell: bash
-        run: |
-          curl --fail --silent --show-error "$OLLAMA_BASE_URL/api/tags" >/dev/null
-          curl --fail --silent --show-error "$COMFYUI_BASE_URL/system_stats" >/dev/null
+        run: bash scripts/qa-ensure-local-ai.sh
 
       - name: Start isolated branch API
         shell: bash
@@ -138,13 +136,15 @@ jobs:
           fi
           npm run qa:fold:smoke
 
-      - name: Stop isolated API
+      - name: Stop isolated API and workflow-started model services
         if: always()
         shell: bash
         run: |
-          if [[ -f automation-logs/api.pid ]]; then
-            kill "$(cat automation-logs/api.pid)" 2>/dev/null || true
-          fi
+          for pidfile in automation-logs/api.pid automation-logs/comfyui.pid automation-logs/ollama.pid; do
+            if [[ -f "$pidfile" ]]; then
+              kill "$(cat "$pidfile")" 2>/dev/null || true
+            fi
+          done
 
       - name: Upload QA evidence
         if: always()
