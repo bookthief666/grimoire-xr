@@ -79,6 +79,7 @@ appSource = replaceOnce(
   block([
     '    const compiledPrompt = compileTarotImagePrompt({',
     '      cardName: card.name,',
+    '      invocationSubject: state.author,',
     '      traditionName: state.selectedTradition.name,',
     '      styleName: state.selectedStyle.name,',
     '      stylePrompt: state.selectedStyle.prompt,',
