@@ -1,3 +1,5 @@
+export const TAROT_PROMPT_SCHEMA = 'tarot-structured-v1';
+
 const clean = value => String(value ?? '').replace(/\s+/g, ' ').trim();
 
 const correspondenceLine = meta => {
@@ -28,11 +30,12 @@ export const compileTarotImagePrompt = ({
   const subject = clean(cardName);
   if (!subject) throw new Error('A card name is required to compile an image prompt.');
 
+  const correspondences = correspondenceLine(meta);
   const sections = [
     `SUBJECT: Tarot card \"${subject}\".`,
     clean(traditionName) ? `TAROT SYSTEM: ${clean(traditionName)}. Preserve recognizable symbolic logic from this lineage without adding readable text.` : '',
     clean(visual) ? `COMPOSITION AND ICONOGRAPHY: ${clean(visual)}.` : '',
-    correspondenceLine(meta) ? `CORRESPONDENCES: ${correspondenceLine(meta)}.` : '',
+    correspondences ? `CORRESPONDENCES: ${correspondences}.` : '',
     clean(stylePrompt) ? `ART DIRECTION: ${clean(stylePrompt)}.` : '',
     clean(styleName) ? `AESTHETIC REGISTER: ${clean(styleName)}.` : '',
     clean(erosPrompt) ? `EROS REGISTER: ${clean(erosPrompt)}.` : '',
