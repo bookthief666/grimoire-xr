@@ -1,6 +1,10 @@
 export const TAROT_PROMPT_SCHEMA = 'tarot-structured-v1';
 
-const clean = value => String(value ?? '').replace(/\s+/g, ' ').trim();
+const clean = value => {
+  if (value === null || value === undefined) return '';
+  const text = typeof value === 'object' ? JSON.stringify(value) : String(value);
+  return text.replace(/\s+/g, ' ').trim();
+};
 
 const correspondenceLine = meta => {
   if (!meta || typeof meta !== 'object') return '';
@@ -20,6 +24,7 @@ const correspondenceLine = meta => {
 
 export const compileTarotImagePrompt = ({
   cardName,
+  invocationSubject,
   traditionName,
   styleName,
   stylePrompt,
@@ -33,6 +38,7 @@ export const compileTarotImagePrompt = ({
   const correspondences = correspondenceLine(meta);
   const sections = [
     `SUBJECT: Tarot card \"${subject}\".`,
+    clean(invocationSubject) ? `INVOCATION SUBJECT: ${clean(invocationSubject)}. Let this current inform the scene without replacing the card's canonical identity.` : '',
     clean(traditionName) ? `TAROT SYSTEM: ${clean(traditionName)}. Preserve recognizable symbolic logic from this lineage without adding readable text.` : '',
     clean(visual) ? `COMPOSITION AND ICONOGRAPHY: ${clean(visual)}.` : '',
     correspondences ? `CORRESPONDENCES: ${correspondences}.` : '',
