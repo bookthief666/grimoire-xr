@@ -112,16 +112,25 @@ describe('0.36 ReadingRecord archive envelope', () => {
       .toBe('LEGACY_NO_CONTRACT_PIN');
   });
 
-  it('rehydrates catalog object identity while preserving archived ReadingRecord', () => {
+  it('rehydrates catalog object identity and reopens an archived reading directly in Oracle', () => {
     const envelope = buildGrimoireArchiveEnvelope({ state: makeState() });
     const style = { id: 'pixel', name: '16-Bit Sovereign' };
     const tradition = { id: 'thoth', name: 'Book of Thoth' };
     const restored = buildArchiveRestoreState({ envelope, styles: [style], traditions: [tradition] });
-    expect(restored.phase).toBe('SCRIPTORIUM');
+    expect(restored.phase).toBe('ORACLE');
     expect(restored.selectedStyle).toBe(style);
     expect(restored.selectedTradition).toBe(tradition);
     expect(restored.reading.readingRecord.readingId).toBe('archive-fixture');
     expect(restored.restoredArchiveContractStatus).toBe('CURRENT_CONTRACT_MATCH');
+  });
+
+  it('restores archives without a reading into the Scriptorium', () => {
+    const state = makeState();
+    state.reading = null;
+    const envelope = buildGrimoireArchiveEnvelope({ state });
+    const restored = buildArchiveRestoreState({ envelope, styles: [], traditions: [] });
+    expect(restored.phase).toBe('SCRIPTORIUM');
+    expect(restored.reading).toBeNull();
   });
 
   it('summarizes visible provenance without treating generated prose as canonical', () => {
