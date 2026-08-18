@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   AESTHETIC_CURRENTS,
+  DEFAULT_AESTHETIC_CURRENT,
+  DEFAULT_ENCHANTMENT_LEVEL,
   ENCHANTMENT_LEVELS,
   cycleAestheticCurrent,
   cycleEnchantmentLevel,
@@ -25,10 +27,12 @@ describe('aesthetic currents', () => {
     expect(arcane.authority).toBe('PROJECT_AUTHORED_PRESENTATION_PROFILE_NOT_SOURCE_FACT');
   });
 
-  it('defaults to the rich Ritual Hybrid rather than a minimalist profile', () => {
+  it('defaults fresh presentation to Ritual Hybrid + Exalted', () => {
+    expect(DEFAULT_AESTHETIC_CURRENT).toBe('ritual-hybrid');
+    expect(DEFAULT_ENCHANTMENT_LEVEL).toBe('exalted');
     expect(resolveAestheticPreferences()).toEqual({
       current: 'ritual-hybrid',
-      enchantment: 'balanced',
+      enchantment: 'exalted',
       queryOverride: false,
     });
   });
