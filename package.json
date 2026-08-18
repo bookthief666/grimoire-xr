@@ -19,6 +19,7 @@
     "qa:living-relic": "node scripts/qa-living-relic.mjs",
     "qa:continuity": "node scripts/qa-continuity-foundation.mjs",
     "qa:oracle-book": "node scripts/qa-oracle-living-book.mjs",
+    "qa:threshold": "node scripts/qa-threshold.mjs",
     "qa:ai:contracts": "node scripts/qa-local-ai.mjs --contracts-only",
     "qa:ai": "node scripts/qa-local-ai.mjs",
     "qa:ai:resume": "node scripts/qa-local-ai.mjs --resume-latest",
