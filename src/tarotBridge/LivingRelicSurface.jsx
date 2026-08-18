@@ -128,7 +128,7 @@ export default function LivingRelicSurface({
               <div
                 className="h-full origin-left bg-[#e5c158]"
                 style={{
-                  transform: isAttuning ? 'scaleX(1)' : 'scaleX(0)',
+                  transform: isAttuning && animated ? 'scaleX(1)' : 'scaleX(0)',
                   transitionProperty: 'transform',
                   transitionTimingFunction: 'linear',
                   transitionDuration: isAttuning && animated ? `${model.holdMs}ms` : '0ms',
