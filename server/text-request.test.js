@@ -14,11 +14,25 @@ describe('0.37 provider-neutral structured text requests', () => {
     expect(() => normalizeTextRequest({ prompt: 'Prompt', task: 'mystery' })).toThrow(/unsupported structured text task/i);
   });
 
-  it('retains conservative prompt inference for backward-compatible clients', () => {
+  it('retains conservative inference for the new dossier-only ritual prompt', () => {
     expect(normalizeTextRequest({
       prompt: 'Write a 200-word Thesis. Generate 3 profound questions.',
       isJson: true,
     }).task).toBe('ritual');
+  });
+
+  it('rejects a pre-v2 ritual client that still asks the model to author 78 card names', () => {
+    try {
+      normalizeTextRequest({
+        prompt: 'Write a 200-word Thesis. List 78 Card Names. Include Oracle Suggestions.',
+        isJson: true,
+      });
+      throw new Error('Expected protocol upgrade rejection.');
+    } catch (error) {
+      expect(error.code).toBe('TEXT_PROTOCOL_UPGRADE_REQUIRED');
+      expect(error.status).toBe(409);
+      expect(error.message).toMatch(/canonical manifest/i);
+    }
   });
 
   it('does not infer structured tasks for free-form text', () => {
