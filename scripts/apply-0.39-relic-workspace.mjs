@@ -50,8 +50,11 @@ for (const required of [
 
 const replacement = `                <div className="flex-1 min-w-0">\n                  <RelicWorkspace\n                    card={state.focusedCard}\n                    tradition={state.selectedTradition}\n                    isForging={state.isForging}\n                    forgeStatus={state.reforgeStatus}\n                    canFinalize={canFinalizeCard(state.focusedCard)}\n                    canRefine={canRefineCard(state.focusedCard)}\n                    onRemanifest={() => handleRetryCard(state.focusedCard)}\n                    onFinalize={() => handleFinalizeCard(state.focusedCard)}\n                    onRefine={() => handleRefineCard(state.focusedCard)}\n                    onCopyPrompt={copyToClipboard}\n                    copied={copied}\n                  />\n                </div>\n`;
 
-app = app.replace(oldImport, newImport);
+// Important: replace the indexed modal slice before changing any earlier text.
+// Swapping the import first changes the file length and invalidates start/end,
+// which can leave a partial JSX token at the replacement boundary.
 app = `${app.slice(0, start)}${replacement}${app.slice(end)}`;
+app = app.replace(oldImport, newImport);
 
 fs.writeFileSync(appPath, app);
 console.log('Applied 0.39 Relic Workspace to src/App.jsx.');
