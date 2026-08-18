@@ -22,6 +22,26 @@ const correspondenceLine = meta => {
     : '';
 };
 
+const canonicalFieldEntries = fields => Object.entries(fields || {})
+  .map(([key, field]) => [key, clean(field?.value)])
+  .filter(([, value]) => value);
+
+const canonicalContextLines = context => {
+  if (!context || context.sourceQualification !== 'SOURCE_QUALIFIED') return [];
+  const expression = canonicalFieldEntries(context.canonicalExpression);
+  const correspondences = canonicalFieldEntries(context.canonicalCorrespondences);
+  return [
+    `CANONICAL CARD ID: ${clean(context.cardId)}.`,
+    expression.length
+      ? `CANONICAL THOTH EXPRESSION: ${expression.map(([key, value]) => `${key}=${value}`).join('; ')}.`
+      : '',
+    correspondences.length
+      ? `REVIEWED CANONICAL CORRESPONDENCES: ${correspondences.map(([key, value]) => `${key}=${value}`).join('; ')}.`
+      : '',
+    'CANONICALITY RULE: preserve these source-qualified facts. Generated interpretive notes may elaborate imagery but may not replace or contradict them.',
+  ].filter(Boolean);
+};
+
 export const compileTarotImagePrompt = ({
   cardName,
   invocationSubject,
@@ -31,6 +51,7 @@ export const compileTarotImagePrompt = ({
   visual,
   erosPrompt,
   meta,
+  canonicalContext = null,
 } = {}) => {
   const subject = clean(cardName);
   if (!subject) throw new Error('A card name is required to compile an image prompt.');
@@ -38,10 +59,11 @@ export const compileTarotImagePrompt = ({
   const correspondences = correspondenceLine(meta);
   const sections = [
     `SUBJECT: Tarot card \"${subject}\".`,
+    ...canonicalContextLines(canonicalContext),
     clean(invocationSubject) ? `INVOCATION SUBJECT: ${clean(invocationSubject)}. Let this current inform the scene without replacing the card's canonical identity.` : '',
     clean(traditionName) ? `TAROT SYSTEM: ${clean(traditionName)}. Preserve recognizable symbolic logic from this lineage without adding readable text.` : '',
     clean(visual) ? `COMPOSITION AND ICONOGRAPHY: ${clean(visual)}.` : '',
-    correspondences ? `CORRESPONDENCES: ${correspondences}.` : '',
+    correspondences ? `GENERATED INTERPRETIVE NOTES (NON-CANONICAL): ${correspondences}.` : '',
     clean(stylePrompt) ? `ART DIRECTION: ${clean(stylePrompt)}.` : '',
     clean(styleName) ? `AESTHETIC REGISTER: ${clean(styleName)}.` : '',
     clean(erosPrompt) ? `EROS REGISTER: ${clean(erosPrompt)}.` : '',
