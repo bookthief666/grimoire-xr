@@ -32,6 +32,13 @@ import {
   buildCanonicalOracleSynthesisPrompt,
   prepareCanonicalOracleConsultation,
 } from './tarotBridge/oracleSynthesis.js';
+import {
+  buildArchiveRestoreState,
+  parseGrimoireArchive,
+  serializeGrimoireArchive,
+} from './tarotBridge/archiveEnvelope.js';
+import { generateGrimoireHtmlDocument } from './tarotBridge/archiveHtml.js';
+import ReadingProvenancePanel from './tarotBridge/ReadingProvenancePanel.jsx';
 
 // ============================================================================
 // 1. CONFIGURATION & STYLES
@@ -246,6 +253,7 @@ export function grimoireReducer(state, action) {
       const clrSlots = [...state.spreadSlots];
       clrSlots[action.payload] = null;
       return { ...state, spreadSlots: clrSlots };
+    case 'RESTORE_ARCHIVE': return { ...initialState, ...action.payload };
     default: return state;
   }
 }
@@ -817,56 +825,6 @@ const ReadingCloth = ({ deck, spreadSlots, activeSpread, placementCardId, onSlot
   );
 };
 
-const escapeHtml = (value) => String(value ?? '')
-  .replace(/&/g, '&amp;')
-  .replace(/</g, '&lt;')
-  .replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;')
-  .replace(/'/g, '&#039;');
-
-const generateHtmlDocument = (state, deck) => {
-  const author = escapeHtml(state.author || 'Untitled');
-  const cards = deck.map(card => {
-    const image = typeof card.imageUrl === 'string' && /^data:image\/(png|jpeg|webp);base64,[a-z0-9+/=\r\n]+$/i.test(card.imageUrl)
-      ? `<img src="${card.imageUrl}" alt="${escapeHtml(card.name)}" />`
-      : '<div class="missing">UNFORGED</div>';
-    return `
-      <article class="card">
-        <div class="image">${image}</div>
-        <section>
-          <h2>${escapeHtml(card.name)}</h2>
-          <p>${escapeHtml(card.exegesis || 'This card has not yet been forged.')}</p>
-          ${card.meta ? `<pre>${escapeHtml(JSON.stringify(card.meta, null, 2))}</pre>` : ''}
-        </section>
-      </article>`;
-  }).join('');
-
-  return `<!doctype html>
-  <html lang="en">
-    <head>
-      <meta charset="UTF-8" />
-      <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <title>Grimoire Archive — ${author}</title>
-      <style>
-        :root { color-scheme: dark; } * { box-sizing: border-box; }
-        body { margin: 0; padding: 32px; background: #050000; color: #d22; font: 18px/1.5 ui-monospace, monospace; }
-        header { max-width: 900px; margin: 0 auto 48px; border-bottom: 2px solid #900; }
-        h1, h2 { color: #e5c158; text-transform: uppercase; } .dossier { white-space: pre-wrap; }
-        main { max-width: 1100px; margin: auto; display: grid; gap: 32px; }
-        .card { display: grid; grid-template-columns: minmax(180px, 280px) 1fr; gap: 24px; padding: 20px; border: 1px solid #900; background: #0b0000; }
-        .image { aspect-ratio: 2/3; border: 1px solid #b8860b; display: grid; place-items: center; }
-        img { width: 100%; height: 100%; object-fit: cover; } .missing { opacity: .5; }
-        p { white-space: pre-wrap; } pre { overflow-wrap: anywhere; white-space: pre-wrap; color: #b8860b; }
-        @media (max-width: 640px) { body { padding: 16px; } .card { grid-template-columns: 1fr; } }
-      </style>
-    </head>
-    <body>
-      <header><h1>${author} Grimoire</h1><p class="dossier">${escapeHtml(state.dossier || '')}</p></header>
-      <main>${cards || '<p>No cards have been inscribed.</p>'}</main>
-    </body>
-  </html>`;
-};
-
 export default function App() {
   const [state, dispatch] = useReducer(grimoireReducer, initialState);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -1233,21 +1191,21 @@ export default function App() {
     touchStartPos.current = { x: null, y: null };
   };
 
-  const triggerDownload = async (htmlStr) => {
+  const triggerTextArchive = async ({ content, extension, mimeType, label }) => {
     const safeAuthor = state.author.trim().replace(/[^a-z0-9._-]+/gi, '_') || 'UNTITLED';
-    const fileName = `GRIMOIRE_${safeAuthor}.html`;
+    const fileName = `GRIMOIRE_${safeAuthor}.${extension}`;
 
     if (Capacitor.isNativePlatform()) {
       try {
         const saved = await Filesystem.writeFile({
           path: fileName,
-          data: htmlStr,
+          data: content,
           directory: Directory.Cache,
           encoding: Encoding.UTF8,
         });
         await Share.share({
-          title: `${state.author || 'Grimoire'} Archive`,
-          dialogTitle: 'Save or share the Grimoire archive',
+          title: `${state.author || 'Grimoire'} ${label}`,
+          dialogTitle: `Save or share the ${label.toLowerCase()}`,
           files: [saved.uri],
         });
         dispatch({ type: 'RESET_ARCHIVE' });
@@ -1257,19 +1215,61 @@ export default function App() {
       return;
     }
 
-    const blob = new Blob([htmlStr], { type: 'text/html' });
+    const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); 
-    a.href = url; 
+    const a = document.createElement('a');
+    a.href = url;
     a.download = fileName;
-    document.body.appendChild(a); 
-    a.click(); 
+    document.body.appendChild(a);
+    a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     dispatch({ type: 'RESET_ARCHIVE' });
   };
 
-  const handleQuickArchive = () => triggerDownload(generateHtmlDocument(state, state.deck));
+  const handleHtmlArchive = () => triggerTextArchive({
+    content: generateGrimoireHtmlDocument(state, state.deck),
+    extension: 'html',
+    mimeType: 'text/html',
+    label: 'HTML Archive',
+  });
+
+  const handleJsonArchive = () => triggerTextArchive({
+    content: serializeGrimoireArchive({ state, deck: state.deck }),
+    extension: 'json',
+    mimeType: 'application/json',
+    label: 'Restorable JSON Archive',
+  });
+
+  const handleRestoreJsonArchive = () => {
+    const picker = document.createElement('input');
+    picker.type = 'file';
+    picker.accept = 'application/json,.json';
+    picker.onchange = async () => {
+      const file = picker.files?.[0];
+      if (!file) return;
+      try {
+        const parsed = parseGrimoireArchive(await file.text());
+        const restored = buildArchiveRestoreState({
+          envelope: parsed.envelope,
+          styles: ART_STYLES,
+          traditions: TRADITIONS,
+        });
+        dispatch({ type: 'RESTORE_ARCHIVE', payload: restored });
+        if (parsed.contractStatus !== 'CURRENT_CONTRACT_MATCH') {
+          dispatch({
+            type: 'SET_ERROR_MESSAGE',
+            payload: parsed.migratedLegacy
+              ? 'Legacy archive restored. Canonical semantic provenance was not present in that archive.'
+              : 'Archive restored from a different canonical semantic contract. Historical ReadingRecord preserved without being reclassified as current.',
+          });
+        }
+      } catch (error) {
+        dispatch({ type: 'SET_ERROR_MESSAGE', payload: `Archive Restore Failed: ${error.message || 'Invalid JSON archive.'}` });
+      }
+    };
+    picker.click();
+  };
 
   const handleGrandForge = async () => {
     dispatch({ type: 'START_ARCHIVE' });
@@ -1551,6 +1551,7 @@ export default function App() {
                   ))}
                 </div>
                 <div className="p-10 border-2 border-red-600 bg-black/80 text-xl leading-relaxed text-red-600 font-body shadow-[0_0_30px_#ff000022] backdrop-blur-md overflow-y-auto max-h-[50vh]"><p>{state.reading.answer}</p></div>
+                <ReadingProvenancePanel reading={state.reading} />
                 <button onClick={() => dispatch({ type: 'OPEN_ORACLE' })} className="w-full text-center text-sm font-header text-red-600 opacity-60 hover:opacity-100 hover:text-white transition-colors">NEW READING</button>
               </div>
             )}
@@ -1778,8 +1779,14 @@ export default function App() {
                <>
                  <h3 className="text-xl sm:text-2xl font-header text-[#e5c158] mb-4">ARCHIVE OPTIONS</h3>
                  <p className="font-body text-[#b8860b] mb-8">{forgedCount} / 78 Cards Forged.</p>
-                 <button onClick={handleQuickArchive} className="w-full py-4 bg-[#b8860b] text-black font-header text-[10px] sm:text-sm hover:bg-white transition-colors mb-4 shadow-[0_0_15px_#b8860b]">
-                   QUICK SAVE (Current Deck)
+                 <button onClick={handleHtmlArchive} className="w-full py-4 bg-[#b8860b] text-black font-header text-[10px] sm:text-sm hover:bg-white transition-colors mb-4 shadow-[0_0_15px_#b8860b]">
+                   QUICK HTML ARCHIVE
+                 </button>
+                 <button onClick={handleJsonArchive} className="w-full py-4 border-2 border-[#b8860b] text-[#e5c158] font-header text-[10px] sm:text-sm hover:bg-[#b8860b] hover:text-black transition-colors mb-4">
+                   EXPORT RESTORABLE JSON
+                 </button>
+                 <button onClick={handleRestoreJsonArchive} className="w-full py-4 border border-red-600/70 text-red-500 font-header text-[10px] sm:text-sm hover:bg-red-600 hover:text-black transition-colors mb-4">
+                   RESTORE JSON ARCHIVE
                  </button>
                  <button onClick={handleGrandForge} className="w-full py-4 border-2 border-[#b8860b] text-[#e5c158] font-header text-[10px] sm:text-sm hover:bg-[#b8860b] hover:text-black transition-colors mb-4">
                    GRAND FORGE (Generate Missing)
@@ -1801,8 +1808,11 @@ export default function App() {
                <>
                  <FileDown size={64} className="text-[#e5c158] mx-auto mb-8 animate-bounce" />
                  <h3 className="text-xl sm:text-2xl font-header text-[#e5c158] mb-8">ARTIFACT READY</h3>
-                 <button onClick={() => triggerDownload(generateHtmlDocument(state, state.deck))} className="w-full py-4 bg-[#b8860b] text-black font-header text-sm hover:bg-white transition-colors mb-4 shadow-[0_0_15px_#b8860b]">
-                   DOWNLOAD HTML
+                 <button onClick={handleHtmlArchive} className="w-full py-4 bg-[#b8860b] text-black font-header text-sm hover:bg-white transition-colors mb-4 shadow-[0_0_15px_#b8860b]">
+                   DOWNLOAD HTML + READING PROVENANCE
+                 </button>
+                 <button onClick={handleJsonArchive} className="w-full py-4 border-2 border-[#b8860b] text-[#e5c158] font-header text-[10px] sm:text-sm hover:bg-[#b8860b] hover:text-black transition-colors mb-4">
+                   EXPORT RESTORABLE JSON
                  </button>
                  <button onClick={() => dispatch({ type: 'RESET_ARCHIVE' })} className="font-header text-xs text-[#b8860b]/50 hover:text-red-600 uppercase">[ CLOSE ]</button>
                </>
