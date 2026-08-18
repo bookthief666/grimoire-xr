@@ -44,6 +44,13 @@ import { generateGrimoireHtmlDocument } from './tarotBridge/archiveHtml.js';
 import ReadingProvenancePanel from './tarotBridge/ReadingProvenancePanel.jsx';
 import RelicWorkspace from './tarotBridge/RelicWorkspace.jsx';
 import LivingRelicSurface from './tarotBridge/LivingRelicSurface.jsx';
+import ContinuityReturnDialog from './ContinuityReturnDialog.jsx';
+import {
+  persistGrimoireSession,
+  rebindSessionCatalogState,
+  restoreGrimoireSession,
+  shouldPersistGrimoireSession,
+} from './persistence/grimoireStore.js';
 
 // ============================================================================
 // 1. CONFIGURATION & STYLES
@@ -832,12 +839,75 @@ export default function App() {
   const [copied, setCopied] = useState(false);
   const [bootMessages, setBootMessages] = useState([]);
   const spiritInputRef = useRef(null);
+  const continuityReadyRef = useRef(false);
+  const continuityWriteRef = useRef(0);
+  const [continuityBooting, setContinuityBooting] = useState(true);
+  const [continuityNotice, setContinuityNotice] = useState('');
+  const [landingConfirmOpen, setLandingConfirmOpen] = useState(false);
   
   const { forgeBuzz, oracleBuzz, spiritBuzz, ritualShake, relicAttuneBuzz } = useHaptic();
   const reducedMotion = useReducedMotion();
   useNativeShell(spiritInputRef);
 
   const isEgregoreActive = state.erosLevel >= 3;
+
+  const handleReturnToLanding = useCallback(() => {
+    if (state.phase === 'LANDING') return;
+    setLandingConfirmOpen(true);
+  }, [state.phase]);
+
+  const confirmReturnToLanding = useCallback(() => {
+    setLandingConfirmOpen(false);
+    dispatch({ type: 'RETURN_TO_LANDING' });
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void restoreGrimoireSession().then(result => {
+      if (cancelled) return;
+      continuityReadyRef.current = true;
+      if (result.state) {
+        const rebound = rebindSessionCatalogState(result.state, { styles: ART_STYLES, traditions: TRADITIONS });
+        dispatch({
+          type: 'RESTORE_ARCHIVE',
+          payload: { ...rebound, isOffline: typeof navigator !== 'undefined' ? !navigator.onLine : false },
+        });
+        if (result.status === 'RESTORED_WITH_MISSING_IMAGES') {
+          setContinuityNotice(`SESSION RESTORED · ${result.missingImages.length} ARTWORK FILE${result.missingImages.length === 1 ? '' : 'S'} MISSING · CANONICAL DATA PRESERVED`);
+        }
+      } else if (result.status === 'CORRUPT' || result.status === 'FAILED') {
+        setContinuityNotice('LOCAL CONTINUITY CHECKPOINT COULD NOT BE RESTORED · ARCHIVE EXPORTS REMAIN UNAFFECTED');
+      }
+      setContinuityBooting(false);
+    }).catch(error => {
+      if (cancelled) return;
+      continuityReadyRef.current = true;
+      console.warn('Continuity restore failed.', error);
+      setContinuityNotice('LOCAL CONTINUITY CHECKPOINT IS UNAVAILABLE · CURRENT SESSION WILL REMAIN USABLE');
+      setContinuityBooting(false);
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!continuityReadyRef.current || !shouldPersistGrimoireSession(state)) return undefined;
+    const writeToken = ++continuityWriteRef.current;
+    const timer = window.setTimeout(() => {
+      void persistGrimoireSession({ state }).then(result => {
+        if (writeToken !== continuityWriteRef.current) return;
+        if (result.status === 'FAILED') {
+          setContinuityNotice('AUTOSAVE FAILED · EXPORT A JSON ARCHIVE BEFORE LEAVING THIS SESSION');
+        } else if (result.status === 'SAVED_WITH_WARNINGS') {
+          setContinuityNotice('SESSION DATA SAVED · GENERATED ARTWORK CACHE IS DEGRADED');
+        }
+      }).catch(error => {
+        if (writeToken !== continuityWriteRef.current) return;
+        console.warn('Continuity autosave failed.', error);
+        setContinuityNotice('AUTOSAVE FAILED · EXPORT A JSON ARCHIVE BEFORE LEAVING THIS SESSION');
+      });
+    }, 450);
+    return () => window.clearTimeout(timer);
+  }, [state]);
 
   useEffect(() => {
     if (state.author && state.spiritChat.length > 1) {
@@ -1355,6 +1425,19 @@ export default function App() {
       <LivingBackground mousePosition={mousePosition} reducedMotion={reducedMotion} />
       <div className="scanlines" />
       <AudioController />
+      <ContinuityReturnDialog
+        open={landingConfirmOpen}
+        onCancel={() => setLandingConfirmOpen(false)}
+        onConfirm={confirmReturnToLanding}
+      />
+      {continuityBooting && (
+        <div className="fixed inset-0 z-[95] bg-black grid place-items-center px-6">
+          <div className="text-center">
+            <div className="text-[#b8860b] font-header text-[10px] sm:text-xs tracking-widest mb-3">CONTINUITY WARD</div>
+            <div className="text-[#e5c158] font-header text-xs sm:text-sm">RESTORING LAST GRIMOIRE…</div>
+          </div>
+        </div>
+      )}
 
       <AnimatePresence>
         {state.isOffline && (
@@ -1367,10 +1450,15 @@ export default function App() {
              <AlertTriangle size={16} className="inline mr-2 -mt-1"/> {state.errorMessage}
           </motion.div>
         )}
+        {continuityNotice && (
+          <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -20, opacity: 0 }} className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 bg-[#090704] border border-[#b8860b]/70 text-[#d8c89f] text-[10px] sm:text-xs font-header p-3 z-[60] max-w-xl w-[92%] text-center cursor-pointer shadow-[0_0_18px_rgba(184,134,11,0.22)]" onClick={() => setContinuityNotice('')}>
+            {continuityNotice}
+          </motion.div>
+        )}
       </AnimatePresence>
 
       <nav className="fixed top-0 inset-x-0 h-[calc(4rem+env(safe-area-inset-top))] z-50 flex items-center justify-between pt-[env(safe-area-inset-top)] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] bg-black/90 border-b-2 border-red-600 backdrop-blur-md shadow-[0_0_20px_rgba(255,0,0,0.4)]">
-        <div className="flex items-center gap-4 cursor-pointer" onClick={() => dispatch({ type: 'RETURN_TO_LANDING' })}>
+        <div className="flex items-center gap-4 cursor-pointer" onClick={handleReturnToLanding}>
           <div className="w-8 h-8 bg-red-600 flex items-center justify-center text-black font-header font-bold text-xs shadow-[0_0_10px_#ff0000]">Θ</div>
           <span className="hidden sm:block text-xs font-header neon-text"><GlitchText text="GRIMOIRE OS" isEgregore={isEgregoreActive} /></span>
         </div>
