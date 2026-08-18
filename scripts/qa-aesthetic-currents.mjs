@@ -18,6 +18,10 @@ else fail('threeReversibleCurrents');
 if (ENCHANTMENT_LEVELS.map(entry => entry.id).join('|') === 'veiled|balanced|vivid|exalted') pass('independentEnchantmentScale');
 else fail('independentEnchantmentScale');
 
+const preferred = resolveAestheticPreferences();
+if (preferred.current === 'ritual-hybrid' && preferred.enchantment === 'exalted') pass('preferredFoldDefault');
+else fail('preferredFoldDefault');
+
 const baseline = resolveAestheticPreferences({ search: '?look=arcane&fx=exalted' });
 if (baseline.current === 'arcane-os' && baseline.enchantment === 'exalted') pass('arcaneBaselineDirectAccess');
 else fail('arcaneBaselineDirectAccess');
