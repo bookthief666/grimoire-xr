@@ -145,7 +145,7 @@ export const buildArchiveRestoreState = ({ envelope, styles = [], traditions = [
   const selectedStyle = styles.find(item => item.id === archived.selectedStyleId) || styles[0] || null;
   const selectedTradition = traditions.find(item => item.id === archived.selectedTraditionId) || traditions[0] || null;
   return {
-    phase: 'SCRIPTORIUM',
+    phase: archived.reading ? 'ORACLE' : 'SCRIPTORIUM',
     author: archived.author || '',
     selectedStyle,
     selectedTradition,
