@@ -55,25 +55,33 @@ const exegesisReplacement = `                      <div className="p-4 border bo
                         <p className="break-words">{state.focusedCard.exegesis}</p>
                       </div>`;
 
-const metaNeedle = `                      <div className="grid grid-cols-2 gap-2 sm:gap-4 pt-6 sm:pt-8 border-t border-red-600/30">
-                        {Object.entries(state.focusedCard.meta || {}).map(([k, v]) => (`;
-const metaReplacement = `                      <div className="pt-6 sm:pt-8 border-t border-red-600/30">
+const metaBlockNeedle = `                      <div className="grid grid-cols-2 gap-2 sm:gap-4 pt-6 sm:pt-8 border-t border-red-600/30">
+                        {Object.entries(state.focusedCard.meta || {}).map(([k, v]) => (
+                          <div key={k} className="p-3 sm:p-4 bg-red-900/10 border border-red-600/30 min-w-0">
+                            <span className="text-[8px] uppercase text-red-600 block mb-1 font-header opacity-50">{k}</span>
+                            <span className="text-xs sm:text-base font-bold text-[#e5c158] break-words leading-tight block">
+                               {typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>`;
+const metaBlockReplacement = `                      <div className="pt-6 sm:pt-8 border-t border-red-600/30">
                         <div className="flex flex-wrap items-center gap-2 mb-3">
                           <span className="font-header text-[8px] sm:text-[9px] text-red-400">AI-GENERATED REFLECTION METADATA</span>
                           <span className="px-2 py-1 border border-red-600/50 font-header text-[7px] text-red-400">{state.focusedCard.interpretiveMetaAuthority || 'LEGACY_UNCLASSIFIED_REFLECTION'}</span>
                           <span className="px-2 py-1 border border-red-600/30 font-header text-[7px] text-red-500/70">NOT SOURCE FACT</span>
                         </div>
                         <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                        {Object.entries(state.focusedCard.meta || {}).map(([k, v]) => (`;
-const metaCloseNeedle = `                        ))}
-                      </div>
-                    </div>
-                  )}`;
-const metaCloseReplacement = `                        ))}
+                          {Object.entries(state.focusedCard.meta || {}).map(([k, v]) => (
+                            <div key={k} className="p-3 sm:p-4 bg-red-900/10 border border-red-600/30 min-w-0">
+                              <span className="text-[8px] uppercase text-red-600 block mb-1 font-header opacity-50">{k}</span>
+                              <span className="text-xs sm:text-base font-bold text-[#e5c158] break-words leading-tight block">
+                                 {typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                              </span>
+                            </div>
+                          ))}
                         </div>
-                      </div>
-                    </div>
-                  )}`;
+                      </div>`;
 
 for (const [label, needle] of [
   ['authority panel import', importNeedle],
@@ -81,8 +89,7 @@ for (const [label, needle] of [
   ['generation authority return', authorityNeedle],
   ['focused-card authority insertion', panelNeedle],
   ['focused-card exegesis block', exegesisNeedle],
-  ['focused-card meta block', metaNeedle],
-  ['focused-card meta close', metaCloseNeedle],
+  ['focused-card meta block', metaBlockNeedle],
 ]) {
   if (!app.includes(needle)) throw new Error(`0.38 activation refused: ${label} parent shape changed.`);
 }
@@ -93,8 +100,7 @@ app = app
   .replace(authorityNeedle, authorityReplacement)
   .replace(panelNeedle, panelReplacement)
   .replace(exegesisNeedle, exegesisReplacement)
-  .replace(metaNeedle, metaReplacement)
-  .replace(metaCloseNeedle, metaCloseReplacement);
+  .replace(metaBlockNeedle, metaBlockReplacement);
 
 fs.writeFileSync(appPath, app);
 console.log('Applied 0.38 card relic authority UI to src/App.jsx.');
