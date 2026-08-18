@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   GRIMOIRE_AI_PROTOCOL_VERSION,
   GRIMOIRE_PROMPT_SCHEMA,
+  GRIMOIRE_RITUAL_DECK_IDENTITY,
   GRIMOIRE_STRUCTURED_TEXT_TASKS,
   buildApiContract,
   serializeJobTiming,
@@ -9,6 +10,9 @@ import {
 
 describe('Grimoire AI API contract', () => {
   it('advertises the local ComfyUI and structured-text feature surface explicitly', () => {
+    expect(GRIMOIRE_AI_PROTOCOL_VERSION).toBe(2);
+    expect(GRIMOIRE_PROMPT_SCHEMA).toBe('tarot-structured-v2');
+    expect(GRIMOIRE_RITUAL_DECK_IDENTITY).toBe('canonical-client-manifest');
     expect(buildApiContract({ textProvider: 'ollama', imageProvider: 'comfyui' })).toEqual({
       protocolVersion: GRIMOIRE_AI_PROTOCOL_VERSION,
       asyncJobs: true,
@@ -17,6 +21,7 @@ describe('Grimoire AI API contract', () => {
       timingTelemetry: true,
       promptSchema: GRIMOIRE_PROMPT_SCHEMA,
       structuredTextTasks: [...GRIMOIRE_STRUCTURED_TEXT_TASKS],
+      ritualDeckIdentity: GRIMOIRE_RITUAL_DECK_IDENTITY,
       textProvider: 'ollama',
       imageProvider: 'comfyui',
       imageModes: ['preview', 'final', 'refine'],
