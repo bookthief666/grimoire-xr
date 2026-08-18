@@ -5,6 +5,7 @@ export const GRIMOIRE_ARCHIVE_SCHEMA_VERSION = '2.0.0';
 
 const cloneJson = value => value == null ? value : JSON.parse(JSON.stringify(value));
 const cleanText = value => String(value ?? '').trim();
+const hasOwn = (value, key) => Boolean(value && Object.prototype.hasOwnProperty.call(value, key));
 
 export const archiveContractStatus = contract => {
   if (!contract || typeof contract !== 'object') return 'LEGACY_NO_CONTRACT_PIN';
@@ -30,9 +31,12 @@ export const summarizeReadingProvenance = reading => {
     });
   }
   const provenance = record.provenance || {};
+  const semanticContract = hasOwn(reading, 'semanticContract')
+    ? reading.semanticContract
+    : UPSTREAM_TAROT_CONTRACT;
   return Object.freeze({
     hasCanonicalRecord: true,
-    contractStatus: archiveContractStatus(reading?.semanticContract || UPSTREAM_TAROT_CONTRACT),
+    contractStatus: archiveContractStatus(semanticContract),
     recordVersion: record.recordVersion || null,
     engineVersion: record.engineVersion || null,
     spreadId: record.input?.spreadId || null,
@@ -46,7 +50,7 @@ export const summarizeReadingProvenance = reading => {
   });
 };
 
-const normalizeReading = reading => {
+const normalizeReading = (reading, semanticContract = UPSTREAM_TAROT_CONTRACT) => {
   if (!reading || typeof reading !== 'object') return null;
   return {
     cards: cloneJson(Array.isArray(reading.cards) ? reading.cards : []),
@@ -54,7 +58,7 @@ const normalizeReading = reading => {
     answerAuthority: 'MODEL_GENERATED_SYNTHESIS',
     readingRecord: cloneJson(reading.readingRecord || null),
     selectionSource: reading.selectionSource || null,
-    semanticContract: cloneJson(reading.semanticContract || UPSTREAM_TAROT_CONTRACT),
+    semanticContract: cloneJson(hasOwn(reading, 'semanticContract') ? reading.semanticContract : semanticContract),
   };
 };
 
@@ -94,11 +98,12 @@ export const serializeGrimoireArchive = input => JSON.stringify(
 const normalizeLegacyArchive = parsed => {
   const legacyState = parsed?.state && typeof parsed.state === 'object' ? parsed.state : parsed;
   const deck = Array.isArray(parsed?.deck) ? parsed.deck : (Array.isArray(legacyState?.deck) ? legacyState.deck : []);
+  const legacyContract = parsed?.semanticContract || null;
   return {
     schemaId: GRIMOIRE_ARCHIVE_SCHEMA_ID,
     schemaVersion: 'legacy-migrated',
     exportedAt: parsed?.exportedAt || null,
-    semanticContract: parsed?.semanticContract || null,
+    semanticContract: legacyContract,
     grimoire: {
       author: cleanText(legacyState?.author),
       dossier: cleanText(legacyState?.dossier),
@@ -112,7 +117,7 @@ const normalizeLegacyArchive = parsed => {
       spiritChat: cloneJson(Array.isArray(legacyState?.spiritChat) ? legacyState.spiritChat : []),
       activeSpread: legacyState?.activeSpread || 'TRIAD',
       spreadSlots: cloneJson(Array.isArray(legacyState?.spreadSlots) ? legacyState.spreadSlots : [null, null, null]),
-      reading: normalizeReading(legacyState?.reading),
+      reading: normalizeReading(legacyState?.reading, legacyContract),
     },
   };
 };
@@ -124,6 +129,9 @@ export const parseGrimoireArchive = textOrObject => {
     ? parsed
     : normalizeLegacyArchive(parsed);
   if (!Array.isArray(envelope.grimoire?.deck)) throw new Error('Archive is missing a Tarot deck.');
+  if (envelope.grimoire.reading && !hasOwn(envelope.grimoire.reading, 'semanticContract')) {
+    envelope.grimoire.reading.semanticContract = cloneJson(envelope.semanticContract || null);
+  }
   return {
     envelope,
     contractStatus: archiveContractStatus(envelope.semanticContract),
