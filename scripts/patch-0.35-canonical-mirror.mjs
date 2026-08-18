@@ -37,6 +37,16 @@ const replacements = [
     before: "  CROSS: { spreadId: 'legacy.cross.v031', version: '0.31.0', semanticStatus: 'PROVISIONAL', positions: [] },",
     after: `  CROSS: {\n    spreadId: 'legacy.cross.v031',\n    version: '0.31.0',\n    cardCount: 10,\n    semanticStatus: 'PROVISIONAL',\n    positions: Array.from({ length: 10 }, (_, index) => ({\n      positionId: \`p\${index + 1}\`, ordinal: index, label: \`POSITION \${index + 1}\`, questionFunction: null,\n    })),\n    topology: { orderedAdjacency: [], visualEdges: [] },\n  },`,
   },
+  {
+    label: 'bound selection client ownership',
+    before: "    if (selected.every(Boolean)) return deepFreeze({ cards: selected, source: 'BOUND_TRIAD_CLOTH' });",
+    after: "    if (selected.every(Boolean)) return Object.freeze({ cards: Object.freeze([...selected]), source: 'BOUND_TRIAD_CLOTH' });",
+  },
+  {
+    label: 'fallback selection client ownership',
+    before: "  return deepFreeze({ cards: pool.slice(0, 3), source: 'RANDOM_TRIAD_FALLBACK' });",
+    after: "  return Object.freeze({ cards: Object.freeze(pool.slice(0, 3)), source: 'RANDOM_TRIAD_FALLBACK' });",
+  },
 ];
 
 let changed = false;
@@ -60,6 +70,8 @@ const postconditions = [
   'cardCount: 10,',
   "orderedAdjacency: [['thesis', 'antithesis'], ['antithesis', 'synthesis']]",
   'positionId: `p${index + 1}`',
+  "Object.freeze({ cards: Object.freeze([...selected]), source: 'BOUND_TRIAD_CLOTH' })",
+  "Object.freeze({ cards: Object.freeze(pool.slice(0, 3)), source: 'RANDOM_TRIAD_FALLBACK' })",
 ];
 for (const marker of postconditions) {
   if (!source.includes(marker)) throw new Error(`0.35 mirror normalization postcondition failed: ${marker}`);
@@ -67,7 +79,7 @@ for (const marker of postconditions) {
 
 if (changed) {
   fs.writeFileSync(bridgePath, source);
-  console.log('Normalized canonical Tarot mirror identity/spread fields to the pinned 0.35 contract.');
+  console.log('Normalized canonical Tarot mirror identity/spread/ownership fields to the pinned 0.35 contract.');
 } else {
   console.log('0.35 canonical Tarot mirror is already normalized.');
 }
