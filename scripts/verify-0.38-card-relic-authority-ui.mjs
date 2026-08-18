@@ -18,15 +18,15 @@ assert(app.includes("import CardRelicAuthorityPanel from './tarotBridge/CardReli
 assert(app.includes('<CardRelicAuthorityPanel card={state.focusedCard} tradition={state.selectedTradition} />'), 'focused card must render the authority panel');
 assert(app.includes("exegesisAuthority: card.exegesisAuthority"), 'card generation must persist exegesis authority');
 assert(app.includes("visualAuthority: card.visualAuthority"), 'card generation must persist visual authority');
-assert(app.includes('AI-GENERATED EXEGESIS'), 'focused-card exegesis must be visibly labeled generated');
-assert(app.includes('AI-GENERATED REFLECTION METADATA'), 'focused-card metadata must be visibly labeled generated');
-assert(app.includes('NOT SOURCE FACT'), 'generated layers must visibly deny source-fact authority');
+assert(app.includes('INTERPRETIVE EXEGESIS'), 'focused-card exegesis must be visibly classified');
+assert(app.includes('REFLECTION METADATA'), 'focused-card metadata must be visibly classified');
+assert(app.includes('NOT SOURCE FACT'), 'interpretive layers must visibly deny source-fact authority');
 assert(!app.includes("canonicalCardId: canonicalContext?.cardId || card.canonicalCardId || null,\n      interpretiveMetaAuthority: 'MODEL_GENERATED_REFLECTION',"), 'old unconditional generated-meta-only authority shape must be gone');
 
 assert(panel.includes('RELIC AUTHORITY'), 'authority panel heading must exist');
 assert(panel.includes('SOURCE-QUALIFIED EXPRESSION'), 'authority panel must expose canonical expression');
 assert(panel.includes('CANONICAL CORRESPONDENCES'), 'authority panel must expose canonical correspondences');
-assert(panel.includes('GENERATED INTERPRETATION LAYERS'), 'authority panel must expose generated layers separately');
+assert(panel.includes('INTERPRETATION / PRESENTATION LAYERS'), 'authority panel must expose interpretive layers separately');
 assert(panel.includes('IMAGE GENERATION PROVENANCE'), 'authority panel must expose image provenance');
 assert(authority.includes("sourceQualification: canonical.sourceQualification"), 'view model must preserve source qualification');
 assert(authority.includes('canonicalSourceIds'), 'view model must preserve canonical source IDs');
