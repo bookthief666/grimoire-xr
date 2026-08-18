@@ -1,5 +1,6 @@
 import React from 'react';
 import { summarizeReadingProvenance } from './archiveEnvelope.js';
+import { UPSTREAM_TAROT_CONTRACT } from './canonicalTarotBridge.js';
 
 const badgeClass = status => status === 'CURRENT_CONTRACT_MATCH'
   ? 'border-emerald-700/70 text-emerald-400'
@@ -8,6 +9,7 @@ const badgeClass = status => status === 'CURRENT_CONTRACT_MATCH'
 export default function ReadingProvenancePanel({ reading }) {
   const summary = summarizeReadingProvenance(reading);
   const record = reading?.readingRecord || null;
+  const contract = reading?.semanticContract || UPSTREAM_TAROT_CONTRACT;
   if (!record) {
     return (
       <div className="border border-amber-800/60 bg-black/70 p-4 text-amber-300 font-body">
@@ -79,7 +81,7 @@ export default function ReadingProvenancePanel({ reading }) {
       </div>
 
       <div className="border-t border-[#b8860b]/30 pt-3 font-body text-[11px] text-white/35 break-all">
-        {reading?.semanticContract?.contractId}@{reading?.semanticContract?.contractVersion} · {reading?.semanticContract?.commit}
+        {contract.contractId}@{contract.contractVersion} · {contract.commit}
       </div>
     </div>
   );
