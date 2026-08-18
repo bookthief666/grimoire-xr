@@ -5,6 +5,7 @@ export const APP_ROUTE_IDS = Object.freeze({
   cardAuthorityQa: 'card-authority-qa',
   relicWorkspaceQa: 'relic-workspace-qa',
   livingRelicQa: 'living-relic-qa',
+  livingTriadCurrentQa: 'living-triad-current-qa',
 });
 
 export const resolveAppRoute = ({ pathname = '/', search = '' } = {}) => {
@@ -13,6 +14,9 @@ export const resolveAppRoute = ({ pathname = '/', search = '' } = {}) => {
 
   // Explicit QA paths/modes win over other route hints so copied QA URLs are
   // deterministic even if stale query parameters are present.
+  if (normalizedPath.startsWith('/qa/living-current') || params.get('mode') === 'living-triad-current-qa') {
+    return APP_ROUTE_IDS.livingTriadCurrentQa;
+  }
   if (normalizedPath.startsWith('/qa/living-relic') || params.get('mode') === 'living-relic-qa') {
     return APP_ROUTE_IDS.livingRelicQa;
   }
