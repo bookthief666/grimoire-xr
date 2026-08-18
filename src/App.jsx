@@ -1245,9 +1245,15 @@ export default function App() {
     const picker = document.createElement('input');
     picker.type = 'file';
     picker.accept = 'application/json,.json';
+    picker.style.display = 'none';
+    const cleanup = () => picker.remove();
+    picker.addEventListener('cancel', cleanup, { once: true });
     picker.onchange = async () => {
       const file = picker.files?.[0];
-      if (!file) return;
+      if (!file) {
+        cleanup();
+        return;
+      }
       try {
         const parsed = parseGrimoireArchive(await file.text());
         const restored = buildArchiveRestoreState({
@@ -1266,8 +1272,11 @@ export default function App() {
         }
       } catch (error) {
         dispatch({ type: 'SET_ERROR_MESSAGE', payload: `Archive Restore Failed: ${error.message || 'Invalid JSON archive.'}` });
+      } finally {
+        cleanup();
       }
     };
+    document.body.appendChild(picker);
     picker.click();
   };
 
@@ -1375,6 +1384,11 @@ export default function App() {
               </button>
             </>
           )}
+          {currentView === 'oracle' && state.reading && (
+            <button onClick={() => dispatch({ type: 'OPEN_ARCHIVE_PROMPT' })} className="flex items-center gap-2 px-3 py-2 bg-black border border-red-600 text-xs font-header hover:bg-red-600 hover:text-black transition-all shadow-[0_0_10px_#ff000033]">
+              <Download size={14} /> <span className="hidden md:inline">ARCHIVE</span>
+            </button>
+          )}
           <button onClick={() => setIsMenuOpen(true)} className="flex items-center gap-2 px-3 py-2 bg-black border border-red-600 text-xs font-header hover:bg-red-600 hover:text-black transition-all shadow-[0_0_10px_#ff000033]"><Menu size={14} /></button>
         </div>
       </nav>
@@ -1435,6 +1449,9 @@ export default function App() {
               </div>
               <input value={state.author} onChange={(e) => dispatch({ type: 'SET_AUTHOR', payload: e.target.value })} onKeyDown={(e) => e.key === 'Enter' && !e.nativeEvent.isComposing && handleRitualInitiation()} enterKeyHint="go" autoCapitalize="words" placeholder="INSERT SUBJECT..." className="native-text-input w-full bg-black/40 border border-red-600/50 p-4 text-center font-header text-red-600 focus:outline-none focus:border-red-600 transition-all mb-6" />
               <button onClick={handleRitualInitiation} className="w-full py-4 bg-red-600 text-black font-header text-sm hover:bg-white transition-colors shadow-[0_0_15px_#ff0000]">INITIATE RITUAL</button>
+              <button onClick={handleRestoreJsonArchive} className="w-full mt-3 py-3 border border-red-600/70 text-red-500 font-header text-[10px] hover:bg-red-600 hover:text-black transition-colors">
+                RESTORE ARCHIVE FROM JSON
+              </button>
               {!Capacitor.isNativePlatform() && (
                 <a href="/vr" className="block w-full mt-3 py-3 border border-[#b8860b] text-[#d6b45b] font-header text-[10px] hover:bg-[#b8860b] hover:text-black transition-colors shadow-[0_0_12px_#b8860b44]">
                   ENTER VR PROTOTYPE
