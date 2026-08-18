@@ -76,6 +76,18 @@ describe('0.36 ReadingRecord archive envelope', () => {
     expect(parseGrimoireArchive(envelope).contractStatus).toBe('ARCHIVED_CONTRACT_MISMATCH');
   });
 
+  it('propagates an archive-level historical contract into an unpinned restored reading', () => {
+    const envelope = buildGrimoireArchiveEnvelope({ state: makeState() });
+    const foreignContract = { ...envelope.semanticContract, commit: 'foreign-head' };
+    envelope.semanticContract = foreignContract;
+    delete envelope.grimoire.reading.semanticContract;
+
+    const parsed = parseGrimoireArchive(envelope);
+    expect(parsed.envelope.grimoire.reading.semanticContract).toEqual(foreignContract);
+    expect(summarizeReadingProvenance(parsed.envelope.grimoire.reading).contractStatus)
+      .toBe('ARCHIVED_CONTRACT_MISMATCH');
+  });
+
   it('migrates a legacy state/deck-shaped archive without fabricating a contract pin', () => {
     const legacy = {
       state: {
@@ -89,6 +101,15 @@ describe('0.36 ReadingRecord archive envelope', () => {
     expect(parsed.migratedLegacy).toBe(true);
     expect(parsed.contractStatus).toBe('LEGACY_NO_CONTRACT_PIN');
     expect(parsed.envelope.grimoire.deck).toHaveLength(1);
+  });
+
+  it('keeps a legacy ReadingRecord unpinned instead of upgrading it to the current contract', () => {
+    const state = makeState();
+    const parsed = parseGrimoireArchive({ state });
+    expect(parsed.migratedLegacy).toBe(true);
+    expect(parsed.envelope.grimoire.reading.semanticContract).toBeNull();
+    expect(summarizeReadingProvenance(parsed.envelope.grimoire.reading).contractStatus)
+      .toBe('LEGACY_NO_CONTRACT_PIN');
   });
 
   it('rehydrates catalog object identity while preserving archived ReadingRecord', () => {
