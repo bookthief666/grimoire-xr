@@ -6,7 +6,8 @@ const PROJECT_COMPATIBILITY_LABEL_AUTHORITY = 'PROJECT_COMPATIBILITY_LABEL';
 const SOURCE_QUALIFIED_EXPRESSION_AUTHORITY = 'SOURCE_QUALIFIED_CANONICAL_EXPRESSION';
 
 const normalizeTraditionId = tradition => {
-  const direct = String(tradition?.id || tradition || '').trim().toLowerCase();
+  const directValue = typeof tradition === 'string' ? tradition : tradition?.id;
+  const direct = String(directValue || '').trim().toLowerCase();
   if (direct) return direct;
   const name = String(tradition?.name || '').trim().toLowerCase();
   if (name.includes('thoth')) return 'thoth';
