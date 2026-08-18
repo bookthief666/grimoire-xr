@@ -6,6 +6,7 @@ import { normalizeImageJobRequest } from './image-request.mjs';
 import { createMissingJobError, serializeApiError } from './job-errors.mjs';
 import { createOllamaClient, createOllamaConfig } from './ollama.mjs';
 import { createResourceScheduler } from './resource-scheduler.mjs';
+import { normalizeTextRequest, validateProviderTextResult } from './text-request.mjs';
 
 try {
   process.loadEnvFile?.('.env.local');
@@ -128,14 +129,7 @@ const callGoogle = async (url, body) => {
   return data;
 };
 
-const validateTextRequest = ({ prompt, isJson = true } = {}) => {
-  if (typeof prompt !== 'string' || !prompt.trim() || prompt.length > 50_000) {
-    throw Object.assign(new Error('A prompt between 1 and 50,000 characters is required.'), { status: 400 });
-  }
-  return { prompt: prompt.trim(), isJson: Boolean(isJson) };
-};
-
-const generateGeminiText = async ({ prompt, isJson }) => {
+const generateGeminiText = async ({ prompt, isJson, task = null }) => {
   const generationConfig = isJson ? { responseMimeType: 'application/json' } : undefined;
   const data = await callGoogle(
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(TEXT_MODEL)}:generateContent`,
@@ -151,8 +145,10 @@ const generateGeminiText = async ({ prompt, isJson }) => {
   if (!text) throw Object.assign(new Error('The model returned no text.'), { status: 502 });
   if (!isJson) return text;
   try {
-    return JSON.parse(text);
-  } catch {
+    const parsed = JSON.parse(text);
+    return validateProviderTextResult({ task, isJson }, parsed);
+  } catch (error) {
+    if (error?.code === 'TEXT_SCHEMA_INVALID') throw error;
     throw Object.assign(new Error('The model returned malformed JSON.'), { status: 502 });
   }
 };
@@ -164,7 +160,7 @@ const generateTextWithProvider = async input => {
 };
 
 const generateText = async body => {
-  const input = validateTextRequest(body);
+  const input = normalizeTextRequest(body);
   if (TEXT_PROVIDER !== 'ollama') return generateTextWithProvider(input);
   return resourceScheduler.run('text', () => generateTextWithProvider(input));
 };

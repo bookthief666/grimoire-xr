@@ -30,19 +30,23 @@ describe('Ollama structured outputs', () => {
     })).resolves.toEqual({ answer: 'The path is open.' });
   });
 
-  it('repairs one semantically invalid known task instead of returning bad data', async () => {
-    const goodCards = Array.from({ length: 78 }, (_, index) => `Card ${index + 1}`);
-    const badCards = [...goodCards];
-    badCards[77] = badCards[0];
+  it('repairs a ritual result that attempts to author deck identity', async () => {
     const responses = [
-      { dossier: 'Dossier', cards: badCards, questions: ['One?', 'Two?', 'Three?'] },
-      { dossier: 'Dossier', cards: goodCards, questions: ['One?', 'Two?', 'Three?'] },
+      {
+        dossier: 'Dossier',
+        cards: ['Invented card identity'],
+        questions: ['One?', 'Two?', 'Three?'],
+      },
+      {
+        dossier: 'Dossier',
+        questions: ['One?', 'Two?', 'Three?'],
+      },
     ];
     const fetchImpl = vi.fn(async (_url, options) => {
       const body = JSON.parse(options.body);
       if (fetchImpl.mock.calls.length === 2) {
         expect(body.prompt).toContain('previous structured result failed validation');
-        expect(body.prompt).toContain('unique');
+        expect(body.prompt).toContain('must not author Tarot card identities');
       }
       return new Response(JSON.stringify({ response: JSON.stringify(responses.shift()) }), {
         status: 200,
@@ -51,10 +55,12 @@ describe('Ollama structured outputs', () => {
     });
 
     const client = createOllamaClient({ config, fetchImpl });
-    const prompt = 'List 78 Card Names. Include Oracle Suggestions. Return JSON.';
-    const result = await client.generate({ prompt, isJson: true });
-    expect(result.cards).toHaveLength(78);
-    expect(new Set(result.cards).size).toBe(78);
+    const result = await client.generate({
+      prompt: 'Write a 200-word Thesis. Generate 3 profound questions.',
+      isJson: true,
+      task: TEXT_TASKS.ritual,
+    });
+    expect(result).toEqual({ dossier: 'Dossier', questions: ['One?', 'Two?', 'Three?'] });
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 });

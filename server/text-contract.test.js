@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   TEXT_TASKS,
   getTextSchema,
+  inferTextTask,
   normalizeTextTask,
   validateStructuredTextResult,
 } from './text-contract.mjs';
 
 const ritualResult = () => ({
   dossier: 'A complete dossier.',
-  cards: Array.from({ length: 78 }, (_, index) => `Card ${index + 1}`),
   questions: ['Question one?', 'Question two?', 'Question three?'],
 });
 
@@ -16,22 +16,31 @@ describe('text task contracts', () => {
   it('normalizes only supported structured tasks', () => {
     expect(normalizeTextTask(' CARD ')).toBe(TEXT_TASKS.card);
     expect(normalizeTextTask('unknown')).toBeNull();
-    expect(getTextSchema(TEXT_TASKS.ritual)?.properties?.cards?.minItems).toBe(78);
+    expect(getTextSchema(TEXT_TASKS.ritual)?.properties?.cards).toBeUndefined();
+    expect(getTextSchema(TEXT_TASKS.ritual)?.required).toEqual(['dossier', 'questions']);
     expect(getTextSchema(TEXT_TASKS.oracle)?.additionalProperties).toBe(false);
   });
 
-  it('accepts a complete ritual result', () => {
+  it('infers the new ritual prompt without depending on the removed card-name request', () => {
+    expect(inferTextTask('Write a 200-word Thesis. Generate 3 profound questions.')).toBe(TEXT_TASKS.ritual);
+  });
+
+  it('accepts a complete ritual result with dossier and questions only', () => {
     expect(validateStructuredTextResult(TEXT_TASKS.ritual, ritualResult())).toEqual(ritualResult());
   });
 
-  it('rejects ritual outputs with duplicate or missing cards', () => {
-    const duplicate = ritualResult();
-    duplicate.cards[77] = duplicate.cards[0];
-    expect(() => validateStructuredTextResult(TEXT_TASKS.ritual, duplicate)).toThrow(/unique/i);
+  it('rejects ritual output that attempts to author Tarot card identities', () => {
+    expect(() => validateStructuredTextResult(TEXT_TASKS.ritual, {
+      ...ritualResult(),
+      cards: Array.from({ length: 78 }, (_, index) => `Card ${index + 1}`),
+    })).toThrow(/must not author Tarot card identities/i);
+  });
 
-    const short = ritualResult();
-    short.cards.pop();
-    expect(() => validateStructuredTextResult(TEXT_TASKS.ritual, short)).toThrow(/exactly 78/i);
+  it('rejects incomplete ritual questions', () => {
+    expect(() => validateStructuredTextResult(TEXT_TASKS.ritual, {
+      dossier: 'A complete dossier.',
+      questions: ['Only one?'],
+    })).toThrow(/exactly 3/i);
   });
 
   it('validates card and oracle semantics', () => {

@@ -45,7 +45,7 @@ const runTask = async (task, prompt) => {
   const startedAt = Date.now();
   const started = await requestJson('/api/text/start', {
     method: 'POST',
-    body: JSON.stringify({ prompt, isJson: true }),
+    body: JSON.stringify({ prompt, isJson: true, task }),
   });
   const result = await pollTextJob(started.jobId);
   const output = validateStructuredTextResult(task, result.output);
@@ -58,7 +58,7 @@ const runTask = async (task, prompt) => {
 };
 
 const prompts = {
-  [TEXT_TASKS.ritual]: 'Role: Supreme Adept of the Thoth Tarot. Task: Synthesize "Giordano Bruno" into a Tarot system. Source: Secrets of the Thoth Tarot. Style: illuminated hermetic engraving. Instructions: 1. Write a 200-word Thesis (Dossier) analyzing the subject\'s weight. 2. List 78 Card Names fusing the subject with traditional archetypes. 3. Generate 3 profound questions to ask this deck (Oracle Suggestions). Return JSON: {"dossier":"string","cards":["Name 1"],"questions":["Question 1","Question 2","Question 3"]}',
+  [TEXT_TASKS.ritual]: 'Role: Supreme Adept of the Thoth Tarot. Task: Synthesize "Giordano Bruno" into a consultation dossier for a fixed canonical 78-card Tarot deck. The card identities and labels are constructed locally; do not return card names. Style: illuminated hermetic engraving. Instructions: 1. Write a 200-word Thesis (Dossier) analyzing the subject\'s weight. 2. Generate 3 profound questions to ask this deck (Oracle Suggestions). Return JSON: {"dossier":"string","questions":["Question 1","Question 2","Question 3"]}',
   [TEXT_TASKS.card]: 'Role: Grand Master of Thoth Tarot. Task: Card interpretation for "The Infinite Memory" linked to "Giordano Bruno". Instructions: - Exegesis: 200-word analysis. - Meta: Hebrew Letter, Astrological Ruler, Alchemical Stage, Grimoire Spirit. - Visual: Description for art generation (Hermetic engraving). Return JSON: {"exegesis":"string","meta":{"hebrew":"string","planet":"string","alchemical":"string","daimon":"string","gematria":73},"visual":"string"}',
   [TEXT_TASKS.oracle]: 'Role: Oracle of Giordano Bruno. Tradition: Thoth Tarot. Query: "How should memory become practice?" Cards: The Infinite Memory, The Burning Intellect, The World Soul. Task: Synthesize a 300-word divinatory answer using Elemental Dignities. Return JSON: {"answer":"string"}',
 };
