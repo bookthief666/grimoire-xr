@@ -90,6 +90,14 @@ newGenerate = newGenerate.replace(
   '    return {\n      ...card,\n      ...data,',
   `    return {\n      ...card,\n      ...data,\n      canonicalCardId: canonicalContext?.cardId || card.canonicalCardId || null,\n      interpretiveMetaAuthority: 'MODEL_GENERATED_REFLECTION',`,
 );
+for (const marker of [
+  "const canonicalContext = getCanonicalCardPromptContext({",
+  'CANONICAL SOURCE CONTEXT: ${canonicalFacts}',
+  '      canonicalContext,',
+  "interpretiveMetaAuthority: 'MODEL_GENERATED_REFLECTION'",
+]) {
+  if (!newGenerate.includes(marker)) throw new Error(`0.35 migration refused: generateCardData replacement did not apply: ${marker}`);
+}
 source = `${source.slice(0, generateStart)}${newGenerate}${source.slice(generateEnd)}`;
 
 const oracleStart = source.indexOf('  const handleOracleConsultation = useCallback(async () => {');
@@ -108,7 +116,19 @@ source = `${source.slice(0, oracleStart)}${newOracle}${source.slice(oracleEnd)}`
 
 if (source === original) throw new Error('0.35 migration produced no change.');
 if (source.includes(OLD_ORACLE_SENTINEL)) throw new Error('0.35 migration failed to remove the legacy random Oracle draw.');
-for (const marker of [IMPORT_SENTINEL, NEW_ORACLE_SENTINEL, 'canonicalCardIdFromLegacyIndex(i)', 'canonicalContext,', 'readingRecord: prepared.record']) {
+for (const marker of [
+  IMPORT_SENTINEL,
+  NEW_ORACLE_SENTINEL,
+  'canonicalCardIdFromLegacyIndex(i)',
+  'CANONICAL SOURCE CONTEXT: ${canonicalFacts}',
+  'canonicalContext,',
+  "interpretiveMetaAuthority: 'MODEL_GENERATED_REFLECTION'",
+  'activeSpread: state.activeSpread',
+  'spreadSlots: state.spreadSlots',
+  'buildCanonicalOracleSynthesisPrompt({',
+  'readingRecord: prepared.record',
+  'selectionSource: prepared.selectionSource',
+]) {
   if (!source.includes(marker)) throw new Error(`0.35 migration postcondition failed: ${marker}`);
 }
 
