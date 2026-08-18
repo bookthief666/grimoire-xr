@@ -1,0 +1,337 @@
+.grimoire-shell {
+  --grimoire-void: #000000;
+  --grimoire-ink: #050203;
+  --grimoire-panel: rgba(3, 1, 2, 0.94);
+  --grimoire-blood: #ef233c;
+  --grimoire-blood-deep: #6f0715;
+  --grimoire-brass: #b8860b;
+  --grimoire-gold: #e5c158;
+  --grimoire-bone: #f0e6cf;
+  --grimoire-muted: #9c8e78;
+  --grimoire-current: var(--grimoire-blood);
+  --grimoire-current-soft: rgba(239, 35, 60, 0.18);
+  --grimoire-border: var(--grimoire-blood);
+  --grimoire-enchantment-opacity: 0.62;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(120, 8, 26, 0.09), transparent 35%),
+    #000;
+}
+
+.grimoire-shell[data-enchantment="veiled"] { --grimoire-enchantment-opacity: 0.34; }
+.grimoire-shell[data-enchantment="balanced"] { --grimoire-enchantment-opacity: 0.62; }
+.grimoire-shell[data-enchantment="vivid"] { --grimoire-enchantment-opacity: 0.82; }
+.grimoire-shell[data-enchantment="exalted"] { --grimoire-enchantment-opacity: 1; }
+
+/* ARCANE OS is intentionally closest to the accepted pre-0.44 baseline. */
+.grimoire-shell[data-aesthetic-current="arcane-os"] {
+  --grimoire-current: #ef233c;
+  --grimoire-current-soft: rgba(255, 0, 0, 0.2);
+  --grimoire-border: #dc2626;
+  --grimoire-panel: rgba(0, 0, 0, 0.92);
+  --grimoire-bone: #ef233c;
+}
+
+.grimoire-shell[data-aesthetic-current="ritual-hybrid"] {
+  --grimoire-void: #030102;
+  --grimoire-ink: #080405;
+  --grimoire-panel: rgba(7, 3, 4, 0.92);
+  --grimoire-blood: #d3223c;
+  --grimoire-blood-deep: #530611;
+  --grimoire-brass: #ad812e;
+  --grimoire-gold: #e0c36e;
+  --grimoire-bone: #f1e7d1;
+  --grimoire-muted: #a7957d;
+  --grimoire-current: #d3223c;
+  --grimoire-current-soft: rgba(211, 34, 60, 0.15);
+  --grimoire-border: #b38738;
+  background:
+    radial-gradient(ellipse at 50% 8%, rgba(183, 135, 56, 0.12), transparent 28%),
+    radial-gradient(circle at 18% 50%, rgba(122, 10, 33, 0.1), transparent 32%),
+    radial-gradient(circle at 84% 64%, rgba(41, 83, 82, 0.07), transparent 30%),
+    #030102;
+}
+
+.grimoire-shell[data-aesthetic-current="living-book"] {
+  --grimoire-void: #050403;
+  --grimoire-ink: #090704;
+  --grimoire-panel: rgba(12, 9, 5, 0.94);
+  --grimoire-blood: #a52232;
+  --grimoire-blood-deep: #471018;
+  --grimoire-brass: #9f7b38;
+  --grimoire-gold: #d5b865;
+  --grimoire-bone: #efe4cc;
+  --grimoire-muted: #a7987c;
+  --grimoire-current: #b08b43;
+  --grimoire-current-soft: rgba(176, 139, 67, 0.13);
+  --grimoire-border: #8f6d31;
+  background:
+    radial-gradient(ellipse at 50% -6%, rgba(219, 185, 105, 0.12), transparent 34%),
+    linear-gradient(90deg, rgba(111, 79, 26, 0.018) 1px, transparent 1px),
+    linear-gradient(rgba(111, 79, 26, 0.014) 1px, transparent 1px),
+    #050403;
+  background-size: auto, 48px 48px, 48px 48px, auto;
+}
+
+.grimoire-topbar {
+  position: fixed;
+  isolation: isolate;
+}
+
+.grimoire-topbar::before,
+.grimoire-topbar::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+
+.grimoire-topbar::before {
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at 16% 50%, var(--grimoire-current-soft), transparent 26%),
+    linear-gradient(90deg, rgba(0,0,0,0.97), var(--grimoire-panel), rgba(0,0,0,0.97));
+}
+
+.grimoire-topbar::after {
+  left: 5%;
+  right: 5%;
+  bottom: -5px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--grimoire-brass), var(--grimoire-current), var(--grimoire-brass), transparent);
+  box-shadow: 0 0 16px var(--grimoire-current-soft);
+}
+
+.grimoire-shell[data-aesthetic-current="arcane-os"] .grimoire-topbar {
+  border-bottom-color: #dc2626 !important;
+  box-shadow: 0 0 20px rgba(255,0,0,0.4) !important;
+}
+
+.grimoire-shell[data-aesthetic-current="ritual-hybrid"] .grimoire-topbar,
+.grimoire-shell[data-aesthetic-current="living-book"] .grimoire-topbar {
+  border-bottom-color: color-mix(in srgb, var(--grimoire-border) 68%, transparent) !important;
+  box-shadow: 0 12px 42px rgba(0,0,0,0.68), 0 0 24px var(--grimoire-current-soft) !important;
+}
+
+.grimoire-brand-sigil {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--grimoire-border);
+  background: var(--grimoire-current) !important;
+  box-shadow: 0 0 16px var(--grimoire-current-soft), inset 0 0 0 1px rgba(255,255,255,0.08) !important;
+}
+
+.grimoire-brand-sigil::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 1px solid currentColor;
+  opacity: 0.28;
+  transform: rotate(45deg);
+}
+
+.grimoire-shell[data-aesthetic-current="ritual-hybrid"] .grimoire-brand-sigil,
+.grimoire-shell[data-aesthetic-current="living-book"] .grimoire-brand-sigil {
+  color: var(--grimoire-gold) !important;
+  background: #080405 !important;
+}
+
+.grimoire-shell-button {
+  border-color: var(--grimoire-border) !important;
+  color: var(--grimoire-current) !important;
+  background: rgba(3,1,2,0.84) !important;
+  box-shadow: 0 0 12px var(--grimoire-current-soft) !important;
+}
+
+.grimoire-shell[data-aesthetic-current="ritual-hybrid"] .grimoire-shell-button,
+.grimoire-shell[data-aesthetic-current="living-book"] .grimoire-shell-button {
+  color: var(--grimoire-gold) !important;
+  border-color: color-mix(in srgb, var(--grimoire-brass) 72%, transparent) !important;
+}
+
+.grimoire-shell-button:hover {
+  color: #050203 !important;
+  background: var(--grimoire-gold) !important;
+  box-shadow: 0 0 22px color-mix(in srgb, var(--grimoire-gold) 38%, transparent) !important;
+}
+
+.grimoire-codex-drawer {
+  border-left-color: var(--grimoire-border) !important;
+  background:
+    radial-gradient(circle at 100% 12%, var(--grimoire-current-soft), transparent 30%),
+    linear-gradient(180deg, rgba(12,7,5,0.99), rgba(2,1,2,0.99)) !important;
+  box-shadow: -18px 0 54px rgba(0,0,0,0.72), 0 0 34px var(--grimoire-current-soft) !important;
+}
+
+.grimoire-shell[data-aesthetic-current="living-book"] .grimoire-codex-drawer {
+  background:
+    linear-gradient(90deg, rgba(167,128,54,0.035) 1px, transparent 1px),
+    linear-gradient(rgba(167,128,54,0.025) 1px, transparent 1px),
+    radial-gradient(circle at 80% 8%, rgba(214,184,101,0.12), transparent 28%),
+    #090704 !important;
+  background-size: 34px 34px, 34px 34px, auto, auto !important;
+}
+
+.grimoire-codex-title {
+  color: var(--grimoire-gold) !important;
+  text-shadow: 0 0 12px var(--grimoire-current-soft) !important;
+}
+
+/* Scanline character remains strongest in ARCANE OS and never disappears entirely in the hybrid. */
+.grimoire-shell[data-aesthetic-current="arcane-os"] .scanlines { opacity: 1; }
+.grimoire-shell[data-aesthetic-current="ritual-hybrid"] .scanlines { opacity: 0.34; mix-blend-mode: screen; }
+.grimoire-shell[data-aesthetic-current="living-book"] .scanlines { opacity: 0.08; mix-blend-mode: soft-light; }
+
+.grimoire-shell[data-aesthetic-current="ritual-hybrid"] .neon-text {
+  color: var(--grimoire-gold);
+  text-shadow: 0 0 7px rgba(211,34,60,0.42), 0 0 18px rgba(224,195,110,0.12);
+}
+
+.grimoire-shell[data-aesthetic-current="living-book"] .neon-text {
+  color: var(--grimoire-gold);
+  text-shadow: 0 0 10px rgba(213,184,101,0.16);
+}
+
+/* Decorative magical field. It is presentation-only and pointer inert. */
+.aesthetic-field {
+  position: fixed;
+  inset: 0;
+  z-index: -4;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: var(--grimoire-enchantment-opacity);
+}
+
+.aesthetic-field__halo {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  translate: -50% -50%;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--grimoire-brass) 42%, transparent);
+  box-shadow: inset 0 0 48px var(--grimoire-current-soft), 0 0 38px rgba(0,0,0,0.45);
+  animation: grimoire-orbit 42s linear infinite;
+}
+
+.aesthetic-field__halo--outer { width: min(76vw, 860px); aspect-ratio: 1; opacity: 0.34; }
+.aesthetic-field__halo--inner { width: min(48vw, 540px); aspect-ratio: 1; opacity: 0.28; animation-direction: reverse; animation-duration: 31s; }
+
+.aesthetic-field__seal {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  width: min(38vw, 420px);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border: 1px solid color-mix(in srgb, var(--grimoire-current) 34%, transparent);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: color-mix(in srgb, var(--grimoire-gold) 70%, transparent);
+  opacity: 0.24;
+  animation: grimoire-breathe 7s ease-in-out infinite;
+}
+
+.aesthetic-field__seal span { position: absolute; font: 1.05rem Georgia, serif; text-shadow: 0 0 12px var(--grimoire-current); }
+.aesthetic-field__seal span:nth-of-type(1) { top: -0.7rem; }
+.aesthetic-field__seal span:nth-of-type(2) { right: -0.55rem; }
+.aesthetic-field__seal span:nth-of-type(3) { bottom: -0.7rem; }
+.aesthetic-field__seal span:nth-of-type(4) { left: -0.55rem; }
+.aesthetic-field__seal i { position: absolute; width: 72%; height: 1px; background: linear-gradient(90deg, transparent, var(--grimoire-brass), transparent); transform-origin: center; opacity: 0.36; }
+.aesthetic-field__seal i:nth-of-type(2) { rotate: 60deg; }
+.aesthetic-field__seal i:nth-of-type(3) { rotate: -60deg; }
+
+.aesthetic-field__axis {
+  position: absolute;
+  left: 50%;
+  top: 7%;
+  bottom: 5%;
+  width: 1px;
+  background: linear-gradient(transparent, rgba(184,134,11,0.04), var(--grimoire-current-soft), rgba(184,134,11,0.04), transparent);
+}
+
+.aesthetic-field__motes i {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--grimoire-gold);
+  box-shadow: 0 0 9px var(--grimoire-gold);
+  opacity: 0.24;
+  animation: grimoire-mote-rise linear infinite;
+}
+
+.aesthetic-field__glyphs span {
+  position: absolute;
+  color: var(--grimoire-gold);
+  font: 1.1rem Georgia, serif;
+  opacity: 0.095;
+  text-shadow: 0 0 15px var(--grimoire-current);
+  animation: grimoire-glyph-drift 18s ease-in-out infinite alternate;
+}
+
+.aesthetic-field__marginalia span {
+  position: absolute;
+  color: var(--grimoire-gold);
+  opacity: 0.06;
+  font: 0.58rem/1.2 'Press Start 2P', monospace;
+  letter-spacing: 0.18em;
+  writing-mode: vertical-rl;
+}
+.aesthetic-field__marginalia span[data-index="0"] { left: 1rem; top: 20%; }
+.aesthetic-field__marginalia span[data-index="1"] { right: 1rem; top: 24%; transform: rotate(180deg); }
+.aesthetic-field__marginalia span[data-index="2"] { left: 1rem; bottom: 18%; }
+.aesthetic-field__marginalia span[data-index="3"] { right: 1rem; bottom: 16%; transform: rotate(180deg); }
+
+.aesthetic-field[data-profile="living-book"] .aesthetic-field__halo,
+.aesthetic-field[data-profile="living-book"] .aesthetic-field__seal {
+  border-color: color-mix(in srgb, var(--grimoire-gold) 36%, transparent);
+}
+.aesthetic-field[data-profile="living-book"] .aesthetic-field__glyphs span { opacity: 0.07; }
+.aesthetic-field[data-profile="living-book"] .aesthetic-field__marginalia span { opacity: 0.1; }
+
+.aesthetic-field.is-reduced-motion *,
+.aesthetic-field.is-reduced-motion *::before,
+.aesthetic-field.is-reduced-motion *::after {
+  animation: none !important;
+}
+
+/* Aesthetic selector inside the Codex drawer. */
+.aesthetic-control {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--grimoire-brass) 58%, transparent);
+  background: linear-gradient(135deg, rgba(184,134,11,0.08), rgba(80,7,20,0.06));
+  box-shadow: inset 0 0 26px rgba(0,0,0,0.4);
+}
+.aesthetic-control__head > div,
+.aesthetic-control__enchantment-head { display: flex; justify-content: space-between; gap: .75rem; align-items: center; }
+.aesthetic-control__head span,
+.aesthetic-control__enchantment-head span { display: inline-flex; align-items: center; gap: .4rem; color: var(--grimoire-brass); font: .52rem/1.5 'Press Start 2P', monospace; }
+.aesthetic-control__head strong,
+.aesthetic-control__enchantment-head strong { color: var(--grimoire-gold); font: .52rem/1.5 'Press Start 2P', monospace; }
+.aesthetic-control__head p { margin: .75rem 0 1rem; color: var(--grimoire-muted); font: 1rem/1.25 'VT323', monospace; }
+.aesthetic-control__profiles,
+.aesthetic-control__levels { display: grid; gap: .35rem; }
+.aesthetic-control__profiles { grid-template-columns: repeat(3, 1fr); }
+.aesthetic-control__levels { grid-template-columns: repeat(2, 1fr); margin-top: .6rem; }
+.aesthetic-control button { min-height: 2.65rem; padding: .5rem .35rem; border: 1px solid rgba(184,134,11,0.28); color: var(--grimoire-muted); background: rgba(0,0,0,0.34); font: .46rem/1.35 'Press Start 2P', monospace; transition: 150ms ease; }
+.aesthetic-control button:hover { border-color: var(--grimoire-gold); color: var(--grimoire-gold); }
+.aesthetic-control button.is-active { border-color: var(--grimoire-current); color: var(--grimoire-bone); background: var(--grimoire-current-soft); box-shadow: 0 0 12px var(--grimoire-current-soft); }
+.aesthetic-control__enchantment { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(184,134,11,0.18); }
+.aesthetic-control__note { margin: .85rem 0 0; color: color-mix(in srgb, var(--grimoire-muted) 75%, transparent); font: .85rem/1.25 'VT323', monospace; }
+
+@keyframes grimoire-orbit { to { rotate: 360deg; } }
+@keyframes grimoire-breathe { 0%,100% { scale: .98; opacity: .17; } 50% { scale: 1.025; opacity: .31; } }
+@keyframes grimoire-mote-rise { 0% { translate: 0 12vh; opacity: 0; } 15% { opacity: .25; } 80% { opacity: .18; } 100% { translate: 1.5vw -22vh; opacity: 0; } }
+@keyframes grimoire-glyph-drift { from { translate: -3px -4px; rotate: -2deg; } to { translate: 5px 6px; rotate: 3deg; } }
+
+@media (max-width: 640px) {
+  .aesthetic-field__halo--outer { width: 110vw; }
+  .aesthetic-field__halo--inner { width: 76vw; }
+  .aesthetic-field__seal { width: 64vw; }
+  .aesthetic-field__marginalia { display: none; }
+  .aesthetic-control__profiles { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aesthetic-field *, .aesthetic-field *::before, .aesthetic-field *::after { animation: none !important; }
+}
