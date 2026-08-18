@@ -5,13 +5,24 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const appPath = path.join(root, 'src', 'App.jsx');
 let app = fs.readFileSync(appPath, 'utf8');
+let wordingRepaired = false;
+
+const truthStatus = `reforgeStatus: 'INSCRIBING TRUTH...'`;
+const interpretationStatus = `reforgeStatus: 'INSCRIBING INTERPRETATION...'`;
+if (app.includes(truthStatus)) {
+  app = app.replace(truthStatus, interpretationStatus);
+  wordingRepaired = true;
+}
 
 const done = app.includes("import RelicWorkspace from './tarotBridge/RelicWorkspace.jsx';")
   && app.includes('<RelicWorkspace')
   && app.includes('onRemanifest={() => handleRetryCard(state.focusedCard)}')
   && !app.includes('<CardRelicAuthorityPanel card={state.focusedCard} tradition={state.selectedTradition} />');
 if (done) {
-  console.log('0.39 relic workspace activation already applied.');
+  if (wordingRepaired) fs.writeFileSync(appPath, app);
+  console.log(wordingRepaired
+    ? '0.39 relic workspace already applied; repaired forge wording to INSCRIBING INTERPRETATION.'
+    : '0.39 relic workspace activation already applied.');
   process.exit(0);
 }
 
