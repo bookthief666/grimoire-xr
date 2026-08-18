@@ -25,4 +25,28 @@ describe('grimoireReducer mobile regression coverage', () => {
     expect(next.spreadSlots).toEqual([null, 0, null]);
     expect(next.placementCardId).toBeNull();
   });
+
+  it('constructs ritual deck identity canonically and ignores injected model card names', () => {
+    const injected = Array.from({ length: 78 }, (_, index) => `MODEL INVENTED ${77 - index}`);
+    const state = {
+      ...initialState,
+      selectedTradition: { id: 'thoth', name: 'Book of Thoth' },
+      author: 'QA',
+    };
+    const next = grimoireReducer(state, {
+      type: 'RITUAL_SUCCESS',
+      payload: {
+        dossier: 'Dossier',
+        cards: injected,
+        questions: ['One?', 'Two?', 'Three?'],
+        portrait: null,
+      },
+    });
+
+    expect(next.deck).toHaveLength(78);
+    expect(next.deck[0]).toMatchObject({ id: 0, canonicalCardId: 'major.fool', name: 'THE FOOL' });
+    expect(next.deck[1]).toMatchObject({ id: 1, canonicalCardId: 'major.magician', name: 'THE MAGUS' });
+    expect(next.deck[8]).toMatchObject({ id: 8, canonicalCardId: 'major.fortitude', name: 'LUST' });
+    expect(next.deck.some(card => injected.includes(card.name))).toBe(false);
+  });
 });
