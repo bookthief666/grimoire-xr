@@ -19,6 +19,9 @@ const done = app.includes("import RelicWorkspace from './tarotBridge/RelicWorksp
   && app.includes('onRemanifest={() => handleRetryCard(state.focusedCard)}')
   && !app.includes('<CardRelicAuthorityPanel card={state.focusedCard} tradition={state.selectedTradition} />');
 if (done) {
+  if (app.includes('<d                <div className="flex-1 min-w-0">')) {
+    throw new Error('0.39 activation detected a corrupted prior modal boundary. Restore src/App.jsx from the branch HEAD and rerun the activator.');
+  }
   if (wordingRepaired) fs.writeFileSync(appPath, app);
   console.log(wordingRepaired
     ? '0.39 relic workspace already applied; repaired forge wording to INSCRIBING INTERPRETATION.'
@@ -55,6 +58,13 @@ const replacement = `                <div className="flex-1 min-w-0">\n         
 // which can leave a partial JSX token at the replacement boundary.
 app = `${app.slice(0, start)}${replacement}${app.slice(end)}`;
 app = app.replace(oldImport, newImport);
+
+if (app.includes('<d                <div className="flex-1 min-w-0">')) {
+  throw new Error('0.39 activation produced an invalid partial JSX boundary; refusing to write src/App.jsx.');
+}
+if (!app.includes("reforgeStatus: 'INSCRIBING INTERPRETATION...'")) {
+  throw new Error('0.39 activation failed to preserve the interpretation-safe forge status.');
+}
 
 fs.writeFileSync(appPath, app);
 console.log('Applied 0.39 Relic Workspace to src/App.jsx.');
