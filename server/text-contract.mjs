@@ -14,13 +14,6 @@ const closedObject = (properties, required = Object.keys(properties)) => ({
 export const TEXT_SCHEMAS = Object.freeze({
   [TEXT_TASKS.ritual]: closedObject({
     dossier: { type: 'string', minLength: 1 },
-    cards: {
-      type: 'array',
-      items: { type: 'string', minLength: 1 },
-      minItems: 78,
-      maxItems: 78,
-      uniqueItems: true,
-    },
     questions: {
       type: 'array',
       items: { type: 'string', minLength: 1 },
@@ -51,6 +44,11 @@ export const normalizeTextTask = value => {
 
 export const inferTextTask = prompt => {
   const text = String(prompt || '').toLowerCase();
+  if (
+    (text.includes('write a 200-word thesis') || text.includes('200-word thesis'))
+    && (text.includes('generate 3 profound questions') || text.includes('oracle suggestions'))
+  ) return TEXT_TASKS.ritual;
+  // Backward compatibility for pre-0.37 clients while the new explicit task field rolls out.
   if (text.includes('list 78 card names') && text.includes('oracle suggestions')) return TEXT_TASKS.ritual;
   if (text.includes('card interpretation for') && text.includes('meta: hebrew letter')) return TEXT_TASKS.card;
   if (text.includes('synthesize a 300-word divinatory answer') && text.includes('elemental dignities')) return TEXT_TASKS.oracle;
@@ -74,10 +72,9 @@ export const validateStructuredTextResult = (task, value) => {
 
   if (normalizedTask === TEXT_TASKS.ritual) {
     assertString(value.dossier, 'dossier');
-    if (!Array.isArray(value.cards) || value.cards.length !== 78) fail('ritual output must contain exactly 78 card names.');
-    value.cards.forEach((card, index) => assertString(card, `cards[${index}]`));
-    const normalizedCards = value.cards.map(card => card.trim().toLowerCase());
-    if (new Set(normalizedCards).size !== 78) fail('ritual output card names must be unique.');
+    if (Object.prototype.hasOwnProperty.call(value, 'cards')) {
+      fail('ritual output must not author Tarot card identities; the canonical deck is deterministic.');
+    }
     if (!Array.isArray(value.questions) || value.questions.length !== 3) fail('ritual output must contain exactly 3 oracle questions.');
     value.questions.forEach((question, index) => assertString(question, `questions[${index}]`));
     return value;
