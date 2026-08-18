@@ -9,9 +9,17 @@ import './index.css';
 // route-scoped CSS has been applied, collapsing the canvas and control panel.
 import './vr/vr.css';
 
+const searchParams = new URLSearchParams(window.location.search);
 const isVrRoute = window.location.pathname.startsWith('/vr')
-  || new URLSearchParams(window.location.search).get('mode') === 'vr';
-const RootApp = lazy(() => (isVrRoute ? import('./vr/VrApp.jsx') : import('./App.jsx')));
+  || searchParams.get('mode') === 'vr';
+const isTarotQaRoute = window.location.pathname.startsWith('/qa/tarot')
+  || searchParams.get('mode') === 'tarot-qa';
+
+const RootApp = lazy(() => {
+  if (isTarotQaRoute) return import('./tarotBridge/TarotQaApp.jsx');
+  if (isVrRoute) return import('./vr/VrApp.jsx');
+  return import('./App.jsx');
+});
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
