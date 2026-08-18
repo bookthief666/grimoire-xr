@@ -16,6 +16,7 @@
     "qa:deck-genesis": "node scripts/qa-canonical-deck-genesis.mjs",
     "qa:card-authority": "node scripts/qa-card-authority.mjs",
     "qa:relic-workspace": "node scripts/qa-relic-workspace.mjs",
+    "qa:living-relic": "node scripts/qa-living-relic.mjs",
     "qa:ai:contracts": "node scripts/qa-local-ai.mjs --contracts-only",
     "qa:ai": "node scripts/qa-local-ai.mjs",
     "qa:ai:resume": "node scripts/qa-local-ai.mjs --resume-latest",
