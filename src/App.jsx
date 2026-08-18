@@ -41,7 +41,7 @@ import {
   serializeGrimoireArchive,
 } from './tarotBridge/archiveEnvelope.js';
 import { generateGrimoireHtmlDocument } from './tarotBridge/archiveHtml.js';
-import ReadingProvenancePanel from './tarotBridge/ReadingProvenancePanel.jsx';
+import OracleLivingBook from './tarotBridge/OracleLivingBook.jsx';
 import RelicWorkspace from './tarotBridge/RelicWorkspace.jsx';
 import LivingRelicSurface from './tarotBridge/LivingRelicSurface.jsx';
 import ContinuityReturnDialog from './ContinuityReturnDialog.jsx';
@@ -1626,8 +1626,8 @@ export default function App() {
         )}
 
         {currentView === 'oracle' && (
-          <motion.div key="oracle" className="min-h-[100dvh] pt-[calc(8rem+env(safe-area-inset-top))] pr-[max(1.5rem,env(safe-area-inset-right))] pb-[max(1.5rem,env(safe-area-inset-bottom))] pl-[max(1.5rem,env(safe-area-inset-left))] flex flex-col items-center max-w-4xl mx-auto z-20 relative">
-            <h2 className="text-6xl font-header text-red-600 mb-12 neon-text text-center"><GlitchText text="THE ORACLE" isEgregore={isEgregoreActive} /></h2>
+          <motion.div key="oracle" className={`min-h-[100dvh] pt-[calc(8rem+env(safe-area-inset-top))] pr-[max(1.5rem,env(safe-area-inset-right))] pb-[max(1.5rem,env(safe-area-inset-bottom))] pl-[max(1.5rem,env(safe-area-inset-left))] flex flex-col items-center ${state.reading ? 'max-w-5xl' : 'max-w-4xl'} mx-auto z-20 relative`}>
+            {!state.reading && <h2 className="text-6xl font-header text-red-600 mb-12 neon-text text-center"><GlitchText text="THE ORACLE" isEgregore={isEgregoreActive} /></h2>}
             {!state.reading && !state.isConsulting && (
               <div className="w-full space-y-8 bg-black/60 p-8 border border-red-900 backdrop-blur-md">
                 {state.suggestedQuestions.length > 0 && (
@@ -1651,18 +1651,13 @@ export default function App() {
             )}
 
             {state.reading && !state.isConsulting && (
-              <div className="w-full space-y-12 pb-40">
-                <div className="flex justify-center gap-6">
-                  {state.reading.cards.map((c, i) => (
-                    <div key={i} className="w-28 sm:w-40 aspect-[2/3.4] border-2 border-red-600 bg-black/40 shadow-[0_0_20px_#ff000033] relative">
-                      {c.imageUrl ? <><img src={c.imageUrl} className="w-full h-full object-cover pixelated" /><ArcaneFrame element={normalizeElement(c.meta)}/></> : <CardSkeleton />}
-                    </div>
-                  ))}
-                </div>
-                <div className="p-10 border-2 border-red-600 bg-black/80 text-xl leading-relaxed text-red-600 font-body shadow-[0_0_30px_#ff000022] backdrop-blur-md overflow-y-auto max-h-[50vh]"><p>{state.reading.answer}</p></div>
-                <ReadingProvenancePanel reading={state.reading} />
-                <button onClick={() => dispatch({ type: 'OPEN_ORACLE' })} className="w-full text-center text-sm font-header text-red-600 opacity-60 hover:opacity-100 hover:text-white transition-colors">NEW READING</button>
-              </div>
+              <OracleLivingBook
+                reading={state.reading}
+                onCopy={copyToClipboard}
+                copied={copied}
+                onArchive={() => dispatch({ type: 'OPEN_ARCHIVE_PROMPT' })}
+                onNewReading={() => dispatch({ type: 'OPEN_ORACLE' })}
+              />
             )}
           </motion.div>
         )}
