@@ -8,7 +8,8 @@ let app = fs.readFileSync(appPath, 'utf8');
 
 const landingMarker = 'RESTORE ARCHIVE FROM JSON';
 const pickerMarker = 'document.body.appendChild(picker);';
-if (app.includes(landingMarker) && app.includes(pickerMarker)) {
+const oracleArchiveMarker = "currentView === 'oracle' && state.reading";
+if (app.includes(landingMarker) && app.includes(pickerMarker) && app.includes(oracleArchiveMarker)) {
   console.log('0.36 restore entry hardening already applied.');
   process.exit(0);
 }
@@ -91,9 +92,29 @@ const newLanding = `              <button onClick={handleRitualInitiation} class
               </button>
               {!Capacitor.isNativePlatform() && (`;
 
+const oldNav = `              <button onClick={() => dispatch({ type: 'OPEN_ARCHIVE_PROMPT' })} className="flex items-center gap-2 px-3 py-2 bg-black border border-red-600 text-xs font-header hover:bg-red-600 hover:text-black transition-all shadow-[0_0_10px_#ff000033]">
+                <Download size={14} /> <span className="hidden md:inline">ARCHIVE</span>
+              </button>
+            </>
+          )}
+          <button onClick={() => setIsMenuOpen(true)} className="flex items-center gap-2 px-3 py-2 bg-black border border-red-600 text-xs font-header hover:bg-red-600 hover:text-black transition-all shadow-[0_0_10px_#ff000033]"><Menu size={14} /></button>`;
+
+const newNav = `              <button onClick={() => dispatch({ type: 'OPEN_ARCHIVE_PROMPT' })} className="flex items-center gap-2 px-3 py-2 bg-black border border-red-600 text-xs font-header hover:bg-red-600 hover:text-black transition-all shadow-[0_0_10px_#ff000033]">
+                <Download size={14} /> <span className="hidden md:inline">ARCHIVE</span>
+              </button>
+            </>
+          )}
+          {currentView === 'oracle' && state.reading && (
+            <button onClick={() => dispatch({ type: 'OPEN_ARCHIVE_PROMPT' })} className="flex items-center gap-2 px-3 py-2 bg-black border border-red-600 text-xs font-header hover:bg-red-600 hover:text-black transition-all shadow-[0_0_10px_#ff000033]">
+              <Download size={14} /> <span className="hidden md:inline">ARCHIVE</span>
+            </button>
+          )}
+          <button onClick={() => setIsMenuOpen(true)} className="flex items-center gap-2 px-3 py-2 bg-black border border-red-600 text-xs font-header hover:bg-red-600 hover:text-black transition-all shadow-[0_0_10px_#ff000033]"><Menu size={14} /></button>`;
+
 if (!app.includes(oldPicker)) throw new Error('0.36 restore hardening refused: picker parent shape changed.');
 if (!app.includes(oldLanding)) throw new Error('0.36 restore hardening refused: landing parent shape changed.');
+if (!app.includes(oldNav)) throw new Error('0.36 restore hardening refused: nav parent shape changed.');
 
-app = app.replace(oldPicker, newPicker).replace(oldLanding, newLanding);
+app = app.replace(oldPicker, newPicker).replace(oldLanding, newLanding).replace(oldNav, newNav);
 fs.writeFileSync(appPath, app);
 console.log('Applied 0.36 cold-start archive restore hardening to src/App.jsx.');
