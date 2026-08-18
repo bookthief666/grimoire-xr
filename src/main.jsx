@@ -16,6 +16,7 @@ const routeId = resolveAppRoute({
 });
 
 const RootApp = lazy(() => {
+  if (routeId === APP_ROUTE_IDS.relicWorkspaceQa) return import('./tarotBridge/RelicWorkspaceQaApp.jsx');
   if (routeId === APP_ROUTE_IDS.cardAuthorityQa) return import('./tarotBridge/CardAuthorityQaApp.jsx');
   if (routeId === APP_ROUTE_IDS.tarotQa) return import('./tarotBridge/TarotQaApp.jsx');
   if (routeId === APP_ROUTE_IDS.vr) return import('./vr/VrApp.jsx');

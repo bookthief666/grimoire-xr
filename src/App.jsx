@@ -42,7 +42,7 @@ import {
 } from './tarotBridge/archiveEnvelope.js';
 import { generateGrimoireHtmlDocument } from './tarotBridge/archiveHtml.js';
 import ReadingProvenancePanel from './tarotBridge/ReadingProvenancePanel.jsx';
-import CardRelicAuthorityPanel from './tarotBridge/CardRelicAuthorityPanel.jsx';
+import RelicWorkspace from './tarotBridge/RelicWorkspace.jsx';
 
 // ============================================================================
 // 1. CONFIGURATION & STYLES
@@ -193,7 +193,7 @@ export function grimoireReducer(state, action) {
     case 'SET_TRADITION': return { ...state, selectedTradition: action.payload };
     case 'SET_EROS_LEVEL': return { ...state, erosLevel: action.payload };
     case 'SET_TECH_LEVEL': return { ...state, techLevel: action.payload };
-    case 'FORGE_CARD_START': return { ...state, focusedCard: action.payload, isForging: true, reforgeStatus: 'INSCRIBING TRUTH...' };
+    case 'FORGE_CARD_START': return { ...state, focusedCard: action.payload, isForging: true, reforgeStatus: 'INSCRIBING INTERPRETATION...' };
     case 'FORGE_CARD_SUCCESS': return { 
         ...state, 
         deck: state.deck.map(c => c.id === action.payload.id ? { ...action.payload, patina: (c.patina || 0) + 1 } : c), 
@@ -1632,87 +1632,19 @@ export default function App() {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <div className="mb-8 space-y-3">
-                    <div className="text-center md:text-left font-header text-[8px] sm:text-[9px] tracking-wider text-[#b8860b]/80">
-                      {state.focusedCard.generation ? (
-                        <>
-                          {state.focusedCard.generation.mode.toUpperCase()}
-                          {state.focusedCard.generation.width && state.focusedCard.generation.height ? ` · ${state.focusedCard.generation.width}×${state.focusedCard.generation.height}` : ''}
-                          {state.focusedCard.generation.steps ? ` · ${state.focusedCard.generation.steps} STEPS` : ''}
-                          {Number.isSafeInteger(state.focusedCard.generation.seed) ? ` · SEED ${state.focusedCard.generation.seed}` : ''}
-                          {Number.isFinite(state.focusedCard.generation.denoise) ? ` · DENOISE ${state.focusedCard.generation.denoise}` : ''}
-                          {formatJobTiming(state.focusedCard.generation.timing) ? ` · ${formatJobTiming(state.focusedCard.generation.timing)}` : ''}
-                        </>
-                      ) : (
-                        <>LEGACY MANIFESTATION · RE-MANIFEST TO CAPTURE SEED</>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap gap-2 justify-center md:justify-start">
-                      <button onClick={() => handleRetryCard(state.focusedCard)} className="flex items-center gap-2 px-4 py-2 border border-red-600 text-[10px] font-header hover:bg-red-600 hover:text-black transition-all text-red-600 disabled:opacity-50" disabled={state.isForging}>
-                        <RefreshCw size={12} className={state.isForging ? "animate-spin" : ""}/> RE-MANIFEST PREVIEW
-                      </button>
-                      <button
-                        onClick={() => handleFinalizeCard(state.focusedCard)}
-                        className="flex items-center gap-2 px-4 py-2 border border-[#b8860b] text-[10px] font-header hover:bg-[#b8860b] hover:text-black transition-all text-[#e5c158] disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-[#e5c158]"
-                        disabled={state.isForging || !canFinalizeCard(state.focusedCard)}
-                      >
-                        <Check size={12}/> FINALIZE
-                      </button>
-                      <button
-                        onClick={() => handleRefineCard(state.focusedCard)}
-                        className="flex items-center gap-2 px-4 py-2 border border-white/50 text-[10px] font-header hover:bg-white hover:text-black transition-all text-white disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-white"
-                        disabled={state.isForging || !canRefineCard(state.focusedCard)}
-                      >
-                        <RefreshCw size={12}/> {state.focusedCard.generation?.mode === IMAGE_MODES.refine ? "REFINE AGAIN" : "REFINE FINAL"}
-                      </button>
-                    </div>
-                    <p className="text-center md:text-left text-[9px] font-body text-white/40">REFINE FINAL uses the current ComfyUI image as img2img input at the final preset, preserving composition more strongly than seed-only finalization.</p>
-                  </div>
-                  
-                  <CardRelicAuthorityPanel card={state.focusedCard} tradition={state.selectedTradition} />
-
-                  {state.isForging && !state.focusedCard.exegesis ? <div className="text-center font-header text-red-600 text-xs animate-pulse mt-10">INSCRIBING TRUTH...</div> : state.focusedCard.exegesis && (
-                    <div className="space-y-6 sm:space-y-8 text-red-600/90 font-body leading-relaxed text-base sm:text-xl">
-                      <div className="p-4 border border-red-600/30 bg-red-950/10">
-                        <div className="flex flex-wrap items-center gap-2 mb-3">
-                          <span className="font-header text-[8px] sm:text-[9px] text-red-400">INTERPRETIVE EXEGESIS</span>
-                          <span className="px-2 py-1 border border-red-600/50 font-header text-[7px] text-red-400">{state.focusedCard.exegesisAuthority || 'LEGACY_UNCLASSIFIED_INTERPRETATION'}</span>
-                          <span className="px-2 py-1 border border-red-600/30 font-header text-[7px] text-red-500/70">NOT SOURCE FACT</span>
-                        </div>
-                        <p className="break-words">{state.focusedCard.exegesis}</p>
-                      </div>
-                      
-                      {state.focusedCard.promptUsed && (
-                        <div className="p-3 sm:p-4 bg-red-600/5 border border-red-600/30 mb-4 shadow-[inset_0_0_10px_rgba(255,0,0,0.1)]">
-                          <div className="flex justify-between items-center mb-2 border-b border-red-600/30 pb-2">
-                            <span className="text-[8px] sm:text-[10px] uppercase text-red-600 font-header opacity-70">Visual Prompt</span>
-                            <button onClick={() => copyToClipboard(state.focusedCard.promptUsed)} className="text-[8px] sm:text-[10px] text-white hover:text-red-600 flex items-center gap-1">
-                              {copied ? <Check size={10} /> : <Copy size={10} />} {copied ? 'COPIED' : 'COPY'}
-                            </button>
-                          </div>
-                          <p className="text-[10px] sm:text-xs font-body opacity-60 italic break-words">"{state.focusedCard.promptUsed}"</p>
-                        </div>
-                      )}
-
-                      <div className="pt-6 sm:pt-8 border-t border-red-600/30">
-                        <div className="flex flex-wrap items-center gap-2 mb-3">
-                          <span className="font-header text-[8px] sm:text-[9px] text-red-400">REFLECTION METADATA</span>
-                          <span className="px-2 py-1 border border-red-600/50 font-header text-[7px] text-red-400">{state.focusedCard.interpretiveMetaAuthority || 'LEGACY_UNCLASSIFIED_REFLECTION'}</span>
-                          <span className="px-2 py-1 border border-red-600/30 font-header text-[7px] text-red-500/70">NOT SOURCE FACT</span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 sm:gap-4">
-                          {Object.entries(state.focusedCard.meta || {}).map(([k, v]) => (
-                            <div key={k} className="p-3 sm:p-4 bg-red-900/10 border border-red-600/30 min-w-0">
-                              <span className="text-[8px] uppercase text-red-600 block mb-1 font-header opacity-50">{k}</span>
-                              <span className="text-xs sm:text-base font-bold text-[#e5c158] break-words leading-tight block">
-                                 {typeof v === 'object' ? JSON.stringify(v) : String(v)}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
+                  <RelicWorkspace
+                    card={state.focusedCard}
+                    tradition={state.selectedTradition}
+                    isForging={state.isForging}
+                    forgeStatus={state.reforgeStatus}
+                    canFinalize={canFinalizeCard(state.focusedCard)}
+                    canRefine={canRefineCard(state.focusedCard)}
+                    onRemanifest={() => handleRetryCard(state.focusedCard)}
+                    onFinalize={() => handleFinalizeCard(state.focusedCard)}
+                    onRefine={() => handleRefineCard(state.focusedCard)}
+                    onCopyPrompt={copyToClipboard}
+                    copied={copied}
+                  />
                 </div>
               </div>
             </motion.div>
