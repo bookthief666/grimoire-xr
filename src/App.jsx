@@ -43,6 +43,7 @@ import {
 import { generateGrimoireHtmlDocument } from './tarotBridge/archiveHtml.js';
 import ReadingProvenancePanel from './tarotBridge/ReadingProvenancePanel.jsx';
 import RelicWorkspace from './tarotBridge/RelicWorkspace.jsx';
+import LivingRelicSurface from './tarotBridge/LivingRelicSurface.jsx';
 
 // ============================================================================
 // 1. CONFIGURATION & STYLES
@@ -267,6 +268,11 @@ const useHaptic = () => useMemo(() => {
     forgeBuzz: () => safely(() => Haptics.impact({ style: ImpactStyle.Medium })),
     oracleBuzz: () => safely(() => Haptics.notification({ type: NotificationType.Success })),
     spiritBuzz: () => safely(() => Haptics.impact({ style: ImpactStyle.Light })),
+    relicAttuneBuzz: () => safely(async () => {
+      await Haptics.impact({ style: ImpactStyle.Light });
+      await pause(55);
+      await Haptics.impact({ style: ImpactStyle.Medium });
+    }),
     ritualShake: () => safely(async () => {
       await Haptics.impact({ style: ImpactStyle.Heavy });
       await pause(90);
@@ -827,7 +833,7 @@ export default function App() {
   const [bootMessages, setBootMessages] = useState([]);
   const spiritInputRef = useRef(null);
   
-  const { forgeBuzz, oracleBuzz, spiritBuzz, ritualShake } = useHaptic();
+  const { forgeBuzz, oracleBuzz, spiritBuzz, ritualShake, relicAttuneBuzz } = useHaptic();
   const reducedMotion = useReducedMotion();
   useNativeShell(spiritInputRef);
 
@@ -1615,20 +1621,27 @@ export default function App() {
 
               <div className="flex flex-col md:flex-row gap-6 sm:gap-10">
                 <div className="flex-shrink-0 w-full md:w-80 aspect-[2/3] bg-black border-2 border-[#b8860b] relative overflow-hidden shadow-[0_0_30px_#b8860b44] mx-auto md:mx-0 md:sticky md:top-4 h-max">
-                  {state.focusedCard.imageUrl ? (
-                    <>
-                      <img src={state.focusedCard.imageUrl} className={`w-full h-full object-cover pixelated ${state.focusedCard.patina >= 10 ? 'grayscale sepia contrast-125' : ''}`} />
-                      <ArcaneFrame element={normalizeElement(state.focusedCard.meta)} />
-                    </>
-                  ) : (
-                    <CardSkeleton />
-                  )}
-                  {state.isForging && (
-                    <div className="absolute inset-x-0 bottom-0 p-4 bg-black/80 flex flex-col items-center justify-center">
-                      <span className="text-[10px] font-header text-red-600 animate-pulse text-center">{state.reforgeStatus || "FORGING ARCANUM..."}</span>
-                    </div>
-                  )}
-                  {(state.focusedCard.patina >= 1) && <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSIvPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMwMDAiIGZpbGwtb3BhY2l0eT0iMC4xIi8+PC9zdmc+')] opacity-40 mix-blend-overlay pointer-events-none" />}
+                  <LivingRelicSurface
+                    card={state.focusedCard}
+                    tradition={state.selectedTradition}
+                    reducedMotion={reducedMotion}
+                    onAttuned={relicAttuneBuzz}
+                  >
+                    {state.focusedCard.imageUrl ? (
+                      <>
+                        <img src={state.focusedCard.imageUrl} className={`w-full h-full object-cover pixelated ${state.focusedCard.patina >= 10 ? 'grayscale sepia contrast-125' : ''}`} />
+                        <ArcaneFrame element={normalizeElement(state.focusedCard.meta)} />
+                      </>
+                    ) : (
+                      <CardSkeleton />
+                    )}
+                    {state.isForging && (
+                      <div className="absolute inset-x-0 bottom-0 p-4 bg-black/80 flex flex-col items-center justify-center">
+                        <span className="text-[10px] font-header text-red-600 animate-pulse text-center">{state.reforgeStatus || "FORGING ARCANUM..."}</span>
+                      </div>
+                    )}
+                    {(state.focusedCard.patina >= 1) && <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSIvPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiMwMDAiIGZpbGwtb3BhY2l0eT0iMC4xIi8+PC9zdmc+')] opacity-40 mix-blend-overlay pointer-events-none" />}
+                  </LivingRelicSurface>
                 </div>
 
                 <div className="flex-1 min-w-0">
