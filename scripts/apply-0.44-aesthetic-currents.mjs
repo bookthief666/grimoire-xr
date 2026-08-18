@@ -72,13 +72,6 @@ if (!app.includes(shellButtonAfter)) {
 
 app = replaceOnce(
   app,
-  "<button onClick={() => setIsMenuOpen(true)} className=\"flex items-center gap-2 px-3 py-2 bg-black border border-red-600 text-xs font-header hover:bg-red-600 hover:text-black transition-all shadow-[0_0_10px_#ff000033]\"><Menu size={14} /></button>",
-  "<button onClick={() => setIsMenuOpen(true)} className=\"grimoire-shell-button flex items-center gap-2 px-3 py-2 bg-black border border-red-600 text-xs font-header hover:bg-red-600 hover:text-black transition-all shadow-[0_0_10px_#ff000033]\"><Menu size={14} /></button>",
-  'menu shell button',
-);
-
-app = replaceOnce(
-  app,
   "className=\"fixed inset-y-0 right-0 w-full max-w-80 bg-black border-l-2 border-red-600 z-[60] pt-[calc(1.5rem+env(safe-area-inset-top))] pr-[max(1.5rem,env(safe-area-inset-right))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] pl-6 shadow-[0_0_50px_#ff000033] overflow-y-auto native-scroll\"",
   "className=\"grimoire-codex-drawer fixed inset-y-0 right-0 w-full max-w-80 bg-black border-l-2 border-red-600 z-[60] pt-[calc(1.5rem+env(safe-area-inset-top))] pr-[max(1.5rem,env(safe-area-inset-right))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] pl-6 shadow-[0_0_50px_#ff000033] overflow-y-auto native-scroll\"",
   'codex drawer class',
@@ -105,6 +98,7 @@ for (const required of [
   "persistAestheticPreferences({ current: aestheticCurrent, enchantment: enchantmentLevel })",
   "grimoire-topbar",
   "grimoire-codex-drawer",
+  "grimoire-shell-button",
 ]) {
   if (!app.includes(required)) fail(`required runtime marker missing: ${required}`);
 }
