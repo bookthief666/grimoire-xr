@@ -12,6 +12,7 @@
     "test": "vitest run",
     "check": "npm run test && npm run build",
     "qa:tarot": "node scripts/qa-tarot-semantic.mjs",
+    "qa:archive": "node scripts/qa-reading-archive.mjs",
     "qa:ai:contracts": "node scripts/qa-local-ai.mjs --contracts-only",
     "qa:ai": "node scripts/qa-local-ai.mjs",
     "qa:ai:resume": "node scripts/qa-local-ai.mjs --resume-latest",
