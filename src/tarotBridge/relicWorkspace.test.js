@@ -40,9 +40,9 @@ describe('0.39 relic workspace', () => {
       sourceQualification: 'SOURCE_QUALIFIED',
       patina: 3,
     });
-    expect(model.correspondences.expressionById.cardTitle.value).toBe('DOMINION');
+    expect(model.correspondences.expressionById.nativeTitle.value).toBe('DOMINION');
     expect(model.correspondences.correspondenceById.planet.value).toBe('MARS');
-    expect(model.correspondences.correspondenceById.zodiac.value).toBe('ARIES');
+    expect(model.correspondences.correspondenceById.zodiacSign.value).toBe('ARIES');
     expect(model.interpretation).toMatchObject({
       exegesis: 'Generated interpretation.',
       exegesisAuthority: 'MODEL_GENERATED_INTERPRETATION',
