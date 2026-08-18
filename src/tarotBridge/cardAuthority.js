@@ -14,16 +14,22 @@ const normalizeFieldEntries = fields => Object.entries(fields || {})
     sourceIds: [...(field.sourceIds || [])],
   }));
 
+const finiteNumberOrNull = value => (
+  value === null || value === undefined || value === '' || !Number.isFinite(Number(value))
+    ? null
+    : Number(value)
+);
+
 const generationSummary = generation => {
   if (!generation) return null;
   return {
     provider: generation.provider || null,
     mode: generation.mode || null,
-    width: Number.isFinite(Number(generation.width)) ? Number(generation.width) : null,
-    height: Number.isFinite(Number(generation.height)) ? Number(generation.height) : null,
-    steps: Number.isFinite(Number(generation.steps)) ? Number(generation.steps) : null,
+    width: finiteNumberOrNull(generation.width),
+    height: finiteNumberOrNull(generation.height),
+    steps: finiteNumberOrNull(generation.steps),
     seed: Number.isSafeInteger(generation.seed) ? generation.seed : null,
-    denoise: Number.isFinite(Number(generation.denoise)) ? Number(generation.denoise) : null,
+    denoise: finiteNumberOrNull(generation.denoise),
     timing: generation.timing || null,
   };
 };
