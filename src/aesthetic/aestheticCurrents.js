@@ -1,5 +1,7 @@
 export const AESTHETIC_STORAGE_KEY = 'grimoire_aesthetic_current_v1';
 export const ENCHANTMENT_STORAGE_KEY = 'grimoire_enchantment_level_v1';
+export const DEFAULT_AESTHETIC_CURRENT = 'ritual-hybrid';
+export const DEFAULT_ENCHANTMENT_LEVEL = 'exalted';
 
 export const AESTHETIC_CURRENTS = Object.freeze([
   Object.freeze({
@@ -55,22 +57,26 @@ const ENCHANTMENT_ALIASES = Object.freeze({
 
 export const normalizeAestheticCurrent = value => {
   const key = String(value || '').trim().toLowerCase();
-  return CURRENT_ALIASES[key] || 'ritual-hybrid';
+  return CURRENT_ALIASES[key] || DEFAULT_AESTHETIC_CURRENT;
 };
 
 export const normalizeEnchantmentLevel = value => {
   const key = String(value || '').trim().toLowerCase();
-  return ENCHANTMENT_ALIASES[key] || 'balanced';
+  return ENCHANTMENT_ALIASES[key] || DEFAULT_ENCHANTMENT_LEVEL;
 };
 
 export const getAestheticCurrent = value => {
   const id = normalizeAestheticCurrent(value);
-  return AESTHETIC_CURRENTS.find(entry => entry.id === id) || AESTHETIC_CURRENTS[1];
+  return AESTHETIC_CURRENTS.find(entry => entry.id === id)
+    || AESTHETIC_CURRENTS.find(entry => entry.id === DEFAULT_AESTHETIC_CURRENT)
+    || AESTHETIC_CURRENTS[0];
 };
 
 export const getEnchantmentLevel = value => {
   const id = normalizeEnchantmentLevel(value);
-  return ENCHANTMENT_LEVELS.find(entry => entry.id === id) || ENCHANTMENT_LEVELS[1];
+  return ENCHANTMENT_LEVELS.find(entry => entry.id === id)
+    || ENCHANTMENT_LEVELS.find(entry => entry.id === DEFAULT_ENCHANTMENT_LEVEL)
+    || ENCHANTMENT_LEVELS[0];
 };
 
 export const cycleAestheticCurrent = (current, direction = 1) => {
@@ -103,8 +109,8 @@ export const resolveAestheticPreferences = ({ search = '', storage = null } = {}
   const storedEnchantment = safeRead(storage, ENCHANTMENT_STORAGE_KEY);
 
   return Object.freeze({
-    current: normalizeAestheticCurrent(queryCurrent || storedCurrent || 'ritual-hybrid'),
-    enchantment: normalizeEnchantmentLevel(queryEnchantment || storedEnchantment || 'balanced'),
+    current: normalizeAestheticCurrent(queryCurrent || storedCurrent || DEFAULT_AESTHETIC_CURRENT),
+    enchantment: normalizeEnchantmentLevel(queryEnchantment || storedEnchantment || DEFAULT_ENCHANTMENT_LEVEL),
     queryOverride: Boolean(queryCurrent || queryEnchantment),
   });
 };
