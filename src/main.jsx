@@ -4,20 +4,20 @@ import { Capacitor } from '@capacitor/core';
 import '@fontsource/press-start-2p/400.css';
 import '@fontsource/vt323/400.css';
 import './index.css';
+import { APP_ROUTE_IDS, resolveAppRoute } from './appRoute.js';
 // Keep the critical VR shell styles in the entry stylesheet. Some production
 // preview/browser combinations can render the lazy XR module before its
 // route-scoped CSS has been applied, collapsing the canvas and control panel.
 import './vr/vr.css';
 
-const searchParams = new URLSearchParams(window.location.search);
-const isVrRoute = window.location.pathname.startsWith('/vr')
-  || searchParams.get('mode') === 'vr';
-const isTarotQaRoute = window.location.pathname.startsWith('/qa/tarot')
-  || searchParams.get('mode') === 'tarot-qa';
+const routeId = resolveAppRoute({
+  pathname: window.location.pathname,
+  search: window.location.search,
+});
 
 const RootApp = lazy(() => {
-  if (isTarotQaRoute) return import('./tarotBridge/TarotQaApp.jsx');
-  if (isVrRoute) return import('./vr/VrApp.jsx');
+  if (routeId === APP_ROUTE_IDS.tarotQa) return import('./tarotBridge/TarotQaApp.jsx');
+  if (routeId === APP_ROUTE_IDS.vr) return import('./vr/VrApp.jsx');
   return import('./App.jsx');
 });
 
