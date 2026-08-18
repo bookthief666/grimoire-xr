@@ -21,6 +21,7 @@ assert(app.includes('onFinalize={() => handleFinalizeCard(state.focusedCard)}'),
 assert(app.includes('onRefine={() => handleRefineCard(state.focusedCard)}'), 'existing refine handler must be preserved');
 assert(!app.includes('<CardRelicAuthorityPanel card={state.focusedCard} tradition={state.selectedTradition} />'), 'old long authority column must be removed from the real modal');
 assert(!app.includes('INSCRIBING TRUTH...'), 'generated interpretation must not be labeled as truth');
+assert(app.includes("reforgeStatus: 'INSCRIBING INTERPRETATION...'"), 'forge start must use interpretation-safe wording');
 
 for (const label of ['RELIC', 'CORRESPONDENCES', 'INTERPRETATION', 'GENERATION']) {
   assert(workspace.includes(label), `workspace must expose ${label} mode`);
