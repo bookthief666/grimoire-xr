@@ -1,3 +1,5 @@
+import { writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { buildGrimoireArchiveEnvelope, parseGrimoireArchive, serializeGrimoireArchive } from '../src/tarotBridge/archiveEnvelope.js';
 import { buildCanonicalTriadConsultation } from '../src/tarotBridge/canonicalTarotBridge.js';
 
@@ -17,7 +19,8 @@ const state = {
 };
 
 const envelope = buildGrimoireArchiveEnvelope({ state, exportedAt: 'QA' });
-const parsed = parseGrimoireArchive(serializeGrimoireArchive(envelope));
+const serialized = serializeGrimoireArchive(envelope);
+const parsed = parseGrimoireArchive(serialized);
 const record = parsed.envelope.grimoire.reading.readingRecord;
 const checks = {
   contract: parsed.contractStatus === 'CURRENT_CONTRACT_MATCH',
@@ -28,5 +31,16 @@ const checks = {
   generatedAuthority: parsed.envelope.grimoire.reading.answerAuthority === 'MODEL_GENERATED_SYNTHESIS',
 };
 for (const [name, pass] of Object.entries(checks)) console.log(`${pass ? 'PASS' : 'FAIL'} ${name}`);
-if (Object.values(checks).some(pass => !pass)) process.exitCode = 1;
-else console.log('0.36 ReadingRecord archive QA: PASS');
+if (Object.values(checks).some(pass => !pass)) {
+  process.exitCode = 1;
+} else {
+  console.log('0.36 ReadingRecord archive QA: PASS');
+  const writeIndex = process.argv.indexOf('--write');
+  if (writeIndex >= 0) {
+    const requested = process.argv[writeIndex + 1];
+    if (!requested) throw new Error('--write requires a destination path.');
+    const destination = resolve(requested);
+    writeFileSync(destination, serialized, 'utf8');
+    console.log(`ARCHIVE_FIXTURE_WRITTEN ${destination}`);
+  }
+}
