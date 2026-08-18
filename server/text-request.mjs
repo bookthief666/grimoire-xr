@@ -1,4 +1,5 @@
 import {
+  TEXT_TASKS,
   inferTextTask,
   normalizeTextTask,
   validateStructuredTextResult,
@@ -12,14 +13,26 @@ export const normalizeTextRequest = ({ prompt, isJson = true, task = null } = {}
   if (typeof prompt !== 'string' || !prompt.trim() || prompt.length > 50_000) {
     fail('A prompt between 1 and 50,000 characters is required.');
   }
+  const normalizedPrompt = prompt.trim();
   const json = Boolean(isJson);
   const requestedTask = task === null || task === undefined || task === ''
     ? null
     : normalizeTextTask(task);
   if (task && !requestedTask) fail(`Unsupported structured text task: ${task}.`);
-  const inferredTask = json && !requestedTask ? inferTextTask(prompt) : null;
+  const inferredTask = json && !requestedTask ? inferTextTask(normalizedPrompt) : null;
+  if (
+    !requestedTask
+    && inferredTask === TEXT_TASKS.ritual
+    && /list\s+78\s+card\s+names/i.test(normalizedPrompt)
+  ) {
+    fail(
+      'This ritual request uses the pre-v2 model-authored deck contract. Update the client so Tarot identity is constructed from the canonical manifest.',
+      409,
+      'TEXT_PROTOCOL_UPGRADE_REQUIRED',
+    );
+  }
   return {
-    prompt: prompt.trim(),
+    prompt: normalizedPrompt,
     isJson: json,
     task: requestedTask || inferredTask || null,
   };
