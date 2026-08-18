@@ -137,7 +137,7 @@ const buildCanonicalCardManifest = () => {
       legacyIndex,
       cardId,
       arcana: 'major',
-      familyId: 'major',
+      familyId: slug,
       suitFamilyId: null,
       rankId: null,
       rankClass: null,
@@ -187,10 +187,10 @@ const buildCanonicalCardManifest = () => {
         legacyIndex,
         cardId: `minor.${suit.familyId}.${rankId}`,
         arcana: 'minor',
-        familyId: `minor.${suit.familyId}`,
+        familyId: suit.familyId,
         suitFamilyId: suit.familyId,
         rankId,
-        rankClass: rankIndex >= 10 ? 'court' : 'numbered',
+        rankClass: rankIndex < 10 ? 'pip' : 'court',
         thoth: {
           expressionCoverage: 'FULL',
           fields: {
@@ -267,15 +267,38 @@ export const CANONICAL_SPREAD_MAP = deepFreeze({
   TRIAD: {
     spreadId: 'grimoire.triad.dialectic',
     version: '1.0.0',
+    cardCount: 3,
     semanticStatus: 'CANONICAL_PROJECT',
     positions: [
-      { positionId: 'thesis', label: 'THESIS', questionFunction: 'the first articulated force or proposition in the question' },
-      { positionId: 'antithesis', label: 'ANTITHESIS', questionFunction: 'the force that resists, complicates, or qualifies the first' },
-      { positionId: 'synthesis', label: 'SYNTHESIS', questionFunction: 'what becomes visible when the first two are read in relation' },
+      { positionId: 'thesis', ordinal: 0, label: 'THESIS', questionFunction: 'the first articulated force or proposition in the question' },
+      { positionId: 'antithesis', ordinal: 1, label: 'ANTITHESIS', questionFunction: 'the force that resists, complicates, or qualifies the first' },
+      { positionId: 'synthesis', ordinal: 2, label: 'SYNTHESIS', questionFunction: 'what becomes visible when the first two are read in relation' },
     ],
+    topology: {
+      orderedAdjacency: [['thesis', 'antithesis'], ['antithesis', 'synthesis']],
+      visualEdges: [['thesis', 'antithesis'], ['thesis', 'synthesis'], ['antithesis', 'synthesis']],
+    },
   },
-  HEXAGRAM: { spreadId: 'legacy.hexagram.v031', version: '0.31.0', semanticStatus: 'PROVISIONAL', positions: [] },
-  CROSS: { spreadId: 'legacy.cross.v031', version: '0.31.0', semanticStatus: 'PROVISIONAL', positions: [] },
+  HEXAGRAM: {
+    spreadId: 'legacy.hexagram.v031',
+    version: '0.31.0',
+    cardCount: 6,
+    semanticStatus: 'PROVISIONAL',
+    positions: Array.from({ length: 6 }, (_, index) => ({
+      positionId: `p${index + 1}`, ordinal: index, label: `POSITION ${index + 1}`, questionFunction: null,
+    })),
+    topology: { orderedAdjacency: [], visualEdges: [] },
+  },
+  CROSS: {
+    spreadId: 'legacy.cross.v031',
+    version: '0.31.0',
+    cardCount: 10,
+    semanticStatus: 'PROVISIONAL',
+    positions: Array.from({ length: 10 }, (_, index) => ({
+      positionId: `p${index + 1}`, ordinal: index, label: `POSITION ${index + 1}`, questionFunction: null,
+    })),
+    topology: { orderedAdjacency: [], visualEdges: [] },
+  },
 });
 
 const relationKey = (left, right) => [left, right].sort().join('|');
@@ -509,14 +532,14 @@ export const chooseOracleCards = ({ deck = [], activeSpread = 'TRIAD', spreadSlo
     && spreadSlots.every(Number.isInteger)) {
     const byId = new Map(deck.map(card => [card.id, card]));
     const selected = spreadSlots.map(id => byId.get(id) || null);
-    if (selected.every(Boolean)) return deepFreeze({ cards: selected, source: 'BOUND_TRIAD_CLOTH' });
+    if (selected.every(Boolean)) return Object.freeze({ cards: Object.freeze([...selected]), source: 'BOUND_TRIAD_CLOTH' });
   }
   const pool = [...deck];
   for (let index = pool.length - 1; index > 0; index -= 1) {
     const swapIndex = Math.floor(random() * (index + 1));
     [pool[index], pool[swapIndex]] = [pool[swapIndex], pool[index]];
   }
-  return deepFreeze({ cards: pool.slice(0, 3), source: 'RANDOM_TRIAD_FALLBACK' });
+  return Object.freeze({ cards: Object.freeze(pool.slice(0, 3)), source: 'RANDOM_TRIAD_FALLBACK' });
 };
 
 export const validateCanonicalTarotBridge = () => {

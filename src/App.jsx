@@ -24,6 +24,14 @@ import { IMAGE_MODES, buildImageJobBody, canFinalizeCard, canRefineCard, readIma
 import { createGrimoireApiError, isTerminalJobPollError, jobInterruptedMessage, jobKindFromStatusPath } from './jobPolling.js';
 import { describeJobProgress, formatJobTiming } from './jobProgress.js';
 import { TAROT_PROMPT_SCHEMA, compileTarotImagePrompt } from './tarotPrompt.js';
+import {
+  canonicalCardIdFromLegacyIndex,
+  getCanonicalCardPromptContext,
+} from './tarotBridge/canonicalTarotBridge.js';
+import {
+  buildCanonicalOracleSynthesisPrompt,
+  prepareCanonicalOracleConsultation,
+} from './tarotBridge/oracleSynthesis.js';
 
 // ============================================================================
 // 1. CONFIGURATION & STYLES
@@ -162,7 +170,17 @@ export function grimoireReducer(state, action) {
         ...state, 
         phase: 'SCRIPTORIUM', 
         dossier: action.payload.dossier, 
-        deck: action.payload.cards.map((name, i) => ({ id: i, name, imageUrl: null, exegesis: null, meta: null, promptUsed: null, patina: 0 })), 
+        deck: action.payload.cards.map((name, i) => ({
+          id: i,
+          canonicalCardId: canonicalCardIdFromLegacyIndex(i),
+          name,
+          imageUrl: null,
+          exegesis: null,
+          meta: null,
+          interpretiveMetaAuthority: null,
+          promptUsed: null,
+          patina: 0,
+        })),
         portrait: action.payload.portrait,
         suggestedQuestions: action.payload.questions || [],
         status: 'SYSTEM ONLINE',
@@ -903,7 +921,7 @@ export default function App() {
       const erosContext = getErosContext(state.erosLevel);
       const techContext = TECH_LEVELS[state.techLevel].instruction;
       
-      const geminiPromise = fetchGemini(`Role: Supreme Adept of the ${state.selectedTradition.name}. Task: Synthesize "${state.author}" into a Tarot system. Source: 'Secrets of the Thoth Tarot' (Katz). Style: ${state.selectedStyle.prompt}. Instructions: 1. Write a 200-word Thesis (Dossier) analyzing the subject's weight. 2. List 78 Card Names fusing the subject with traditional archetypes. 3. Generate 3 profound questions to ask this deck (Oracle Suggestions). 4. TONE: ${techContext} ${erosContext} Return JSON: {"dossier": "string", "cards": ["Name 1", ...], "questions": ["Question 1", "Question 2", "Question 3"]}`);
+      const geminiPromise = fetchGemini(`Role: Supreme Adept of the ${state.selectedTradition.name}. Task: Synthesize "${state.author}" into a Tarot system. Creative frame: generated manifestation names are presentation labels bound by position to the canonical 0..77 Tarot identity map; do not present generated names or correspondences as historical source facts. Style: ${state.selectedStyle.prompt}. Instructions: 1. Write a 200-word Thesis (Dossier) analyzing the subject's weight. 2. List 78 Card Names fusing the subject with traditional archetypes. 3. Generate 3 profound questions to ask this deck (Oracle Suggestions). 4. TONE: ${techContext} ${erosContext} Return JSON: {"dossier": "string", "cards": ["Name 1", ...], "questions": ["Question 1", "Question 2", "Question 3"]}`);
       
       setTimeout(() => setBootMessages(prev => [...prev, "> INDEXING ARCHETYPES..."]), 800);
       setTimeout(() => setBootMessages(prev => [...prev, "> CALIBRATING PLANETARY LATTICE..."]), 1600);
@@ -940,12 +958,23 @@ export default function App() {
     const erosContext = getErosContext(state.erosLevel);
     const erosPrompt = getErosPrompt(state.erosLevel);
     const techContext = TECH_LEVELS[state.techLevel].instruction;
+    const canonicalContext = getCanonicalCardPromptContext({
+      card,
+      tradition: state.selectedTradition,
+    });
+    const canonicalFacts = canonicalContext?.sourceQualification === 'SOURCE_QUALIFIED'
+      ? JSON.stringify({
+          cardId: canonicalContext.cardId,
+          expression: canonicalContext.canonicalExpression,
+          correspondences: canonicalContext.canonicalCorrespondences,
+        })
+      : 'No source-qualified canonical fact pack is active for this selected Tarot system.';
     if (setStatusCb) setStatusCb(card.exegesis && card.meta ? "PREPARING IMAGE..." : "SCRIBING EXEGESIS...");
     let data;
     if (card.exegesis && card.meta) {
         data = { exegesis: card.exegesis, meta: card.meta, visual: card.visual }; 
     } else {
-        data = await fetchGemini(`Role: Grand Master of ${state.selectedTradition.name}. Task: Card interpretation for "${card.name}" linked to "${state.author}". Instructions: - Exegesis: 200-word analysis. - Meta: Hebrew Letter, Astrological Ruler, Alchemical Stage, Grimoire Spirit. - Visual: Description for art generation (${state.selectedStyle.name}). - TONE: ${techContext} ${erosContext} Return JSON: {"exegesis": "string", "meta": { "hebrew": "string", "planet": "string", "alchemical": "string", "daimon": "string", "gematria": number }, "visual": "string"}`);
+        data = await fetchGemini(`Role: Grand Master of ${state.selectedTradition.name}. Task: Card interpretation for "${card.name}" linked to "${state.author}". Instructions: - Exegesis: 200-word analysis. - Meta: Hebrew Letter, Astrological Ruler, Alchemical Stage, Grimoire Spirit. - Visual: Description for art generation (${state.selectedStyle.name}). - CANONICAL SOURCE CONTEXT: ${canonicalFacts}. Preserve these facts exactly. The requested Meta fields are generated interpretive reflection only; do not present them as historical source facts. - TONE: ${techContext} ${erosContext} Return JSON: {"exegesis": "string", "meta": { "hebrew": "string", "planet": "string", "alchemical": "string", "daimon": "string", "gematria": number }, "visual": "string"}`);
     }
     const compiledPrompt = compileTarotImagePrompt({
       cardName: card.name,
@@ -956,6 +985,7 @@ export default function App() {
       visual: data.visual,
       erosPrompt,
       meta: data.meta,
+      canonicalContext,
     });
     const hasStoredPrompt = Boolean(imageOptions.prompt || card.promptUsed);
     const fullPrompt = imageOptions.prompt || card.promptUsed || compiledPrompt;
@@ -970,6 +1000,8 @@ export default function App() {
     return {
       ...card,
       ...data,
+      canonicalCardId: canonicalContext?.cardId || card.canonicalCardId || null,
+      interpretiveMetaAuthority: 'MODEL_GENERATED_REFLECTION',
       imageUrl: rendered.imageUrl,
       promptUsed: fullPrompt,
       promptSchema,
@@ -1065,27 +1097,76 @@ export default function App() {
   const handleOracleConsultation = useCallback(async () => {
     if (!state.oracleQuestion) return;
     dispatch({ type: 'CONSULT_ORACLE_START' });
-    const drawn = [...state.deck].sort(() => 0.5 - Math.random()).slice(0, 3);
+
+    const erosContext = getErosContext(state.erosLevel);
+    const techContext = TECH_LEVELS[state.techLevel].instruction;
+    let prepared;
+    try {
+      prepared = prepareCanonicalOracleConsultation({
+        deck: state.deck,
+        activeSpread: state.activeSpread,
+        spreadSlots: state.spreadSlots,
+        question: state.oracleQuestion,
+        tradition: state.selectedTradition,
+        author: state.author,
+        readingDepth: 'adept',
+        techContext,
+        erosContext,
+      });
+    } catch (e) {
+      dispatch({ type: 'CONSULT_ORACLE_FAILURE' });
+      dispatch({ type: 'SET_ERROR_MESSAGE', payload: `Oracle Canonicalization Failed: ${e.message}` });
+      return;
+    }
+
+    const drawn = prepared.cards;
     const updatedCards = await Promise.all(drawn.map(async (c) => {
-      if (!c.exegesis || !c.imageUrl) { try { return await generateCardData(c); } catch (e) { return c; } }
+      if (!c.exegesis || !c.imageUrl) {
+        try { return await generateCardData(c); } catch (e) { return c; }
+      }
       return c;
     }));
     const newDeck = state.deck.map(deckCard => {
-       const newlyForged = updatedCards.find(u => u.id === deckCard.id);
-       return newlyForged ? newlyForged : deckCard;
+      const newlyForged = updatedCards.find(u => u.id === deckCard.id);
+      return newlyForged || deckCard;
     });
+
     try {
-      const erosContext = getErosContext(state.erosLevel);
-      const techContext = TECH_LEVELS[state.techLevel].instruction;
-      const res = await fetchGemini(`Role: Oracle of ${state.author}. Tradition: ${state.selectedTradition.name}. Query: "${state.oracleQuestion}" Cards: ${updatedCards.map(c => c.name).join(', ')}. Task: Synthesize a 300-word divinatory answer using Elemental Dignities. TONE: ${techContext} ${erosContext} Return JSON: {"answer": "string"}`);
+      const canonicalPrompt = buildCanonicalOracleSynthesisPrompt({
+        author: state.author,
+        traditionName: state.selectedTradition.name,
+        techContext,
+        erosContext,
+        record: prepared.record,
+        cards: updatedCards,
+      });
+      const res = await fetchGemini(canonicalPrompt);
       oracleBuzz();
-      dispatch({ type: 'CONSULT_ORACLE_SUCCESS', payload: { cards: updatedCards, answer: res.answer, updatedDeck: newDeck } });
+      dispatch({
+        type: 'CONSULT_ORACLE_SUCCESS',
+        payload: {
+          cards: updatedCards,
+          answer: res.answer,
+          updatedDeck: newDeck,
+          readingRecord: prepared.record,
+          selectionSource: prepared.selectionSource,
+        },
+      });
     } catch (e) {
       dispatch({ type: 'CONSULT_ORACLE_FAILURE' });
       dispatch({ type: 'SET_STATUS', payload: 'ORACLE SILENT' });
-      dispatch({ type: 'SET_ERROR_MESSAGE', payload: `Oracle Disconnected: ${e.message || "Connection lost"}` });
+      dispatch({ type: 'SET_ERROR_MESSAGE', payload: `Oracle Disconnected: ${e.message || 'Connection lost'}` });
     }
-  }, [state.oracleQuestion, state.deck, state.author, state.selectedTradition, state.erosLevel, state.techLevel]);
+  }, [
+    state.oracleQuestion,
+    state.deck,
+    state.author,
+    state.selectedTradition,
+    state.erosLevel,
+    state.techLevel,
+    state.activeSpread,
+    state.spreadSlots,
+  ]);
 
   const handleSpiritMessage = useCallback(async (overrideText = null) => {
     const input = overrideText || state.spiritInput;
