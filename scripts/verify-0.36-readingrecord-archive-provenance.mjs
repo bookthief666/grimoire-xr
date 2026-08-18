@@ -16,6 +16,9 @@ const must = [
   '<ReadingProvenancePanel reading={state.reading} />',
   'EXPORT RESTORABLE JSON',
   'RESTORE JSON ARCHIVE',
+  'RESTORE ARCHIVE FROM JSON',
+  'document.body.appendChild(picker);',
+  "picker.addEventListener('cancel', cleanup, { once: true });",
 ];
 for (const marker of must) {
   if (!app.includes(marker)) throw new Error(`0.36 static gate failed: missing ${marker}`);
