@@ -19,6 +19,7 @@ const must = [
   'RESTORE ARCHIVE FROM JSON',
   'document.body.appendChild(picker);',
   "picker.addEventListener('cancel', cleanup, { once: true });",
+  "currentView === 'oracle' && state.reading",
 ];
 for (const marker of must) {
   if (!app.includes(marker)) throw new Error(`0.36 static gate failed: missing ${marker}`);
