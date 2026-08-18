@@ -7,10 +7,14 @@ import {
   shouldCancelRelicAttunement,
 } from './livingRelic.js';
 
+const formatRevealValue = value => (
+  value && typeof value === 'object' ? JSON.stringify(value) : String(value)
+);
+
 const RevealToken = ({ label, value }) => (
   <div className="min-w-0 border border-[#e5c158]/45 bg-black/75 px-2 py-2 backdrop-blur-sm">
     <div className="font-header text-[6px] text-[#b8860b]/65">{label}</div>
-    <div className="mt-1 font-header text-[8px] sm:text-[9px] text-[#e5c158] break-words">{String(value)}</div>
+    <div className="mt-1 font-header text-[8px] sm:text-[9px] text-[#e5c158] break-words">{formatRevealValue(value)}</div>
   </div>
 );
 
@@ -156,7 +160,7 @@ export default function LivingRelicSurface({
 
           <div className="grid grid-cols-2 gap-2">
             {model.revealEligible ? revealSummary.map(([label, value]) => (
-              <RevealToken key={`${label}:${String(value)}`} label={label} value={value} />
+              <RevealToken key={`${label}:${formatRevealValue(value)}`} label={label} value={value} />
             )) : (
               <div className="col-span-2 border border-[#b8860b]/45 bg-black/80 p-3 font-body text-[10px] text-[#e5c158]/75">
                 Reviewed correspondence pack pending. The relic remains identified, but no correspondence facts are invented for this system.
