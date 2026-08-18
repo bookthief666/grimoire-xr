@@ -33,6 +33,11 @@ describe('0.37 canonical deck genesis', () => {
     expect(deck.every(card => card.nameAuthority === DECK_GENESIS_AUTHORITIES.sourceQualifiedExpression)).toBe(true);
   });
 
+  it('resolves a name-only Book of Thoth tradition object without object-string drift', () => {
+    const deck = buildCanonicalDeckGenesis({ tradition: { name: 'Book of Thoth' } });
+    expect(deck[1]).toMatchObject({ name: 'THE MAGUS', nameAuthority: DECK_GENESIS_AUTHORITIES.sourceQualifiedExpression });
+  });
+
   it('keeps unsourced traditions deterministic without pretending their labels are source-qualified', () => {
     const deck = buildCanonicalDeckGenesis({ tradition: { id: 'rws', name: 'Rider-Waite-Smith' } });
     expect(deck[1]).toMatchObject({ canonicalCardId: 'major.magician', name: 'THE MAGICIAN' });
