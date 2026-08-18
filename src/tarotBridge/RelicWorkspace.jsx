@@ -64,9 +64,9 @@ export default function RelicWorkspace({
 
   if (!model) return null;
 
-  const title = model.correspondences.expressionById.cardTitle?.value || model.relic.displayName;
+  const title = model.correspondences.expressionById.nativeTitle?.value || model.relic.displayName;
   const planet = model.correspondences.correspondenceById.planet?.value || null;
-  const zodiac = model.correspondences.correspondenceById.zodiac?.value || null;
+  const zodiac = model.correspondences.correspondenceById.zodiacSign?.value || null;
   const element = model.correspondences.correspondenceById.suitElement?.value || null;
 
   return (
