@@ -95,8 +95,14 @@ export const readingRecordSignature = record => JSON.stringify({
   methodAuthority: record?.provenance?.relationMethodAuthority || null,
 });
 
+const resolveReadingRecord = reading => {
+  if (reading?.readingRecord) return reading.readingRecord;
+  if (Array.isArray(reading?.positions) && Array.isArray(reading?.relations)) return reading;
+  return null;
+};
+
 export const buildLivingTriadCurrentModel = ({ reading, cards, reducedMotion = false } = {}) => {
-  const record = reading?.readingRecord || reading || null;
+  const record = resolveReadingRecord(reading);
   if (!record) {
     return {
       version: LIVING_TRIAD_CURRENT_VERSION,
