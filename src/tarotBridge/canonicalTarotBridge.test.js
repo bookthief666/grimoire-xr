@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   CANONICAL_CARD_MANIFEST,
+  CANONICAL_SPREAD_MAP,
   UPSTREAM_TAROT_CONTRACT,
   buildCanonicalOraclePromptPayload,
   buildCanonicalTriadConsultation,
@@ -36,6 +37,27 @@ describe('0.35 Fold canonical Tarot bridge', () => {
     expect(validateCanonicalTarotBridge()).toEqual([]);
   });
 
+  it('mirrors upstream neutral family/rank identity fields rather than client-specific labels', () => {
+    expect(getCanonicalCardDescriptor('major.empress')).toMatchObject({
+      familyId: 'empress',
+      suitFamilyId: null,
+      rankId: null,
+      rankClass: null,
+    });
+    expect(getCanonicalCardDescriptor('minor.swords.ace')).toMatchObject({
+      familyId: 'swords',
+      suitFamilyId: 'swords',
+      rankId: 'ace',
+      rankClass: 'pip',
+    });
+    expect(getCanonicalCardDescriptor('minor.coins.king')).toMatchObject({
+      familyId: 'coins',
+      suitFamilyId: 'coins',
+      rankId: 'king',
+      rankClass: 'court',
+    });
+  });
+
   it('mirrors source-qualified Thoth expression/correspondence fields without importing the legacy full-major table as truth', () => {
     expect(getCanonicalCardDescriptor(1).thoth.fields.displayName).toMatchObject({
       value: 'THE MAGUS',
@@ -52,6 +74,30 @@ describe('0.35 Fold canonical Tarot bridge', () => {
       zodiacSign: { value: 'ARIES' },
     });
     expect(getCanonicalCardDescriptor('major.empress').thoth.correspondences).toEqual({});
+  });
+
+  it('mirrors canonical and provisional spread position identity exactly enough for cross-client addressing', () => {
+    expect(CANONICAL_SPREAD_MAP.TRIAD).toMatchObject({
+      spreadId: 'grimoire.triad.dialectic',
+      version: '1.0.0',
+      cardCount: 3,
+      semanticStatus: 'CANONICAL_PROJECT',
+    });
+    expect(CANONICAL_SPREAD_MAP.TRIAD.positions.map(position => [position.positionId, position.ordinal])).toEqual([
+      ['thesis', 0], ['antithesis', 1], ['synthesis', 2],
+    ]);
+    expect(CANONICAL_SPREAD_MAP.TRIAD.topology.orderedAdjacency).toEqual([
+      ['thesis', 'antithesis'], ['antithesis', 'synthesis'],
+    ]);
+
+    expect(CANONICAL_SPREAD_MAP.HEXAGRAM).toMatchObject({ cardCount: 6, semanticStatus: 'PROVISIONAL' });
+    expect(CANONICAL_SPREAD_MAP.HEXAGRAM.positions.map(position => position.positionId)).toEqual([
+      'p1', 'p2', 'p3', 'p4', 'p5', 'p6',
+    ]);
+    expect(CANONICAL_SPREAD_MAP.CROSS).toMatchObject({ cardCount: 10, semanticStatus: 'PROVISIONAL' });
+    expect(CANONICAL_SPREAD_MAP.CROSS.positions.map(position => position.positionId)).toEqual([
+      'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10',
+    ]);
   });
 
   it('resolves Book of Thoth to the inherited sourced relation method and does not invent thoth_native relations', () => {
