@@ -22,6 +22,13 @@ app = replaceOnce(
 
 app = replaceOnce(
   app,
+  '          <motion.div key="oracle" className="min-h-[100dvh] pt-[calc(8rem+env(safe-area-inset-top))] pr-[max(1.5rem,env(safe-area-inset-right))] pb-[max(1.5rem,env(safe-area-inset-bottom))] pl-[max(1.5rem,env(safe-area-inset-left))] flex flex-col items-center max-w-4xl mx-auto z-20 relative">',
+  '          <motion.div key="oracle" className={`min-h-[100dvh] pt-[calc(8rem+env(safe-area-inset-top))] pr-[max(1.5rem,env(safe-area-inset-right))] pb-[max(1.5rem,env(safe-area-inset-bottom))] pl-[max(1.5rem,env(safe-area-inset-left))] flex flex-col items-center ${state.reading ? \'max-w-5xl\' : \'max-w-4xl\'} mx-auto z-20 relative`}>',
+  'completed-reading measure',
+);
+
+app = replaceOnce(
+  app,
   '            <h2 className="text-6xl font-header text-red-600 mb-12 neon-text text-center"><GlitchText text="THE ORACLE" isEgregore={isEgregoreActive} /></h2>',
   '            {!state.reading && <h2 className="text-6xl font-header text-red-600 mb-12 neon-text text-center"><GlitchText text="THE ORACLE" isEgregore={isEgregoreActive} /></h2>}',
   'completed-reading title hierarchy',
@@ -35,6 +42,7 @@ app = replaceOnce(app, oldReading, newReading, 'completed Oracle reading surface
 
 if (!app.includes("import OracleLivingBook from './tarotBridge/OracleLivingBook.jsx';")) fail('Living Book import missing');
 if (!app.includes('<OracleLivingBook')) fail('Living Book surface missing');
+if (!app.includes("state.reading ? 'max-w-5xl' : 'max-w-4xl'")) fail('completed-reading width hierarchy missing');
 if (app.includes('<ReadingProvenancePanel reading={state.reading} />')) fail('old technical provenance surface still mounted in Oracle');
 
 fs.writeFileSync(appPath, app);
