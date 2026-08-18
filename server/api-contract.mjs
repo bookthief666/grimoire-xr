@@ -1,6 +1,7 @@
-export const GRIMOIRE_AI_PROTOCOL_VERSION = 1;
-export const GRIMOIRE_PROMPT_SCHEMA = 'tarot-structured-v1';
+export const GRIMOIRE_AI_PROTOCOL_VERSION = 2;
+export const GRIMOIRE_PROMPT_SCHEMA = 'tarot-structured-v2';
 export const GRIMOIRE_STRUCTURED_TEXT_TASKS = Object.freeze(['ritual', 'card', 'oracle']);
+export const GRIMOIRE_RITUAL_DECK_IDENTITY = 'canonical-client-manifest';
 
 export const buildApiContract = ({
   textProvider = 'unknown',
@@ -15,6 +16,7 @@ export const buildApiContract = ({
     timingTelemetry: true,
     promptSchema: GRIMOIRE_PROMPT_SCHEMA,
     structuredTextTasks: [...GRIMOIRE_STRUCTURED_TEXT_TASKS],
+    ritualDeckIdentity: GRIMOIRE_RITUAL_DECK_IDENTITY,
     textProvider,
     imageProvider,
     imageModes: comfy ? ['preview', 'final', 'refine'] : ['preview'],
