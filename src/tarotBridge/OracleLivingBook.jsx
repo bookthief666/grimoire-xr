@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { BookOpen, Check, Copy, Download, RefreshCw } from 'lucide-react';
+import { BookOpen, Check, Copy, Download, RefreshCw, Sparkles } from 'lucide-react';
 import { buildOracleBookPresentation } from './oracleBookPresentation.js';
 
 const toneClass = tone => {
@@ -30,10 +30,10 @@ const PositionCard = ({ position, ordinal }) => (
       {position.imageUrl ? (
         <img src={position.imageUrl} alt={`${position.label}: ${position.title}`} className="h-full w-full object-cover" />
       ) : (
-        <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_center,rgba(184,134,11,0.14),transparent_58%)]">
-          <div className="text-center">
-            <div className="text-4xl sm:text-5xl text-[#8c713b]/60" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>{['I','II','III'][ordinal] || '✶'}</div>
-            <div className="mt-4 font-header text-[7px] text-[#8c713b]/50">IMAGE UNMANIFESTED</div>
+        <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_center,rgba(184,134,11,0.16),transparent_58%)]">
+          <div className="text-center px-2">
+            <div className="text-4xl sm:text-5xl text-[#8c713b]/70" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>{['I','II','III'][ordinal] || '✶'}</div>
+            <div className="mt-4 font-header text-[7px] text-[#8c713b]/55">UNMANIFESTED RELIC</div>
           </div>
         </div>
       )}
@@ -56,7 +56,15 @@ const RelationNote = ({ relation }) => (
   </div>
 );
 
-export default function OracleLivingBook({ reading, onCopy, copied = false, onNewReading, onArchive }) {
+export default function OracleLivingBook({
+  reading,
+  onCopy,
+  copied = false,
+  onNewReading,
+  onArchive,
+  onInterpret = null,
+  isInterpreting = false,
+}) {
   const model = useMemo(() => buildOracleBookPresentation(reading), [reading]);
 
   if (!model.hasCanonicalRecord) {
@@ -90,20 +98,49 @@ export default function OracleLivingBook({ reading, onCopy, copied = false, onNe
         {model.positions.map((position, index) => <PositionCard key={position.positionId} position={position} ordinal={index} />)}
       </div>
 
-      <article className="relative border-y border-[#8b6a2b]/45 bg-[#090806]/90 px-5 py-8 sm:px-10 sm:py-10 shadow-[0_18px_60px_rgba(0,0,0,0.28)]">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+      <article className="relative border-y border-[#8b6a2b]/45 bg-[#090806]/90 px-5 py-7 sm:px-10 sm:py-9 shadow-[0_18px_60px_rgba(0,0,0,0.28)]">
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
           <div>
-            <div className="font-header text-[8px] sm:text-[9px] tracking-[0.18em] text-red-400/80">INTERPRETATION</div>
-            <div className="mt-1 text-[12px] sm:text-[13px] text-red-300/50">Generated synthesis · not a source fact</div>
+            <div className="font-header text-[8px] sm:text-[9px] tracking-[0.18em] text-[#d6b45b]">THE WITNESS</div>
+            <div className="mt-1 text-[12px] sm:text-[13px] text-[#9e8d62]">Derived from the recorded relations · no model invoked</div>
           </div>
           <button onClick={() => onCopy?.(model.copyText)} className="min-h-11 flex items-center gap-2 border border-[#8b6a2b]/55 px-4 py-3 font-header text-[9px] text-[#d6b45b] hover:bg-[#b8860b] hover:text-black transition-colors">
             {copied ? <Check size={14}/> : <Copy size={14}/>} {copied ? 'COPIED' : 'COPY READING'}
           </button>
         </div>
-        <div className="select-text whitespace-pre-wrap text-[19px] sm:text-[22px] leading-[1.75] text-[#eee6d5]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
-          {model.answer || 'No generated synthesis was recorded for this reading.'}
+        <div className="select-text text-[18px] sm:text-[21px] leading-[1.7] text-[#eee6d5]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
+          {model.witness}
         </div>
       </article>
+
+      {model.answer ? (
+        <article className="mt-6 relative border-y border-red-900/40 bg-[#100707]/55 px-5 py-7 sm:px-10 sm:py-9">
+          <div className="mb-5">
+            <div className="font-header text-[8px] sm:text-[9px] tracking-[0.18em] text-red-400/80">INTERPRETATION</div>
+            <div className="mt-1 text-[12px] sm:text-[13px] text-red-300/50">Generated synthesis · not a source fact</div>
+          </div>
+          <div className="select-text whitespace-pre-wrap text-[19px] sm:text-[22px] leading-[1.75] text-[#eee6d5]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
+            {model.answer}
+          </div>
+        </article>
+      ) : onInterpret ? (
+        <div className="mt-6 border border-red-900/35 bg-[#0b0707]/45 px-5 py-5 sm:px-7 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="font-header text-[8px] sm:text-[9px] tracking-[0.15em] text-red-300/65">INTERPRETATION IS OPTIONAL</div>
+            <p className="mt-2 text-[15px] sm:text-base leading-relaxed text-[#a99d88]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
+              Ask the local text model to synthesize this already-computed reading. No artwork will be generated.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onInterpret}
+            disabled={isInterpreting}
+            className="min-h-12 flex-shrink-0 flex items-center justify-center gap-2 border border-red-900/70 px-5 py-3 font-header text-[9px] text-red-300/75 hover:border-red-600 hover:text-red-200 disabled:opacity-45 disabled:cursor-wait transition-colors"
+          >
+            <Sparkles size={14} className={isInterpreting ? 'animate-pulse' : ''} /> {isInterpreting ? 'INTERPRETING…' : 'REQUEST INTERPRETATION'}
+          </button>
+        </div>
+      ) : null}
 
       <section className="mt-10 sm:mt-14">
         <div className="mb-6 flex items-center gap-3">
@@ -158,6 +195,8 @@ export default function OracleLivingBook({ reading, onCopy, copied = false, onNe
             <div>selectionSource: {technical.selectionSource || '—'}</div>
             <div>relationMethod: {technical.relationMethod || 'disabled'}</div>
             <div>relationMethodAuthority: {technical.relationMethodAuthority || '—'}</div>
+            <div>witnessAuthority: {model.witnessAuthority}</div>
+            <div>answerAuthority: {model.answerAuthority || 'none'}</div>
             <div>sourceIds: {technical.sourceIds.join(', ') || 'none'}</div>
             <div>unresolvedReasonCodes: {technical.unresolvedReasonCodes.join(', ') || 'none'}</div>
             <div>{technical.contract.contractId}@{technical.contract.contractVersion} · {technical.contract.commit}</div>

@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { buildTarotQaSnapshot } from './qaFixtures.js';
 import { buildOracleBookPresentation, relationLanguage, sourceLabel } from './oracleBookPresentation.js';
+import { THRESHOLD_READING_AUTHORITY } from './thresholdReading.js';
 
-const readingFromFixture = fixtureId => {
+const readingFromFixture = (fixtureId, { answer = 'Generated QA synthesis.' } = {}) => {
   const snapshot = buildTarotQaSnapshot(fixtureId);
   return {
     cards: snapshot.cards.map(card => ({
@@ -11,13 +12,13 @@ const readingFromFixture = fixtureId => {
       name: card.thothDisplayName,
       imageUrl: null,
     })),
-    answer: 'Generated QA synthesis.',
+    answer,
     readingRecord: snapshot.record,
     selectionSource: 'BOUND_TRIAD_CLOTH',
   };
 };
 
-describe('0.42 Living Book Oracle presentation', () => {
+describe('Living Book Oracle presentation', () => {
   it('turns Three Aces into reader-facing positions without mutating semantic truth', () => {
     const reading = readingFromFixture('three-aces');
     const before = JSON.stringify(reading.readingRecord);
@@ -31,12 +32,28 @@ describe('0.42 Living Book Oracle presentation', () => {
     expect(model.relations.map(relation => relation.heading)).toEqual(['Mutual strengthening', 'Mutual strengthening']);
     expect(model.outerContext.heading).toBe('Contrary relation');
     expect(model.centerContext.heading).toBe('The center between contraries');
+    expect(model.witness).toContain('Thesis and Antithesis strengthen one another');
+    expect(model.witnessAuthority).toBe(THRESHOLD_READING_AUTHORITY);
     expect(model.provenance.methodText).toContain('Liber LXXVIII');
     expect(model.provenance.selectionText).toContain('TRIAD cloth');
     expect(model.provenance.contractText).toContain('current canonical Tarot contract');
     expect(model.copyText).toContain('QUESTION');
-    expect(model.copyText).toContain('READING');
+    expect(model.copyText).toContain('WITNESS');
+    expect(model.copyText).toContain('INTERPRETATION');
     expect(model.copyText).toContain('SOURCES');
+  });
+
+  it('supports a complete provider-free reading with no generated interpretation', () => {
+    const reading = readingFromFixture('three-aces', { answer: '' });
+    reading.origin = 'THRESHOLD_PROVIDER_FREE';
+    reading.providerFree = true;
+    const model = buildOracleBookPresentation(reading);
+
+    expect(model.answer).toBe('');
+    expect(model.answerAuthority).toBe(null);
+    expect(model.witness).toContain('Thesis and Antithesis strengthen one another');
+    expect(model.copyText).toContain('WITNESS');
+    expect(model.copyText).not.toContain('INTERPRETATION\n');
   });
 
   it('translates the Major gap without inventing a relation', () => {
@@ -50,6 +67,7 @@ describe('0.42 Living Book Oracle presentation', () => {
       expect(relation.raw.reasonCode).toBe('CARD_WITHOUT_SUIT_FAMILY');
     }
     expect(model.provenance.unresolvedCount).toBeGreaterThan(0);
+    expect(model.witness).toContain('No elemental-dignity relation is asserted');
   });
 
   it('keeps raw technical provenance available behind the reader-facing model', () => {

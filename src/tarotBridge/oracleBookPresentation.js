@@ -1,5 +1,6 @@
 import { getCanonicalCardDescriptor, UPSTREAM_TAROT_CONTRACT } from './canonicalTarotBridge.js';
 import { summarizeReadingProvenance } from './archiveEnvelope.js';
+import { buildReadingWitness, THRESHOLD_READING_AUTHORITY } from './thresholdReading.js';
 
 const SOURCE_LABELS = Object.freeze({
   'src.primary.crowley.liber-lxxviii': 'Aleister Crowley · Liber LXXVIII',
@@ -94,7 +95,7 @@ export const buildOracleBookPresentation = reading => {
     return Object.freeze({
       hasCanonicalRecord: false,
       question: '', positions: [], relations: [], outerContext: null, centerContext: null,
-      answer,
+      witness: '', witnessAuthority: null, answer, answerAuthority: reading?.answerAuthority || null,
       provenance: { contractText: 'Legacy/generated reading. No canonical ReadingRecord is attached.', sources: [], technical: null },
       copyText: answer,
     });
@@ -161,10 +162,14 @@ export const buildOracleBookPresentation = reading => {
   });
 
   const question = clean(record.input?.question);
+  const witness = clean(reading?.witness) || buildReadingWitness(record);
+  const witnessAuthority = reading?.witnessAuthority || THRESHOLD_READING_AUTHORITY;
+  const answerAuthority = reading?.answerAuthority || (answer ? 'MODEL_GENERATED_INTERPRETATION' : null);
   const copyText = [
     question ? `QUESTION\n${question}` : '',
     ...positions.map(position => `${position.label}\n${position.title}${position.nativeTitle && position.nativeTitle !== position.title ? ` · ${position.nativeTitle}` : ''}\n${position.functionText}`),
-    answer ? `READING\n${answer}` : '',
+    witness ? `WITNESS\n${witness}` : '',
+    answer ? `INTERPRETATION\n${answer}` : '',
     relations.length ? `RELATIONS\n${relations.map(relation => `${relation.fromLabel} → ${relation.toLabel}: ${relation.heading}. ${relation.body}`).join('\n')}` : '',
     sources.length ? `SOURCES\n${sources.map(source => source.label).join('\n')}` : '',
   ].filter(Boolean).join('\n\n');
@@ -176,7 +181,10 @@ export const buildOracleBookPresentation = reading => {
     relations: Object.freeze(relations),
     outerContext,
     centerContext,
+    witness,
+    witnessAuthority,
     answer,
+    answerAuthority,
     provenance,
     copyText,
   });
