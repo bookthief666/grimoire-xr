@@ -32,11 +32,17 @@ describe('application route resolution', () => {
     expect(resolveAppRoute({ pathname: '/', search: '?mode=living-relic-qa' })).toBe(APP_ROUTE_IDS.livingRelicQa);
   });
 
+  it('routes the living triad current QA surface independently', () => {
+    expect(resolveAppRoute({ pathname: '/qa/living-current', search: '?fixture=three-aces' })).toBe(APP_ROUTE_IDS.livingTriadCurrentQa);
+    expect(resolveAppRoute({ pathname: '/', search: '?mode=living-triad-current-qa&fixture=major-gap' })).toBe(APP_ROUTE_IDS.livingTriadCurrentQa);
+  });
+
   it('gives explicit QA selection precedence over stale VR hints', () => {
     expect(resolveAppRoute({ pathname: '/qa/tarot', search: '?mode=vr' })).toBe(APP_ROUTE_IDS.tarotQa);
     expect(resolveAppRoute({ pathname: '/vr', search: '?mode=tarot-qa' })).toBe(APP_ROUTE_IDS.tarotQa);
     expect(resolveAppRoute({ pathname: '/qa/card-authority', search: '?mode=vr' })).toBe(APP_ROUTE_IDS.cardAuthorityQa);
     expect(resolveAppRoute({ pathname: '/qa/relic-workspace', search: '?mode=vr' })).toBe(APP_ROUTE_IDS.relicWorkspaceQa);
     expect(resolveAppRoute({ pathname: '/qa/living-relic', search: '?mode=vr' })).toBe(APP_ROUTE_IDS.livingRelicQa);
+    expect(resolveAppRoute({ pathname: '/qa/living-current', search: '?mode=vr' })).toBe(APP_ROUTE_IDS.livingTriadCurrentQa);
   });
 });
