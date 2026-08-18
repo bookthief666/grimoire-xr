@@ -9,8 +9,8 @@ let app = fs.readFileSync(appPath, 'utf8');
 const alreadyApplied = app.includes("from './tarotBridge/CardRelicAuthorityPanel.jsx';")
   && app.includes('<CardRelicAuthorityPanel card={state.focusedCard} tradition={state.selectedTradition} />')
   && app.includes("exegesisAuthority: card.exegesisAuthority")
-  && app.includes('AI-GENERATED REFLECTION METADATA')
-  && app.includes('AI-GENERATED EXEGESIS');
+  && app.includes('REFLECTION METADATA')
+  && app.includes('INTERPRETIVE EXEGESIS');
 
 if (alreadyApplied) {
   console.log('0.38 card relic authority UI activation already applied.');
@@ -48,7 +48,7 @@ const panelReplacement = `                  <CardRelicAuthorityPanel card={state
 const exegesisNeedle = `                      <p className="break-words">{state.focusedCard.exegesis}</p>`;
 const exegesisReplacement = `                      <div className="p-4 border border-red-600/30 bg-red-950/10">
                         <div className="flex flex-wrap items-center gap-2 mb-3">
-                          <span className="font-header text-[8px] sm:text-[9px] text-red-400">AI-GENERATED EXEGESIS</span>
+                          <span className="font-header text-[8px] sm:text-[9px] text-red-400">INTERPRETIVE EXEGESIS</span>
                           <span className="px-2 py-1 border border-red-600/50 font-header text-[7px] text-red-400">{state.focusedCard.exegesisAuthority || 'LEGACY_UNCLASSIFIED_INTERPRETATION'}</span>
                           <span className="px-2 py-1 border border-red-600/30 font-header text-[7px] text-red-500/70">NOT SOURCE FACT</span>
                         </div>
@@ -67,7 +67,7 @@ const metaBlockNeedle = `                      <div className="grid grid-cols-2 
                       </div>`;
 const metaBlockReplacement = `                      <div className="pt-6 sm:pt-8 border-t border-red-600/30">
                         <div className="flex flex-wrap items-center gap-2 mb-3">
-                          <span className="font-header text-[8px] sm:text-[9px] text-red-400">AI-GENERATED REFLECTION METADATA</span>
+                          <span className="font-header text-[8px] sm:text-[9px] text-red-400">REFLECTION METADATA</span>
                           <span className="px-2 py-1 border border-red-600/50 font-header text-[7px] text-red-400">{state.focusedCard.interpretiveMetaAuthority || 'LEGACY_UNCLASSIFIED_REFLECTION'}</span>
                           <span className="px-2 py-1 border border-red-600/30 font-header text-[7px] text-red-500/70">NOT SOURCE FACT</span>
                         </div>
