@@ -42,7 +42,7 @@ export default function CardRelicAuthorityPanel({ card, tradition }) {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h4 className="font-header text-[10px] sm:text-xs text-[#e5c158] tracking-wider">RELIC AUTHORITY</h4>
-            <p className="font-body text-xs text-white/40 mt-2">Canonical facts and generated interpretation are separate layers.</p>
+            <p className="font-body text-xs text-white/40 mt-2">Canonical facts and interpretive/presentation layers are shown separately.</p>
           </div>
           <Badge tone={sourceQualified ? 'green' : 'gold'}>{model.sourceQualification}</Badge>
         </div>
@@ -95,7 +95,7 @@ export default function CardRelicAuthorityPanel({ card, tradition }) {
 
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <span className="font-header text-[8px] text-red-500/70">GENERATED INTERPRETATION LAYERS</span>
+            <span className="font-header text-[8px] text-red-500/70">INTERPRETATION / PRESENTATION LAYERS</span>
             <Badge tone="red">NOT SOURCE FACT</Badge>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
