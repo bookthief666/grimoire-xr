@@ -17,8 +17,14 @@ describe('application route resolution', () => {
     expect(resolveAppRoute({ pathname: '/', search: '?mode=tarot-qa&fixture=major-gap' })).toBe(APP_ROUTE_IDS.tarotQa);
   });
 
-  it('gives explicit Tarot QA selection precedence over stale VR hints', () => {
+  it('routes the card authority QA surface independently', () => {
+    expect(resolveAppRoute({ pathname: '/qa/card-authority', search: '' })).toBe(APP_ROUTE_IDS.cardAuthorityQa);
+    expect(resolveAppRoute({ pathname: '/', search: '?mode=card-authority-qa' })).toBe(APP_ROUTE_IDS.cardAuthorityQa);
+  });
+
+  it('gives explicit QA selection precedence over stale VR hints', () => {
     expect(resolveAppRoute({ pathname: '/qa/tarot', search: '?mode=vr' })).toBe(APP_ROUTE_IDS.tarotQa);
     expect(resolveAppRoute({ pathname: '/vr', search: '?mode=tarot-qa' })).toBe(APP_ROUTE_IDS.tarotQa);
+    expect(resolveAppRoute({ pathname: '/qa/card-authority', search: '?mode=vr' })).toBe(APP_ROUTE_IDS.cardAuthorityQa);
   });
 });

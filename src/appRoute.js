@@ -2,14 +2,18 @@ export const APP_ROUTE_IDS = Object.freeze({
   app: 'app',
   vr: 'vr',
   tarotQa: 'tarot-qa',
+  cardAuthorityQa: 'card-authority-qa',
 });
 
 export const resolveAppRoute = ({ pathname = '/', search = '' } = {}) => {
   const params = new URLSearchParams(String(search || ''));
   const normalizedPath = String(pathname || '/');
 
-  // Explicit QA path/mode wins over other route hints so a copied QA URL is
+  // Explicit QA paths/modes win over other route hints so copied QA URLs are
   // deterministic even if stale query parameters are present.
+  if (normalizedPath.startsWith('/qa/card-authority') || params.get('mode') === 'card-authority-qa') {
+    return APP_ROUTE_IDS.cardAuthorityQa;
+  }
   if (normalizedPath.startsWith('/qa/tarot') || params.get('mode') === 'tarot-qa') {
     return APP_ROUTE_IDS.tarotQa;
   }

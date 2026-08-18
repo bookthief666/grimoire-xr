@@ -42,6 +42,7 @@ import {
 } from './tarotBridge/archiveEnvelope.js';
 import { generateGrimoireHtmlDocument } from './tarotBridge/archiveHtml.js';
 import ReadingProvenancePanel from './tarotBridge/ReadingProvenancePanel.jsx';
+import CardRelicAuthorityPanel from './tarotBridge/CardRelicAuthorityPanel.jsx';
 
 // ============================================================================
 // 1. CONFIGURATION & STYLES
@@ -921,8 +922,10 @@ export default function App() {
         })
       : 'No source-qualified canonical fact pack is active for this selected Tarot system.';
     if (setStatusCb) setStatusCb(card.exegesis && card.meta ? "PREPARING IMAGE..." : "SCRIBING EXEGESIS...");
+    const reusingStoredInterpretation = Boolean(card.exegesis && card.meta);
+    const inheritedModelAuthority = card.interpretiveMetaAuthority === 'MODEL_GENERATED_REFLECTION';
     let data;
-    if (card.exegesis && card.meta) {
+    if (reusingStoredInterpretation) {
         data = { exegesis: card.exegesis, meta: card.meta, visual: card.visual }; 
     } else {
         data = await fetchGemini(`Role: Grand Master of ${state.selectedTradition.name}. Task: Card interpretation for "${card.name}" linked to "${state.author}". Instructions: - Exegesis: 200-word analysis. - Meta: Hebrew Letter, Astrological Ruler, Alchemical Stage, Grimoire Spirit. - Visual: Description for art generation (${state.selectedStyle.name}). - CANONICAL SOURCE CONTEXT: ${canonicalFacts}. Preserve these facts exactly. The requested Meta fields are generated interpretive reflection only; do not present them as historical source facts. - TONE: ${techContext} ${erosContext} Return JSON: {"exegesis": "string", "meta": { "hebrew": "string", "planet": "string", "alchemical": "string", "daimon": "string", "gematria": number }, "visual": "string"}`, true, 'card');
@@ -952,7 +955,9 @@ export default function App() {
       ...card,
       ...data,
       canonicalCardId: canonicalContext?.cardId || card.canonicalCardId || null,
-      interpretiveMetaAuthority: 'MODEL_GENERATED_REFLECTION',
+      exegesisAuthority: card.exegesisAuthority || ((!reusingStoredInterpretation || inheritedModelAuthority) ? 'MODEL_GENERATED_INTERPRETATION' : 'LEGACY_UNCLASSIFIED_INTERPRETATION'),
+      interpretiveMetaAuthority: card.interpretiveMetaAuthority || (reusingStoredInterpretation ? 'LEGACY_UNCLASSIFIED_REFLECTION' : 'MODEL_GENERATED_REFLECTION'),
+      visualAuthority: card.visualAuthority || ((!reusingStoredInterpretation || inheritedModelAuthority) ? 'MODEL_GENERATED_IMAGE_DIRECTION' : 'LEGACY_UNCLASSIFIED_IMAGE_DIRECTION'),
       imageUrl: rendered.imageUrl,
       promptUsed: fullPrompt,
       promptSchema,
@@ -1664,9 +1669,18 @@ export default function App() {
                     <p className="text-center md:text-left text-[9px] font-body text-white/40">REFINE FINAL uses the current ComfyUI image as img2img input at the final preset, preserving composition more strongly than seed-only finalization.</p>
                   </div>
                   
+                  <CardRelicAuthorityPanel card={state.focusedCard} tradition={state.selectedTradition} />
+
                   {state.isForging && !state.focusedCard.exegesis ? <div className="text-center font-header text-red-600 text-xs animate-pulse mt-10">INSCRIBING TRUTH...</div> : state.focusedCard.exegesis && (
                     <div className="space-y-6 sm:space-y-8 text-red-600/90 font-body leading-relaxed text-base sm:text-xl">
-                      <p className="break-words">{state.focusedCard.exegesis}</p>
+                      <div className="p-4 border border-red-600/30 bg-red-950/10">
+                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                          <span className="font-header text-[8px] sm:text-[9px] text-red-400">INTERPRETIVE EXEGESIS</span>
+                          <span className="px-2 py-1 border border-red-600/50 font-header text-[7px] text-red-400">{state.focusedCard.exegesisAuthority || 'LEGACY_UNCLASSIFIED_INTERPRETATION'}</span>
+                          <span className="px-2 py-1 border border-red-600/30 font-header text-[7px] text-red-500/70">NOT SOURCE FACT</span>
+                        </div>
+                        <p className="break-words">{state.focusedCard.exegesis}</p>
+                      </div>
                       
                       {state.focusedCard.promptUsed && (
                         <div className="p-3 sm:p-4 bg-red-600/5 border border-red-600/30 mb-4 shadow-[inset_0_0_10px_rgba(255,0,0,0.1)]">
@@ -1680,15 +1694,22 @@ export default function App() {
                         </div>
                       )}
 
-                      <div className="grid grid-cols-2 gap-2 sm:gap-4 pt-6 sm:pt-8 border-t border-red-600/30">
-                        {Object.entries(state.focusedCard.meta || {}).map(([k, v]) => (
-                          <div key={k} className="p-3 sm:p-4 bg-red-900/10 border border-red-600/30 min-w-0">
-                            <span className="text-[8px] uppercase text-red-600 block mb-1 font-header opacity-50">{k}</span>
-                            <span className="text-xs sm:text-base font-bold text-[#e5c158] break-words leading-tight block">
-                               {typeof v === 'object' ? JSON.stringify(v) : String(v)}
-                            </span>
-                          </div>
-                        ))}
+                      <div className="pt-6 sm:pt-8 border-t border-red-600/30">
+                        <div className="flex flex-wrap items-center gap-2 mb-3">
+                          <span className="font-header text-[8px] sm:text-[9px] text-red-400">REFLECTION METADATA</span>
+                          <span className="px-2 py-1 border border-red-600/50 font-header text-[7px] text-red-400">{state.focusedCard.interpretiveMetaAuthority || 'LEGACY_UNCLASSIFIED_REFLECTION'}</span>
+                          <span className="px-2 py-1 border border-red-600/30 font-header text-[7px] text-red-500/70">NOT SOURCE FACT</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                          {Object.entries(state.focusedCard.meta || {}).map(([k, v]) => (
+                            <div key={k} className="p-3 sm:p-4 bg-red-900/10 border border-red-600/30 min-w-0">
+                              <span className="text-[8px] uppercase text-red-600 block mb-1 font-header opacity-50">{k}</span>
+                              <span className="text-xs sm:text-base font-bold text-[#e5c158] break-words leading-tight block">
+                                 {typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}
