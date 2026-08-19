@@ -6,6 +6,7 @@ import {
   getCanonicalCardPromptContext,
   getCanonicalInterpretationConfig,
 } from '../src/tarotBridge/canonicalTarotBridge.js';
+import { buildCanonicalOracleSynthesisPrompt } from '../src/tarotBridge/oracleSynthesis.js';
 import { buildThresholdReading } from '../src/tarotBridge/thresholdReading.js';
 
 const pass = label => console.log(`PASS ${label}`);
@@ -14,6 +15,7 @@ const thothShadowBruno = createSemanticConfig({
   tarotSystem: 'thoth',
   interpretiveLenses: ['jungian_shadow', 'bruno_mnemonic'],
   ritualTheme: 'giordano_bruno',
+  readingDepth: 'magus',
 });
 const resolved = getCanonicalInterpretationConfig({
   semanticConfig: thothShadowBruno,
@@ -24,7 +26,8 @@ assert.equal(resolved.correspondenceProfile, 'thoth_native');
 assert.equal(resolved.relationMethod, 'crowley_lxxviii_dignities');
 assert.deepEqual(resolved.lenses, ['jungian_shadow', 'bruno_mnemonic']);
 assert.equal(resolved.ritualTheme, 'giordano_bruno');
-pass('explicit semanticConfig outranks conflicting legacy tradition');
+assert.equal(resolved.readingDepth, 'magus');
+pass('explicit semanticConfig outranks conflicting legacy tradition and preserves its depth');
 
 const thothRecord = buildCanonicalTriadConsultation({
   question: 'Does the explicit semantic configuration survive the bridge?',
@@ -34,9 +37,10 @@ const thothRecord = buildCanonicalTriadConsultation({
 assert.equal(thothRecord.input.tarotSystem, 'thoth');
 assert.equal(thothRecord.input.relationMethod, 'crowley_lxxviii_dignities');
 assert.deepEqual(thothRecord.input.lenses, ['jungian_shadow', 'bruno_mnemonic']);
+assert.equal(thothRecord.input.readingDepth, 'magus');
 assert.equal(thothRecord.presentationContext.ritualTheme, 'giordano_bruno');
 assert.deepEqual(thothRecord.relations.map(relation => relation.relationType), ['FRIENDLY', 'FRIENDLY']);
-pass('TRIAD ReadingRecord records orthogonal lenses without changing Thoth relation truth');
+pass('TRIAD ReadingRecord records orthogonal lenses/depth without changing Thoth relation truth');
 
 const rwsFresh = createSemanticConfig({ tarotSystem: 'rws' });
 const rwsRecord = buildCanonicalTriadConsultation({
@@ -56,6 +60,7 @@ const rwsCrowley = createSemanticConfig({
   correspondenceProfile: 'none',
   relationMethod: 'crowley_lxxviii_dignities',
   interpretiveLenses: ['jungian_shadow'],
+  readingDepth: 'neophyte',
 });
 const directMethodRecord = buildCanonicalTriadConsultation({
   question: 'Can a relation method be selected without inventing a correspondence pack?',
@@ -64,6 +69,7 @@ const directMethodRecord = buildCanonicalTriadConsultation({
 });
 assert.equal(directMethodRecord.input.correspondenceProfile, 'none');
 assert.equal(directMethodRecord.input.relationMethod, 'crowley_lxxviii_dignities');
+assert.equal(directMethodRecord.input.readingDepth, 'neophyte');
 assert.equal(directMethodRecord.provenance.relationMethodAuthority, 'DIRECT_METHOD_SELECTION');
 assert.deepEqual(directMethodRecord.provenance.sourceIds, ['src.primary.crowley.liber-lxxviii']);
 assert.deepEqual(directMethodRecord.input.lenses, ['jungian_shadow']);
@@ -90,11 +96,31 @@ const payload = buildCanonicalOraclePromptPayload({
 assert.equal(payload.reading.positions[0].canonicalCard.tarotSystem, 'rws');
 assert.equal(payload.reading.positions[0].canonicalCard.sourceQualification, 'SOURCE_PACK_PENDING');
 assert.equal(payload.reading.positions[0].canonicalCard.canonicalExpression, null);
-pass('Oracle payload reconstructs card authority from immutable ReadingRecord semantic fields');
+assert.deepEqual(payload.reading.lenses, ['jungian_shadow']);
+assert.equal(payload.reading.readingDepth, 'neophyte');
+assert.equal(payload.reading.ritualTheme, 'none');
+pass('Oracle payload reconstructs card authority and semantic axes from immutable ReadingRecord');
+
+const synthesisPrompt = buildCanonicalOracleSynthesisPrompt({
+  author: 'QA',
+  traditionName: 'legacy-conflicting-label',
+  record: directMethodRecord,
+  cards: [
+    { id: 22, canonicalCardId: 'minor.staffs.ace', name: 'ACE OF WANDS' },
+    { id: 50, canonicalCardId: 'minor.swords.ace', name: 'ACE OF SWORDS' },
+    { id: 36, canonicalCardId: 'minor.cups.ace', name: 'ACE OF CUPS' },
+  ],
+});
+assert.match(synthesisPrompt, /correspondenceProfile=none/);
+assert.match(synthesisPrompt, /relationMethod=crowley_lxxviii_dignities/);
+assert.match(synthesisPrompt, /lenses=jungian_shadow/);
+assert.match(synthesisPrompt, /readingDepth=neophyte/);
+pass('Oracle synthesis prompt discloses explicit semantic axes');
 
 const legacyThoth = getCanonicalInterpretationConfig({ tradition: { id: 'thoth' } });
 assert.equal(legacyThoth.tarotSystem, 'thoth');
 assert.equal(legacyThoth.relationMethod, 'crowley_lxxviii_dignities');
+assert.equal(legacyThoth.readingDepth, 'adept');
 pass('legacy Thoth input remains compatible through deterministic migration');
 
 const threshold = buildThresholdReading({
