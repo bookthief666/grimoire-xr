@@ -33,9 +33,9 @@ const readingState = ({ imageUrl = null, answer = '' } = {}) => ({
   oracleQuestion: 'Does the Grimoire remember?',
   reading: {
     cards: [
-      { id: 'minor.staffs.ace', name: 'Ace of Wands', imageUrl },
-      { id: 'minor.swords.ace', name: 'Ace of Swords', imageUrl: null },
-      { id: 'minor.cups.ace', name: 'Ace of Cups', imageUrl: null },
+      { id: 'minor.staffs.ace', canonicalCardId: 'minor.staffs.ace', name: 'Ace of Wands', imageUrl, patina: 1 },
+      { id: 'minor.swords.ace', canonicalCardId: 'minor.swords.ace', name: 'Ace of Swords', imageUrl: null, patina: 0 },
+      { id: 'minor.cups.ace', canonicalCardId: 'minor.cups.ace', name: 'Ace of Cups', imageUrl: null, patina: 0 },
     ],
     answer,
     semanticContract: { contractId: 'grimoire.tarot.semantic.v1', contractVersion: '1.0.0', commit: 'f4534b4' },
@@ -71,6 +71,22 @@ describe('reliquary store', () => {
     expect(built.entry.metadata.positionCardIds).toEqual(['minor.staffs.ace', 'minor.swords.ace', 'minor.cups.ace']);
     expect(built.images).toHaveLength(1);
     expect(JSON.stringify(built.entry)).not.toContain('data:image/');
+  });
+
+  it('merges the live relic layer by canonicalCardId even when legacy id shapes differ', () => {
+    const state = readingState();
+    state.deck = [{
+      id: 22,
+      canonicalCardId: 'minor.staffs.ace',
+      name: 'ACE OF WANDS',
+      patina: 9,
+      imageUrl: null,
+      exegesis: 'Current live layer',
+    }];
+    const built = buildReliquaryEntry({ state, savedAt: '2026-08-19T00:30:00.000Z' });
+    expect(built.entry.state.reading.cards[0].canonicalCardId).toBe('minor.staffs.ace');
+    expect(built.entry.state.reading.cards[0].patina).toBe(9);
+    expect(built.entry.state.reading.cards[0].exegesis).toBe('Current live layer');
   });
 
   it('upserts the same reading instead of duplicating it', async () => {
