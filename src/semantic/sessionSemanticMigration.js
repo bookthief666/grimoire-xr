@@ -4,8 +4,11 @@ import {
   semanticConfigFromLegacyTradition,
   validateSemanticConfig,
 } from './semanticConfig.js';
+import { semanticBridgeConfigFromReadingRecord } from './semanticBridgeConfig.js';
 
 const depthFromTechLevel = techLevel => ['neophyte', 'adept', 'magus'][Number(techLevel)] || 'adept';
+
+const readingRecordFromState = state => state?.reading?.readingRecord || null;
 
 export const migrateSessionSemanticConfig = state => {
   if (!state || typeof state !== 'object') {
@@ -22,6 +25,20 @@ export const migrateSessionSemanticConfig = state => {
       migrated: false,
       source: 'SEMANTIC_CONFIG_V1',
       migrationNotes: [],
+    });
+  }
+
+  const readingRecord = readingRecordFromState(state);
+  if (readingRecord?.input?.tarotSystem) {
+    const projected = semanticBridgeConfigFromReadingRecord(readingRecord);
+    return Object.freeze({
+      state: {
+        ...state,
+        semanticConfig: projected,
+      },
+      migrated: true,
+      source: 'READING_RECORD_SEMANTIC_PROJECTION',
+      migrationNotes: ['active_semantic_config_recovered_from_immutable_reading_record'],
     });
   }
 
