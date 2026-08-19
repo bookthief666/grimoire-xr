@@ -21,6 +21,7 @@
     "qa:oracle-book": "node scripts/qa-oracle-living-book.mjs",
     "qa:threshold": "node scripts/qa-threshold.mjs",
     "qa:aesthetic": "node scripts/qa-aesthetic-currents.mjs",
+    "qa:reliquary": "node scripts/qa-relic-chamber-reliquary.mjs",
     "qa:ai:contracts": "node scripts/qa-local-ai.mjs --contracts-only",
     "qa:ai": "node scripts/qa-local-ai.mjs",
     "qa:ai:resume": "node scripts/qa-local-ai.mjs --resume-latest",
