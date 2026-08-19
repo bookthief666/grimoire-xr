@@ -50,12 +50,12 @@ if (!bridge.includes(newInterpretation)) {
   bridge = replaceOnce(bridge, oldInterpretation, newInterpretation, 'getCanonicalInterpretationConfig');
 }
 
-if (!bridge.includes('  semanticConfig,\n  readingDepth =')) {
+if (!bridge.includes('  semanticConfig,\n  readingDepth,')) {
   bridge = replaceOnce(
     bridge,
     "  tradition,\n  readingDepth = 'adept',",
-    "  tradition,\n  semanticConfig,\n  readingDepth = 'adept',",
-    'TRIAD semanticConfig parameter',
+    '  tradition,\n  semanticConfig,\n  readingDepth,',
+    'TRIAD semanticConfig parameter without implicit depth override',
   );
 }
 bridge = bridge.includes('getCanonicalInterpretationConfig({ tradition, semanticConfig, readingDepth })')
@@ -92,6 +92,14 @@ if (!bridge.includes('const recordSemanticConfig = semanticBridgeConfigFromReadi
     'ReadingRecord semantic config reconstruction',
   );
 }
+if (!bridge.includes('      lenses: [...(record.input.lenses || [])],')) {
+  bridge = replaceOnce(
+    bridge,
+    '      relationMethod: record.input.relationMethod,\n      positions:',
+    "      relationMethod: record.input.relationMethod,\n      lenses: [...(record.input.lenses || [])],\n      readingDepth: record.input.readingDepth || 'adept',\n      ritualTheme: record.presentationContext?.ritualTheme || 'none',\n      positions:",
+    'Oracle payload semantic axes',
+  );
+}
 bridge = bridge.includes('getCanonicalCardPromptContext({ card: cards[index], semanticConfig: recordSemanticConfig })')
   ? bridge
   : replaceOnce(
@@ -112,6 +120,14 @@ if (!oracle.includes('  semanticConfig,\n  author,')) {
     'Oracle preparation semanticConfig parameter',
   );
 }
+if (oracle.includes("  readingDepth = 'adept',")) {
+  oracle = replaceOnce(
+    oracle,
+    "  readingDepth = 'adept',",
+    '  readingDepth,',
+    'Oracle preparation removes implicit depth override',
+  );
+}
 if (!oracle.includes('    semanticConfig,\n    readingDepth,')) {
   oracle = replaceOnce(
     oracle,
@@ -120,12 +136,20 @@ if (!oracle.includes('    semanticConfig,\n    readingDepth,')) {
     'Oracle TRIAD semanticConfig propagation',
   );
 }
-if (!oracle.includes("traditionName: tradition?.name || tradition?.id || tradition || semanticConfig?.tarotSystem")) {
+if (!oracle.includes("traditionName: semanticConfig?.tarotSystem || tradition?.name || tradition?.id || tradition")) {
   oracle = replaceOnce(
     oracle,
     'traditionName: tradition?.name || tradition?.id || tradition,',
-    "traditionName: tradition?.name || tradition?.id || tradition || semanticConfig?.tarotSystem,",
-    'Oracle presentation label fallback',
+    "traditionName: semanticConfig?.tarotSystem || tradition?.name || tradition?.id || tradition,",
+    'Oracle semantic presentation precedence',
+  );
+}
+if (!oracle.includes('lenses=${(payload.reading.lenses || []).join')) {
+  oracle = replaceOnce(
+    oracle,
+    '`SEMANTIC CONFIG: tarotSystem=${payload.reading.tarotSystem}; correspondenceProfile=${payload.reading.correspondenceProfile}; relationMethod=${payload.reading.relationMethod}; spread=${payload.reading.spreadId}.`,',
+    "`SEMANTIC CONFIG: tarotSystem=${payload.reading.tarotSystem}; correspondenceProfile=${payload.reading.correspondenceProfile}; relationMethod=${payload.reading.relationMethod}; lenses=${(payload.reading.lenses || []).join('+') || 'none'}; ritualTheme=${payload.reading.ritualTheme || 'none'}; readingDepth=${payload.reading.readingDepth || 'adept'}; spread=${payload.reading.spreadId}.`,",
+    'Oracle prompt explicit semantic axes',
   );
 }
 fs.writeFileSync(oraclePath, oracle);
