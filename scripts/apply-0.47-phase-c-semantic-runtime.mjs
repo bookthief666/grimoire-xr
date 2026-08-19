@@ -170,7 +170,7 @@ app = replaceCount(
   app,
   'traditionName: state.selectedTradition.name,',
   'traditionName: semanticSystemPresentationName(state.semanticConfig),',
-  2,
+  3,
   'canonical synthesis semantic system labels',
 );
 
