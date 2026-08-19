@@ -112,6 +112,14 @@ bridge = bridge.includes('getCanonicalCardPromptContext({ card: cards[index], se
 fs.writeFileSync(bridgePath, bridge);
 
 let oracle = fs.readFileSync(oraclePath, 'utf8');
+if (!oracle.includes("from '../semantic/interpretiveLensCatalog.js'")) {
+  oracle = replaceOnce(
+    oracle,
+    "} from './canonicalTarotBridge.js';",
+    "} from './canonicalTarotBridge.js';\nimport { buildInterpretiveLensPromptContext } from '../semantic/interpretiveLensCatalog.js';",
+    'Oracle interpretive-lens prompt import',
+  );
+}
 if (!oracle.includes('  semanticConfig,\n  author,')) {
   oracle = replaceOnce(
     oracle,
@@ -144,12 +152,28 @@ if (!oracle.includes("traditionName: semanticConfig?.tarotSystem || tradition?.n
     'Oracle semantic presentation precedence',
   );
 }
+if (!oracle.includes('const lensContext = buildInterpretiveLensPromptContext(payload.reading.lenses || []);')) {
+  oracle = replaceOnce(
+    oracle,
+    '  const payload = buildCanonicalOraclePromptPayload({ record, cards });',
+    '  const payload = buildCanonicalOraclePromptPayload({ record, cards });\n  const lensContext = buildInterpretiveLensPromptContext(payload.reading.lenses || []);',
+    'Oracle interpretive-lens prompt context',
+  );
+}
 if (!oracle.includes('lenses=${(payload.reading.lenses || []).join')) {
   oracle = replaceOnce(
     oracle,
     '`SEMANTIC CONFIG: tarotSystem=${payload.reading.tarotSystem}; correspondenceProfile=${payload.reading.correspondenceProfile}; relationMethod=${payload.reading.relationMethod}; spread=${payload.reading.spreadId}.`,',
     "`SEMANTIC CONFIG: tarotSystem=${payload.reading.tarotSystem}; correspondenceProfile=${payload.reading.correspondenceProfile}; relationMethod=${payload.reading.relationMethod}; lenses=${(payload.reading.lenses || []).join('+') || 'none'}; ritualTheme=${payload.reading.ritualTheme || 'none'}; readingDepth=${payload.reading.readingDepth || 'adept'}; spread=${payload.reading.spreadId}.`,",
     'Oracle prompt explicit semantic axes',
+  );
+}
+if (!oracle.includes('    lensContext,')) {
+  oracle = replaceOnce(
+    oracle,
+    "    `SEMANTIC CONFIG: tarotSystem=${payload.reading.tarotSystem}; correspondenceProfile=${payload.reading.correspondenceProfile}; relationMethod=${payload.reading.relationMethod}; lenses=${(payload.reading.lenses || []).join('+') || 'none'}; ritualTheme=${payload.reading.ritualTheme || 'none'}; readingDepth=${payload.reading.readingDepth || 'adept'}; spread=${payload.reading.spreadId}.`,\n    'POSITIONS:',",
+    "    `SEMANTIC CONFIG: tarotSystem=${payload.reading.tarotSystem}; correspondenceProfile=${payload.reading.correspondenceProfile}; relationMethod=${payload.reading.relationMethod}; lenses=${(payload.reading.lenses || []).join('+') || 'none'}; ritualTheme=${payload.reading.ritualTheme || 'none'}; readingDepth=${payload.reading.readingDepth || 'adept'}; spread=${payload.reading.spreadId}.`,\n    lensContext,\n    'POSITIONS:',",
+    'Oracle lens context placement',
   );
 }
 fs.writeFileSync(oraclePath, oracle);
