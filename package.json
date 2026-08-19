@@ -22,6 +22,7 @@
     "qa:threshold": "node scripts/qa-threshold.mjs",
     "qa:aesthetic": "node scripts/qa-aesthetic-currents.mjs",
     "qa:reliquary": "node scripts/qa-relic-chamber-reliquary.mjs && node scripts/qa-0.46-behavioral-regressions.mjs && node scripts/verify-0.46-behavioral-policy.mjs",
+    "qa:ontology": "node scripts/qa-semantic-ontology.mjs",
     "qa:ai:contracts": "node scripts/qa-local-ai.mjs --contracts-only",
     "qa:ai": "node scripts/qa-local-ai.mjs",
     "qa:ai:resume": "node scripts/qa-local-ai.mjs --resume-latest",
