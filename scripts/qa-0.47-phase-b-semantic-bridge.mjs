@@ -10,6 +10,11 @@ import { buildCanonicalOracleSynthesisPrompt } from '../src/tarotBridge/oracleSy
 import { buildThresholdReading } from '../src/tarotBridge/thresholdReading.js';
 
 const pass = label => console.log(`PASS ${label}`);
+const aceCards = [
+  { id: 22, canonicalCardId: 'minor.staffs.ace', name: 'ACE OF WANDS' },
+  { id: 50, canonicalCardId: 'minor.swords.ace', name: 'ACE OF SWORDS' },
+  { id: 36, canonicalCardId: 'minor.cups.ace', name: 'ACE OF CUPS' },
+];
 
 const thothShadowBruno = createSemanticConfig({
   tarotSystem: 'thoth',
@@ -87,11 +92,7 @@ pass('RWS card prompt context does not leak Thoth source authority');
 
 const payload = buildCanonicalOraclePromptPayload({
   record: directMethodRecord,
-  cards: [
-    { id: 22, canonicalCardId: 'minor.staffs.ace', name: 'ACE OF WANDS' },
-    { id: 50, canonicalCardId: 'minor.swords.ace', name: 'ACE OF SWORDS' },
-    { id: 36, canonicalCardId: 'minor.cups.ace', name: 'ACE OF CUPS' },
-  ],
+  cards: aceCards,
 });
 assert.equal(payload.reading.positions[0].canonicalCard.tarotSystem, 'rws');
 assert.equal(payload.reading.positions[0].canonicalCard.sourceQualification, 'SOURCE_PACK_PENDING');
@@ -105,17 +106,36 @@ const synthesisPrompt = buildCanonicalOracleSynthesisPrompt({
   author: 'QA',
   traditionName: 'legacy-conflicting-label',
   record: directMethodRecord,
-  cards: [
-    { id: 22, canonicalCardId: 'minor.staffs.ace', name: 'ACE OF WANDS' },
-    { id: 50, canonicalCardId: 'minor.swords.ace', name: 'ACE OF SWORDS' },
-    { id: 36, canonicalCardId: 'minor.cups.ace', name: 'ACE OF CUPS' },
-  ],
+  cards: aceCards,
 });
 assert.match(synthesisPrompt, /correspondenceProfile=none/);
 assert.match(synthesisPrompt, /relationMethod=crowley_lxxviii_dignities/);
 assert.match(synthesisPrompt, /lenses=jungian_shadow/);
 assert.match(synthesisPrompt, /readingDepth=neophyte/);
 pass('Oracle synthesis prompt discloses explicit semantic axes');
+
+const batailleConfig = createSemanticConfig({
+  tarotSystem: 'thoth',
+  interpretiveLenses: ['bataille_eroticism', 'thelemic_hga'],
+  readingDepth: 'magus',
+});
+const batailleRecord = buildCanonicalTriadConsultation({
+  question: 'What can excess reveal without changing the cards?',
+  legacyIndexes: [22, 50, 36],
+  semanticConfig: batailleConfig,
+});
+const bataillePrompt = buildCanonicalOracleSynthesisPrompt({
+  author: 'QA',
+  record: batailleRecord,
+  cards: aceCards,
+});
+assert.match(bataillePrompt, /Georges Bataille — Eroticism & Excess/);
+assert.match(bataillePrompt, /Thelemic Will & HGA/);
+assert.match(bataillePrompt, /MUST NOT recalculate, replace, contradict or invent canonical Tarot/);
+assert.deepEqual(batailleRecord.relations.map(relation => relation.relationType), ['FRIENDLY', 'FRIENDLY']);
+assert.equal(batailleRecord.input.tarotSystem, 'thoth');
+assert.equal(batailleRecord.input.relationMethod, 'crowley_lxxviii_dignities');
+pass('Bataille/Thelema reach generated interpretation only after canonical relation truth is fixed');
 
 const legacyThoth = getCanonicalInterpretationConfig({ tradition: { id: 'thoth' } });
 assert.equal(legacyThoth.tarotSystem, 'thoth');
