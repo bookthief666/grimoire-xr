@@ -29,6 +29,19 @@ const fnvAddress = value => {
 };
 
 const relationType = relation => clean(relation?.relationType || relation?.type || 'UNSPECIFIED').toUpperCase();
+const preferLayer = (current, saved) => current !== null && current !== undefined && current !== '' ? current : saved;
+
+const mergeLiveRelicLayer = (saved, current) => {
+  if (!current) return saved;
+  const merged = { ...saved, ...current };
+  const layeredKeys = [
+    'imageUrl', 'exegesis', 'meta', 'visual', 'promptUsed', 'promptSchema', 'generation',
+    'exegesisAuthority', 'interpretiveMetaAuthority', 'visualAuthority',
+  ];
+  for (const key of layeredKeys) merged[key] = preferLayer(current[key], saved?.[key]);
+  merged.patina = Math.max(Number(saved?.patina || 0), Number(current?.patina || 0));
+  return merged;
+};
 
 export const buildReliquaryMetadata = state => {
   const reading = state?.reading || null;
@@ -80,7 +93,7 @@ export const buildReliquarySnapshot = state => {
   const deckById = new Map((Array.isArray(normalized.deck) ? normalized.deck : []).map(card => [card?.id || card?.canonicalCardId, card]));
   const readingCards = (Array.isArray(normalized.reading.cards) ? normalized.reading.cards : []).map(card => {
     const current = deckById.get(card?.id || card?.canonicalCardId);
-    return current ? { ...card, ...current } : card;
+    return mergeLiveRelicLayer(card, current);
   });
   const reading = {
     ...normalized.reading,
