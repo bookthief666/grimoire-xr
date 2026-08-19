@@ -1,6 +1,9 @@
 import React, { useMemo } from 'react';
 import { BookOpen, Check, Copy, Download, RefreshCw, Sparkles } from 'lucide-react';
 import { buildOracleBookPresentation } from './oracleBookPresentation.js';
+import OracleRelationField from '../aesthetic/OracleRelationField.jsx';
+import { buildOracleSurfaceModel } from '../aesthetic/enchantedSurfaceModel.js';
+import '../aesthetic/enchantedSurfaces.css';
 
 const toneClass = tone => {
   if (tone === 'supportive') return 'border-emerald-900/45 text-emerald-200/90';
@@ -15,8 +18,9 @@ const compactPositionFunction = positionId => {
   return '';
 };
 
-const PositionCard = ({ position, ordinal }) => (
-  <article className="min-w-0">
+const PositionCard = ({ position, ordinal, surfacePosition }) => (
+  <article className="oracle-position-card min-w-0">
+    <div className="oracle-position-seal"><span>{surfacePosition?.mark || '✦'}</span></div>
     <div className="mb-3 text-center">
       <div className="font-header text-[8px] sm:text-[9px] tracking-[0.18em] text-[#d6b45b]">{position.label}</div>
       <p className="mt-2 text-[13px] leading-snug text-[#c9bda2] lg:hidden" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
@@ -26,11 +30,11 @@ const PositionCard = ({ position, ordinal }) => (
         {position.functionText}
       </p>
     </div>
-    <div className="relative aspect-[2/3.35] overflow-hidden border border-[#9c7a32]/70 bg-[#080705] shadow-[0_16px_45px_rgba(0,0,0,0.55)]">
+    <div className="oracle-relic-frame relative aspect-[2/3.35] overflow-hidden border border-[#9c7a32]/70 bg-[#080705] shadow-[0_16px_45px_rgba(0,0,0,0.55)]">
       {position.imageUrl ? (
         <img src={position.imageUrl} alt={`${position.label}: ${position.title}`} className="h-full w-full object-cover" />
       ) : (
-        <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_center,rgba(184,134,11,0.16),transparent_58%)]">
+        <div className="oracle-unmanifested-mark absolute inset-0 grid place-items-center bg-[radial-gradient(circle_at_center,rgba(184,134,11,0.16),transparent_58%)]">
           <div className="text-center px-2">
             <div className="text-4xl sm:text-5xl text-[#8c713b]/70" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>{['I','II','III'][ordinal] || '✶'}</div>
             <div className="mt-4 font-header text-[7px] text-[#8c713b]/55">UNMANIFESTED RELIC</div>
@@ -49,7 +53,7 @@ const PositionCard = ({ position, ordinal }) => (
 );
 
 const RelationNote = ({ relation }) => (
-  <div className={`border-l px-4 py-4 sm:px-5 ${toneClass(relation.tone)}`}>
+  <div className={`oracle-relation-note is-${relation.tone} border-l px-4 py-4 sm:px-5 ${toneClass(relation.tone)}`}>
     <div className="font-header text-[8px] sm:text-[9px] tracking-wider text-[#d6b45b]">{relation.fromLabel} → {relation.toLabel}</div>
     <div className="mt-2 text-[19px] sm:text-xl text-[#eee3c7]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>{relation.heading}</div>
     <p className="mt-2 text-[15px] sm:text-base leading-relaxed text-[#c7bca3]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>{relation.body}</p>
@@ -66,6 +70,7 @@ export default function OracleLivingBook({
   isInterpreting = false,
 }) {
   const model = useMemo(() => buildOracleBookPresentation(reading), [reading]);
+  const surfaceModel = useMemo(() => buildOracleSurfaceModel(model), [model]);
 
   if (!model.hasCanonicalRecord) {
     return (
@@ -79,7 +84,7 @@ export default function OracleLivingBook({
   const technical = model.provenance.technical;
 
   return (
-    <section className="w-full max-w-5xl mx-auto pb-32 text-[#e8dfca]">
+    <section className="oracle-enchanted-surface w-full max-w-5xl mx-auto pb-32 text-[#e8dfca]">
       <header className="mb-8 sm:mb-12 text-center">
         <div className="flex items-center justify-center gap-3 text-[#b99748] mb-3">
           <span className="h-px w-10 bg-[#8b6a2b]/60" />
@@ -94,15 +99,21 @@ export default function OracleLivingBook({
         )}
       </header>
 
-      <div className="grid grid-cols-3 gap-3 sm:gap-6 lg:gap-8 items-start mb-10 sm:mb-14">
-        {model.positions.map((position, index) => <PositionCard key={position.positionId} position={position} ordinal={index} />)}
+      <div className="oracle-spread-stage">
+        <OracleRelationField surface={surfaceModel} />
+        <div className="oracle-card-grid grid grid-cols-3 gap-3 sm:gap-6 lg:gap-8 items-start">
+          {model.positions.map((position, index) => <PositionCard key={position.positionId} position={position} ordinal={index} surfacePosition={surfaceModel.positions[index]} />)}
+        </div>
       </div>
 
-      <article className="relative border-y border-[#8b6a2b]/45 bg-[#090806]/90 px-5 py-7 sm:px-10 sm:py-9 shadow-[0_18px_60px_rgba(0,0,0,0.28)]">
+      <article className="oracle-witness-folio relative border-y border-[#8b6a2b]/45 bg-[#090806]/90 px-5 py-7 sm:px-10 sm:py-9 shadow-[0_18px_60px_rgba(0,0,0,0.28)]">
         <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
-          <div>
+          <div className="flex items-center gap-3">
+            <div className="oracle-witness-seal">✦</div>
+            <div>
             <div className="font-header text-[8px] sm:text-[9px] tracking-[0.18em] text-[#d6b45b]">THE WITNESS</div>
             <div className="mt-1 text-[12px] sm:text-[13px] text-[#9e8d62]">Derived from the recorded relations · no model invoked</div>
+            </div>
           </div>
           <button onClick={() => onCopy?.(model.copyText)} className="min-h-11 flex items-center gap-2 border border-[#8b6a2b]/55 px-4 py-3 font-header text-[9px] text-[#d6b45b] hover:bg-[#b8860b] hover:text-black transition-colors">
             {copied ? <Check size={14}/> : <Copy size={14}/>} {copied ? 'COPIED' : 'COPY READING'}
@@ -156,7 +167,7 @@ export default function OracleLivingBook({
         )}
 
         {(model.outerContext || model.centerContext) && (
-          <div className="mt-6 border border-[#8b6a2b]/30 bg-[#0b0906]/75 p-5 sm:p-6">
+          <div className="oracle-wider-pattern mt-6 border border-[#8b6a2b]/30 bg-[#0b0906]/75 p-5 sm:p-6">
             <div className="font-header text-[8px] sm:text-[9px] text-[#a88842] mb-4">WIDER PATTERN</div>
             {model.outerContext && (
               <p className="text-[15px] sm:text-base leading-relaxed text-[#c7bca3]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>

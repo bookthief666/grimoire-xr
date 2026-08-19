@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BookOpen, ChevronDown, Download, Sparkles } from 'lucide-react';
+import ThresholdRitualField from './aesthetic/ThresholdRitualField.jsx';
+import './aesthetic/enchantedSurfaces.css';
 
 export default function ThresholdLanding({
   question,
@@ -15,10 +17,18 @@ export default function ThresholdLanding({
 }) {
   const canDraw = Boolean(String(question || '').trim());
   const canInitiateStudio = Boolean(String(subject || '').trim());
+  const [isOpening, setIsOpening] = useState(false);
+
+  const handleDraw = () => {
+    if (!canDraw || isOpening) return;
+    setIsOpening(true);
+    window.setTimeout(() => onDraw?.(), 520);
+  };
 
   return (
-    <main className="min-h-[100dvh] pt-[calc(6.5rem+env(safe-area-inset-top))] pr-[max(1.25rem,env(safe-area-inset-right))] pb-[max(2rem,env(safe-area-inset-bottom))] pl-[max(1.25rem,env(safe-area-inset-left))] flex items-center justify-center z-10 relative flex-1">
-      <section className="w-full max-w-3xl mx-auto text-[#e9dfc7]">
+    <main className="threshold-surface min-h-[100dvh] pt-[calc(6.5rem+env(safe-area-inset-top))] pr-[max(1.25rem,env(safe-area-inset-right))] pb-[max(2rem,env(safe-area-inset-bottom))] pl-[max(1.25rem,env(safe-area-inset-left))] flex items-center justify-center z-10 relative flex-1">
+      <ThresholdRitualField hasQuestion={canDraw} opening={isOpening} />
+      <section className="relative z-[1] w-full max-w-3xl mx-auto text-[#e9dfc7]">
         <header className="text-center mb-8 sm:mb-12">
           <div className="flex items-center justify-center gap-3 text-[#b99748] mb-4">
             <span className="h-px w-10 sm:w-16 bg-[#8b6a2b]/55" />
@@ -34,7 +44,7 @@ export default function ThresholdLanding({
           </p>
         </header>
 
-        <div className="border-y border-[#8b6a2b]/45 bg-[#090806]/88 px-4 py-5 sm:px-8 sm:py-7 shadow-[0_22px_70px_rgba(0,0,0,0.35)]">
+        <div className="threshold-inscription-panel border-y border-[#8b6a2b]/45 bg-[#090806]/88 px-4 py-5 sm:px-8 sm:py-7 shadow-[0_22px_70px_rgba(0,0,0,0.35)]">
           <label htmlFor="threshold-question" className="block font-header text-[8px] tracking-[0.2em] text-[#d0af58] mb-3">YOUR QUESTION</label>
           <textarea
             id="threshold-question"
@@ -43,17 +53,17 @@ export default function ThresholdLanding({
             placeholder="Write what you want the cards to illuminate…"
             autoCapitalize="sentences"
             autoCorrect="on"
-            className="native-text-input w-full min-h-[150px] sm:min-h-[180px] resize-y bg-transparent border border-[#8b6a2b]/35 px-4 py-4 text-xl sm:text-2xl leading-relaxed text-[#f0e7d3] placeholder:text-[#8b806b]/45 focus:outline-none focus:border-[#c29c47]/70"
+            className="threshold-question-input native-text-input w-full min-h-[150px] sm:min-h-[180px] resize-y bg-transparent border border-[#8b6a2b]/35 px-4 py-4 text-xl sm:text-2xl leading-relaxed text-[#f0e7d3] placeholder:text-[#8b806b]/45 focus:outline-none focus:border-[#c29c47]/70"
             style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
           />
 
           <button
             type="button"
-            onClick={onDraw}
-            disabled={!canDraw}
-            className="mt-5 min-h-14 w-full flex items-center justify-center gap-3 border border-[#b8860b]/75 bg-[#b8860b]/10 px-5 py-4 font-header text-[10px] sm:text-xs tracking-[0.14em] text-[#e5c158] transition-colors hover:bg-[#b8860b] hover:text-black disabled:opacity-30 disabled:cursor-not-allowed"
+            onClick={handleDraw}
+            disabled={!canDraw || isOpening}
+            className={`threshold-draw-button ${isOpening ? 'is-opening' : ''} mt-5 min-h-14 w-full flex items-center justify-center gap-3 border border-[#b8860b]/75 bg-[#b8860b]/10 px-5 py-4 font-header text-[10px] sm:text-xs tracking-[0.14em] text-[#e5c158] transition-colors hover:bg-[#b8860b] hover:text-black disabled:opacity-30 disabled:cursor-not-allowed`}
           >
-            <Sparkles size={16} /> DRAW THREE
+            <Sparkles size={16} /> {isOpening ? 'OPENING THE THREE…' : 'DRAW THREE'}
           </button>
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-[12px] sm:text-sm text-[#817761]" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
