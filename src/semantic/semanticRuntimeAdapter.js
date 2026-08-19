@@ -35,10 +35,16 @@ export const createInitialSemanticConfig = ({ selectedTradition, techLevel = 1 }
 export const applySemanticPatchToAppState = ({ state, patch, traditions = [] } = {}) => {
   const transition = buildSemanticStateTransition({ state, patch });
   const semanticConfig = transition.nextState.semanticConfig;
+  const closeOpenOracle = Boolean(transition.plan.invalidateReading && state.phase === 'ORACLE');
   return Object.freeze({
     ...transition,
     nextState: {
       ...transition.nextState,
+      ...(closeOpenOracle ? {
+        phase: 'LANDING',
+        oracleQuestion: state.oracleQuestion || state.reading?.readingRecord?.input?.question || '',
+        status: 'READING CLOSED · DOCTRINE CHANGED',
+      } : {}),
       // Compatibility mirrors only. They are no longer semantic authorities.
       selectedTradition: legacySystemTradition({
         tarotSystem: semanticConfig.tarotSystem,
