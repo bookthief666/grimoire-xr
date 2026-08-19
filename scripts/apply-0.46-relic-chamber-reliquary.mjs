@@ -50,6 +50,13 @@ app = replaceOnce(
 
 app = replaceOnce(
   app,
+  "                onArchive={() => void handleSealCurrentReading()}\n                onNewReading={() => dispatch({ type: 'OPEN_THRESHOLD' })}",
+  "                onArchive={() => void handleSealCurrentReading()}\n                onOpenCard={(card) => card && dispatch({ type: 'OPEN_CARD', payload: card })}\n                onNewReading={() => dispatch({ type: 'OPEN_THRESHOLD' })}",
+  'Oracle card chamber action',
+);
+
+app = replaceOnce(
+  app,
   "            className=\"fixed inset-0 z-[80] bg-black/95 backdrop-blur-xl overflow-y-auto native-scroll flex items-start justify-center pt-[calc(4rem+env(safe-area-inset-top))] sm:pt-[calc(6rem+env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[calc(6rem+env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))]\"",
   "            className=\"relic-chamber-overlay fixed inset-0 z-[80] bg-black/95 backdrop-blur-xl overflow-y-auto native-scroll flex items-start justify-center pt-[calc(4rem+env(safe-area-inset-top))] sm:pt-[calc(6rem+env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[calc(6rem+env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))]\"",
   'relic chamber overlay class',
@@ -101,6 +108,7 @@ for (const marker of [
   'handleSealCurrentReading',
   'const canonicalDeck = validateCanonicalDeckGenesis(buildCanonicalDeckGenesis',
   'onArchive={() => void handleSealCurrentReading()}',
+  "onOpenCard={(card) => card && dispatch({ type: 'OPEN_CARD', payload: card })}",
   '<RelicChamberField',
   'relic-chamber-panel',
   '<ReliquarySurface',
@@ -110,4 +118,47 @@ for (const marker of [
 if (app.includes('>ARCHIVE OPTIONS</h3>')) fail('legacy Archive Options surface still present');
 
 fs.writeFileSync(appPath, app);
-console.log('Applied 0.46 Relic Chamber & Reliquary to src/App.jsx.');
+
+const oraclePath = path.join(process.cwd(), 'src/tarotBridge/OracleLivingBook.jsx');
+let oracle = fs.readFileSync(oraclePath, 'utf8');
+
+oracle = replaceOnce(
+  oracle,
+  "const PositionCard = ({ position, ordinal, surfacePosition }) => (\n  <article className=\"oracle-position-card min-w-0\">",
+  "const PositionCard = ({ position, ordinal, surfacePosition, onOpen = null }) => (\n  <article\n    className={`oracle-position-card ${onOpen ? 'is-openable' : ''} min-w-0`}\n    onClick={onOpen || undefined}\n    onKeyDown={event => {\n      if (!onOpen || (event.key !== 'Enter' && event.key !== ' ')) return;\n      event.preventDefault();\n      onOpen();\n    }}\n    role={onOpen ? 'button' : undefined}\n    tabIndex={onOpen ? 0 : undefined}\n    aria-label={onOpen ? `Open relic chamber for ${position.title}` : undefined}\n  >",
+  'Oracle interactive position card',
+);
+
+oracle = replaceOnce(
+  oracle,
+  "    <div className=\"oracle-relic-frame relative aspect-[2/3.35] overflow-hidden border border-[#9c7a32]/70 bg-[#080705] shadow-[0_16px_45px_rgba(0,0,0,0.55)]\">",
+  "    <div className=\"oracle-relic-frame relative aspect-[2/3.35] overflow-hidden border border-[#9c7a32]/70 bg-[#080705] shadow-[0_16px_45px_rgba(0,0,0,0.55)]\">\n      {onOpen && <div className=\"oracle-open-relic-hint\" aria-hidden=\"true\">OPEN RELIC</div>}",
+  'Oracle open relic hint',
+);
+
+oracle = replaceOnce(
+  oracle,
+  "  onArchive,\n  onInterpret = null,",
+  "  onArchive,\n  onOpenCard = null,\n  onInterpret = null,",
+  'Oracle open card prop',
+);
+
+oracle = replaceOnce(
+  oracle,
+  "          {model.positions.map((position, index) => <PositionCard key={position.positionId} position={position} ordinal={index} surfacePosition={surfaceModel.positions[index]} />)}",
+  "          {model.positions.map((position, index) => (\n            <PositionCard\n              key={position.positionId}\n              position={position}\n              ordinal={index}\n              surfacePosition={surfaceModel.positions[index]}\n              onOpen={onOpenCard && position.legacyCard ? () => onOpenCard(position.legacyCard) : null}\n            />\n          ))}",
+  'Oracle position card chamber wiring',
+);
+
+for (const marker of [
+  'onOpenCard = null',
+  "className={`oracle-position-card ${onOpen ? 'is-openable' : ''} min-w-0`}",
+  'aria-label={onOpen ? `Open relic chamber for ${position.title}` : undefined}',
+  'oracle-open-relic-hint',
+  'onOpen={onOpenCard && position.legacyCard ? () => onOpenCard(position.legacyCard) : null}',
+]) {
+  if (!oracle.includes(marker)) fail(`required Oracle runtime marker missing: ${marker}`);
+}
+
+fs.writeFileSync(oraclePath, oracle);
+console.log('Applied 0.46 Relic Chamber & Reliquary to src/App.jsx and src/tarotBridge/OracleLivingBook.jsx.');
