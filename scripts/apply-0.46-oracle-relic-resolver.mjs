@@ -26,17 +26,34 @@ const newHandler = `                onOpenCard={(cardId) => {\n                 
 
 app = replaceOnce(app, oldHandler, newHandler, 'Oracle relic resolver handler');
 
+app = replaceOnce(
+  app,
+  '    const savedById = new Map(savedReadingCards.map(card => [card.id || card.canonicalCardId, card]));',
+  '    const savedByCanonicalId = new Map(savedReadingCards.map(card => [card.canonicalCardId || card.id, card]));',
+  'Reliquary canonical restore index',
+);
+
+app = replaceOnce(
+  app,
+  '      const saved = savedById.get(card.id) || savedById.get(card.canonicalCardId);',
+  '      const saved = savedByCanonicalId.get(card.canonicalCardId) || savedByCanonicalId.get(card.id);',
+  'Reliquary canonical restore lookup',
+);
+
 for (const marker of [
   "import { resolveOracleRelicCard } from './reliquary/oracleRelicResolver.js';",
   'const card = resolveOracleRelicCard({',
   'readingCards: state.reading?.cards || [],',
   "dispatch({ type: 'OPEN_CARD', payload: card })",
   'Relic Chamber could not resolve canonical card',
+  'const savedByCanonicalId = new Map(savedReadingCards.map(card => [card.canonicalCardId || card.id, card]));',
+  'savedByCanonicalId.get(card.canonicalCardId) || savedByCanonicalId.get(card.id)',
 ]) {
   if (!app.includes(marker)) fail(`required resolver runtime marker missing: ${marker}`);
 }
 
 if (app.includes('const liveDeckCard = state.deck.find')) fail('legacy inline Oracle resolver is still present');
+if (app.includes('savedReadingCards.map(card => [card.id || card.canonicalCardId')) fail('legacy-first Reliquary restore index is still present');
 
 fs.writeFileSync(appPath, app);
-console.log('Applied tested 0.46 Oracle relic resolver to src/App.jsx.');
+console.log('Applied tested 0.46 Oracle relic resolver and canonical restore identity to src/App.jsx.');
