@@ -47,6 +47,10 @@ import LivingRelicSurface from './tarotBridge/LivingRelicSurface.jsx';
 import { buildThresholdReading } from './tarotBridge/thresholdReading.js';
 import ThresholdLanding from './ThresholdLanding.jsx';
 import ContinuityReturnDialog from './ContinuityReturnDialog.jsx';
+import AestheticField from './aesthetic/AestheticField.jsx';
+import AestheticCurrentControl from './aesthetic/AestheticCurrentControl.jsx';
+import { persistAestheticPreferences, restoreAestheticPreferences } from './aesthetic/aestheticCurrents.js';
+import './aesthetic/aestheticShell.css';
 import {
   persistGrimoireSession,
   rebindSessionCatalogState,
@@ -869,10 +873,17 @@ export default function App() {
   const [continuityNotice, setContinuityNotice] = useState('');
   const [landingConfirmOpen, setLandingConfirmOpen] = useState(false);
   const [isThresholdInterpreting, setIsThresholdInterpreting] = useState(false);
+  const initialAesthetic = useMemo(restoreAestheticPreferences, []);
+  const [aestheticCurrent, setAestheticCurrent] = useState(initialAesthetic.current);
+  const [enchantmentLevel, setEnchantmentLevel] = useState(initialAesthetic.enchantment);
   
   const { forgeBuzz, oracleBuzz, spiritBuzz, ritualShake, relicAttuneBuzz } = useHaptic();
   const reducedMotion = useReducedMotion();
   useNativeShell(spiritInputRef);
+
+  useEffect(() => {
+    persistAestheticPreferences({ current: aestheticCurrent, enchantment: enchantmentLevel });
+  }, [aestheticCurrent, enchantmentLevel]);
 
   const isEgregoreActive = state.erosLevel >= 3;
 
@@ -1474,7 +1485,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-transparent text-red-600 font-mono selection:bg-red-600 selection:text-black overflow-x-hidden relative flex flex-col">
+    <div className="grimoire-shell min-h-[100dvh] bg-transparent text-red-600 font-mono selection:bg-red-600 selection:text-black overflow-x-hidden relative flex flex-col" data-aesthetic-current={aestheticCurrent} data-enchantment={enchantmentLevel}>
       <style>{`
         .font-header { font-family: 'Press Start 2P', cursive; }
         .font-body { font-family: 'VT323', monospace; font-size: 1.4rem; }
@@ -1486,6 +1497,7 @@ export default function App() {
       `}</style>
 
       <LivingBackground mousePosition={mousePosition} reducedMotion={reducedMotion} />
+      <AestheticField current={aestheticCurrent} enchantment={enchantmentLevel} reducedMotion={reducedMotion} />
       <div className="scanlines" />
       <AudioController />
       <ContinuityReturnDialog
@@ -1520,39 +1532,39 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      <nav className="fixed top-0 inset-x-0 h-[calc(4rem+env(safe-area-inset-top))] z-50 flex items-center justify-between pt-[env(safe-area-inset-top)] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] bg-black/90 border-b-2 border-red-600 backdrop-blur-md shadow-[0_0_20px_rgba(255,0,0,0.4)]">
+      <nav className="grimoire-topbar fixed top-0 inset-x-0 h-[calc(4rem+env(safe-area-inset-top))] z-50 flex items-center justify-between pt-[env(safe-area-inset-top)] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] bg-black/90 border-b-2 border-red-600 backdrop-blur-md shadow-[0_0_20px_rgba(255,0,0,0.4)]">
         <div className="flex items-center gap-4 cursor-pointer" onClick={handleReturnToLanding}>
-          <div className="w-8 h-8 bg-red-600 flex items-center justify-center text-black font-header font-bold text-xs shadow-[0_0_10px_#ff0000]">Θ</div>
+          <div className="grimoire-brand-sigil w-8 h-8 bg-red-600 flex items-center justify-center text-black font-header font-bold text-xs shadow-[0_0_10px_#ff0000]">Θ</div>
           <span className="hidden sm:block text-xs font-header neon-text"><GlitchText text="GRIMOIRE OS" isEgregore={isEgregoreActive} /></span>
         </div>
         <div className="flex items-center gap-2">
           {currentView === 'scriptorium' && (
             <>
-              <button onClick={() => dispatch({ type: 'TOGGLE_SPIRIT_BOX' })} className="flex items-center gap-2 px-3 py-2 bg-black border border-red-600 text-xs font-header hover:bg-red-600 hover:text-black transition-all shadow-[0_0_10px_#ff000033]">
+              <button onClick={() => dispatch({ type: 'TOGGLE_SPIRIT_BOX' })} className="grimoire-shell-button flex items-center gap-2 px-3 py-2 bg-black border border-red-600 text-xs font-header hover:bg-red-600 hover:text-black transition-all shadow-[0_0_10px_#ff000033]">
                 <MessageSquare size={14} /> <span className="hidden md:inline">SPIRIT</span>
               </button>
-              <button onClick={() => dispatch({ type: 'OPEN_ORACLE' })} className="flex items-center gap-2 px-3 py-2 bg-black border border-red-600 text-xs font-header hover:bg-red-600 hover:text-black transition-all shadow-[0_0_10px_#ff000033]">
+              <button onClick={() => dispatch({ type: 'OPEN_ORACLE' })} className="grimoire-shell-button flex items-center gap-2 px-3 py-2 bg-black border border-red-600 text-xs font-header hover:bg-red-600 hover:text-black transition-all shadow-[0_0_10px_#ff000033]">
                 <Eye size={14} /> <span className="hidden md:inline">ORACLE</span>
               </button>
-              <button onClick={() => dispatch({ type: 'OPEN_ARCHIVE_PROMPT' })} className="flex items-center gap-2 px-3 py-2 bg-black border border-red-600 text-xs font-header hover:bg-red-600 hover:text-black transition-all shadow-[0_0_10px_#ff000033]">
+              <button onClick={() => dispatch({ type: 'OPEN_ARCHIVE_PROMPT' })} className="grimoire-shell-button flex items-center gap-2 px-3 py-2 bg-black border border-red-600 text-xs font-header hover:bg-red-600 hover:text-black transition-all shadow-[0_0_10px_#ff000033]">
                 <Download size={14} /> <span className="hidden md:inline">ARCHIVE</span>
               </button>
             </>
           )}
           {currentView === 'oracle' && state.reading && (
-            <button onClick={() => dispatch({ type: 'OPEN_ARCHIVE_PROMPT' })} className="flex items-center gap-2 px-3 py-2 bg-black border border-red-600 text-xs font-header hover:bg-red-600 hover:text-black transition-all shadow-[0_0_10px_#ff000033]">
+            <button onClick={() => dispatch({ type: 'OPEN_ARCHIVE_PROMPT' })} className="grimoire-shell-button flex items-center gap-2 px-3 py-2 bg-black border border-red-600 text-xs font-header hover:bg-red-600 hover:text-black transition-all shadow-[0_0_10px_#ff000033]">
               <Download size={14} /> <span className="hidden md:inline">ARCHIVE</span>
             </button>
           )}
-          <button onClick={() => setIsMenuOpen(true)} className="flex items-center gap-2 px-3 py-2 bg-black border border-red-600 text-xs font-header hover:bg-red-600 hover:text-black transition-all shadow-[0_0_10px_#ff000033]"><Menu size={14} /></button>
+          <button onClick={() => setIsMenuOpen(true)} className="grimoire-shell-button flex items-center gap-2 px-3 py-2 bg-black border border-red-600 text-xs font-header hover:bg-red-600 hover:text-black transition-all shadow-[0_0_10px_#ff000033]"><Menu size={14} /></button>
         </div>
       </nav>
 
       <AnimatePresence>
         {isMenuOpen && (
-          <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} className="fixed inset-y-0 right-0 w-full max-w-80 bg-black border-l-2 border-red-600 z-[60] pt-[calc(1.5rem+env(safe-area-inset-top))] pr-[max(1.5rem,env(safe-area-inset-right))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] pl-6 shadow-[0_0_50px_#ff000033] overflow-y-auto native-scroll">
+          <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} className="grimoire-codex-drawer fixed inset-y-0 right-0 w-full max-w-80 bg-black border-l-2 border-red-600 z-[60] pt-[calc(1.5rem+env(safe-area-inset-top))] pr-[max(1.5rem,env(safe-area-inset-right))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] pl-6 shadow-[0_0_50px_#ff000033] overflow-y-auto native-scroll">
             <div className="flex justify-between items-center mb-8 pb-4 border-b border-red-600/30">
-              <h2 className="font-header text-red-600 neon-text">CODEX</h2>
+              <h2 className="grimoire-codex-title font-header text-red-600 neon-text">CODEX</h2>
               <button onClick={() => setIsMenuOpen(false)}><X/></button>
             </div>
             {currentView === 'scriptorium' && (
@@ -1560,6 +1572,12 @@ export default function App() {
                  <BarChart3 size={14}/> ARCANE STATS
                </button>
             )}
+            <AestheticCurrentControl
+              current={aestheticCurrent}
+              enchantment={enchantmentLevel}
+              onCurrentChange={setAestheticCurrent}
+              onEnchantmentChange={setEnchantmentLevel}
+            />
             <div className="p-4 border border-[#b8860b]/50 bg-[#b8860b]/10 mb-8">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-xs font-header text-[#b8860b] flex items-center gap-2"><Brain size={12}/> INTELLECT</span>
