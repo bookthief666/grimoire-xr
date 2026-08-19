@@ -17,6 +17,7 @@ const clonePlain = value => {
 };
 
 const clean = value => String(value || '').replace(/\s+/g, ' ').trim();
+const canonicalIdentityOf = card => card?.canonicalCardId || card?.id || null;
 
 const fnvAddress = value => {
   const text = String(value || '');
@@ -90,9 +91,9 @@ export const buildReliquarySnapshot = state => {
   const normalized = normalizePersistedState(clonePlain(state));
   if (!normalized.reading?.readingRecord) throw new Error('A kept reading requires a canonical ReadingRecord.');
 
-  const deckById = new Map((Array.isArray(normalized.deck) ? normalized.deck : []).map(card => [card?.id || card?.canonicalCardId, card]));
+  const deckById = new Map((Array.isArray(normalized.deck) ? normalized.deck : []).map(card => [canonicalIdentityOf(card), card]));
   const readingCards = (Array.isArray(normalized.reading.cards) ? normalized.reading.cards : []).map(card => {
-    const current = deckById.get(card?.id || card?.canonicalCardId);
+    const current = deckById.get(canonicalIdentityOf(card));
     return mergeLiveRelicLayer(card, current);
   });
   const reading = {
