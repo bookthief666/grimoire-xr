@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { buildRelicChamberModel } from './relicChamberModel.js';
 import './reliquary.css';
+import './oracleRelicOpen.css';
 
 export default function RelicChamberField({ card, tradition, reducedMotion = false }) {
   const model = useMemo(() => buildRelicChamberModel({ card, tradition }), [card, tradition]);
