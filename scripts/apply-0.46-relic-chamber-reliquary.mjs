@@ -41,6 +41,14 @@ app = replaceOnce(
   'reliquary handlers',
 );
 
+const archiveLabelBefore = '<Download size={14} /> <span className="hidden md:inline">ARCHIVE</span>';
+const archiveLabelAfter = '<Download size={14} /> <span className="hidden md:inline">RELIQUARY</span>';
+if (!app.includes(archiveLabelAfter)) {
+  const count = app.split(archiveLabelBefore).length - 1;
+  if (count !== 2) fail(`expected exactly 2 top-bar Archive labels, found ${count}`);
+  app = app.split(archiveLabelBefore).join(archiveLabelAfter);
+}
+
 app = replaceOnce(
   app,
   "                onArchive={() => dispatch({ type: 'OPEN_ARCHIVE_PROMPT' })}",
@@ -51,7 +59,7 @@ app = replaceOnce(
 app = replaceOnce(
   app,
   "                onArchive={() => void handleSealCurrentReading()}\n                onNewReading={() => dispatch({ type: 'OPEN_THRESHOLD' })}",
-  "                onArchive={() => void handleSealCurrentReading()}\n                onOpenCard={(card) => card && dispatch({ type: 'OPEN_CARD', payload: card })}\n                onNewReading={() => dispatch({ type: 'OPEN_THRESHOLD' })}",
+  "                onArchive={() => void handleSealCurrentReading()}\n                onOpenCard={(cardId, fallbackCard) => {\n                  const card = state.deck.find(entry => entry.id === cardId || entry.canonicalCardId === cardId) || fallbackCard;\n                  if (card) dispatch({ type: 'OPEN_CARD', payload: card });\n                }}\n                onNewReading={() => dispatch({ type: 'OPEN_THRESHOLD' })}",
   'Oracle card chamber action',
 );
 
@@ -108,7 +116,8 @@ for (const marker of [
   'handleSealCurrentReading',
   'const canonicalDeck = validateCanonicalDeckGenesis(buildCanonicalDeckGenesis',
   'onArchive={() => void handleSealCurrentReading()}',
-  "onOpenCard={(card) => card && dispatch({ type: 'OPEN_CARD', payload: card })}",
+  'const card = state.deck.find(entry => entry.id === cardId || entry.canonicalCardId === cardId) || fallbackCard;',
+  '<span className="hidden md:inline">RELIQUARY</span>',
   '<RelicChamberField',
   'relic-chamber-panel',
   '<ReliquarySurface',
@@ -146,7 +155,7 @@ oracle = replaceOnce(
 oracle = replaceOnce(
   oracle,
   "          {model.positions.map((position, index) => <PositionCard key={position.positionId} position={position} ordinal={index} surfacePosition={surfaceModel.positions[index]} />)}",
-  "          {model.positions.map((position, index) => (\n            <PositionCard\n              key={position.positionId}\n              position={position}\n              ordinal={index}\n              surfacePosition={surfaceModel.positions[index]}\n              onOpen={onOpenCard && position.legacyCard ? () => onOpenCard(position.legacyCard) : null}\n            />\n          ))}",
+  "          {model.positions.map((position, index) => (\n            <PositionCard\n              key={position.positionId}\n              position={position}\n              ordinal={index}\n              surfacePosition={surfaceModel.positions[index]}\n              onOpen={onOpenCard && position.legacyCard ? () => onOpenCard(position.cardId, position.legacyCard) : null}\n            />\n          ))}",
   'Oracle position card chamber wiring',
 );
 
@@ -155,7 +164,7 @@ for (const marker of [
   "className={`oracle-position-card ${onOpen ? 'is-openable' : ''} min-w-0`}",
   'aria-label={onOpen ? `Open relic chamber for ${position.title}` : undefined}',
   'oracle-open-relic-hint',
-  'onOpen={onOpenCard && position.legacyCard ? () => onOpenCard(position.legacyCard) : null}',
+  'onOpen={onOpenCard && position.legacyCard ? () => onOpenCard(position.cardId, position.legacyCard) : null}',
 ]) {
   if (!oracle.includes(marker)) fail(`required Oracle runtime marker missing: ${marker}`);
 }
