@@ -37,5 +37,22 @@ if (remainingSynthesisLabels !== 2) {
   fail(`after image-prompt rebinding exactly 2 synthesis label anchors must remain, found ${remainingSynthesisLabels}`);
 }
 
+const thresholdPresentationAnchors = app.split('traditionName={state.selectedTradition.name}').length - 1;
+if (thresholdPresentationAnchors !== 1) {
+  fail(`Threshold semantic presentation anchor expected 1, found ${thresholdPresentationAnchors}`);
+}
+
+const relicTraditionAnchors = app.split('tradition={state.selectedTradition}').length - 1;
+if (relicTraditionAnchors !== 3) {
+  fail(`Relic authority semantic-system anchors expected 3, found ${relicTraditionAnchors}`);
+}
+
+if (!app.includes('<Brain size={12}/> INTELLECT')) {
+  fail('legacy Intellect block anchor is missing before Phase C replacement');
+}
+if (!app.includes('>TRADITION</h3>')) {
+  fail('legacy Tradition block anchor is missing before Phase C replacement');
+}
+
 fs.writeFileSync(path, app);
 console.log('Applied 0.47 Phase C preflight: image prompt authority + semantic callback dependencies.');
