@@ -18,7 +18,8 @@ const appRequired = [
   'removeReliquaryEntry({ entryId })',
   'const canonicalDeck = validateCanonicalDeckGenesis(buildCanonicalDeckGenesis',
   'onArchive={() => void handleSealCurrentReading()}',
-  "onOpenCard={(card) => card && dispatch({ type: 'OPEN_CARD', payload: card })}",
+  'const card = state.deck.find(entry => entry.id === cardId || entry.canonicalCardId === cardId) || fallbackCard;',
+  '<span className="hidden md:inline">RELIQUARY</span>',
   '<RelicChamberField card={state.focusedCard}',
   'RELIC HISTORY · {state.focusedCard.patina || 0} ENCOUNTER',
   '<ReliquarySurface',
@@ -36,7 +37,7 @@ const oracleRequired = [
   'role={onOpen ? \'button\' : undefined}',
   'aria-label={onOpen ? `Open relic chamber for ${position.title}` : undefined}',
   'oracle-open-relic-hint',
-  'onOpen={onOpenCard && position.legacyCard ? () => onOpenCard(position.legacyCard) : null}',
+  'onOpen={onOpenCard && position.legacyCard ? () => onOpenCard(position.cardId, position.legacyCard) : null}',
 ];
 
 for (const marker of oracleRequired) {
