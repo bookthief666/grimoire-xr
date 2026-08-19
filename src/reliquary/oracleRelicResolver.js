@@ -1,6 +1,10 @@
 import { buildCanonicalDeckGenesis, validateCanonicalDeckGenesis } from '../tarotBridge/canonicalDeckGenesis.js';
 
-const canonicalIdOf = card => card?.id || card?.canonicalCardId || null;
+const canonicalIdOf = card => {
+  const canonical = String(card?.canonicalCardId || card?.cardId || '').trim();
+  if (canonical) return canonical;
+  return typeof card?.id === 'string' && card.id.includes('.') ? card.id : null;
+};
 
 export const resolveOracleRelicCard = ({
   cardId,
