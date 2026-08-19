@@ -1,3 +1,5 @@
+import { resolveSemanticBridgeConfig, semanticBridgeConfigFromReadingRecord } from '../semantic/semanticBridgeConfig.js';
+
 export const UPSTREAM_TAROT_CONTRACT = Object.freeze({
   repository: 'bookthief666/tarot-archetype-vr',
   branch: 'feature/0.35-cross-client-semantic-contract',
@@ -249,17 +251,16 @@ const normalizeTraditionId = tradition => {
   return direct;
 };
 
-export const getCanonicalInterpretationConfig = ({ tradition, readingDepth = 'adept' } = {}) => {
-  const traditionId = normalizeTraditionId(tradition);
-  const base = TRADITION_CONFIGS[traditionId] || TRADITION_CONFIGS.rws;
-  const depth = ['neophyte', 'adept', 'magus'].includes(String(readingDepth).toLowerCase())
-    ? String(readingDepth).toLowerCase()
-    : 'adept';
+export const getCanonicalInterpretationConfig = ({ tradition, semanticConfig, readingDepth } = {}) => {
+  const resolved = resolveSemanticBridgeConfig({ semanticConfig, tradition, readingDepth });
   return deepFreeze({
-    legacyTraditionId: traditionId || 'rws',
-    ...base,
-    lenses: [...base.lenses],
-    readingDepth: depth,
+    legacyTraditionId: semanticConfig ? null : (normalizeTraditionId(tradition) || null),
+    tarotSystem: resolved.tarotSystem,
+    correspondenceProfile: resolved.correspondenceProfile,
+    relationMethod: resolved.relationMethod,
+    lenses: [...resolved.interpretiveLenses],
+    ritualTheme: resolved.ritualTheme,
+    readingDepth: resolved.readingDepth,
   });
 };
 
@@ -364,7 +365,8 @@ export const buildCanonicalTriadConsultation = ({
   question,
   legacyIndexes,
   tradition,
-  readingDepth = 'adept',
+  semanticConfig,
+  readingDepth,
   orientations = [],
 } = {}) => {
   if (!Array.isArray(legacyIndexes) || legacyIndexes.length !== 3) {
@@ -375,7 +377,7 @@ export const buildCanonicalTriadConsultation = ({
     if (!card) throw new Error(`Unknown Tarot legacy index: ${index}`);
     return card;
   });
-  const interpretation = getCanonicalInterpretationConfig({ tradition, readingDepth });
+  const interpretation = getCanonicalInterpretationConfig({ tradition, semanticConfig, readingDepth });
   const spread = CANONICAL_SPREAD_MAP.TRIAD;
   const normalizedQuestion = String(question || '').replace(/\s+/g, ' ').trim();
   const normalizedOrientations = cards.map((_, index) => ['upright', 'reversed'].includes(orientations[index]) ? orientations[index] : 'upright');
@@ -483,11 +485,11 @@ export const buildCanonicalTriadConsultation = ({
   });
 };
 
-export const getCanonicalCardPromptContext = ({ card, tradition } = {}) => {
+export const getCanonicalCardPromptContext = ({ card, tradition, semanticConfig } = {}) => {
   const legacyIndex = Number.isInteger(card?.id) ? card.id : legacyIndexFromCanonicalCardId(card?.canonicalCardId);
   const descriptor = getCanonicalCardDescriptor(legacyIndex);
   if (!descriptor) return null;
-  const interpretation = getCanonicalInterpretationConfig({ tradition });
+  const interpretation = getCanonicalInterpretationConfig({ tradition, semanticConfig });
   const thothActive = interpretation.tarotSystem === 'thoth';
   return deepFreeze({
     contractId: UPSTREAM_TAROT_CONTRACT.contractId,
@@ -504,6 +506,7 @@ export const getCanonicalCardPromptContext = ({ card, tradition } = {}) => {
 
 export const buildCanonicalOraclePromptPayload = ({ record, cards } = {}) => {
   if (!record || !Array.isArray(cards) || cards.length !== 3) throw new Error('Oracle prompt payload requires a canonical TRIAD record and three cards.');
+  const recordSemanticConfig = semanticBridgeConfigFromReadingRecord(record);
   return deepFreeze({
     contract: UPSTREAM_TAROT_CONTRACT,
     reading: {
@@ -513,10 +516,13 @@ export const buildCanonicalOraclePromptPayload = ({ record, cards } = {}) => {
       tarotSystem: record.input.tarotSystem,
       correspondenceProfile: record.input.correspondenceProfile,
       relationMethod: record.input.relationMethod,
+      lenses: [...(record.input.lenses || [])],
+      readingDepth: record.input.readingDepth || 'adept',
+      ritualTheme: record.presentationContext?.ritualTheme || 'none',
       positions: record.positions.map((position, index) => ({
         ...position,
         manifestationName: String(cards[index]?.name || ''),
-        canonicalCard: getCanonicalCardPromptContext({ card: cards[index], tradition: { id: record.input.tarotSystem } }),
+        canonicalCard: getCanonicalCardPromptContext({ card: cards[index], semanticConfig: recordSemanticConfig }),
       })),
       relations: record.relations,
       spreadPatterns: record.spreadPatterns,

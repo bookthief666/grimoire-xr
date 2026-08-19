@@ -1,5 +1,6 @@
 import { buildCanonicalDeckGenesis, validateCanonicalDeckGenesis } from './canonicalDeckGenesis.js';
 import { prepareCanonicalOracleConsultation } from './oracleSynthesis.js';
+import { resolveSemanticBridgeConfig } from '../semantic/semanticBridgeConfig.js';
 
 export const THRESHOLD_READING_VERSION = '0.43.0';
 export const THRESHOLD_READING_AUTHORITY = 'DETERMINISTIC_READING_RECORD_WITNESS';
@@ -60,15 +61,17 @@ export const buildReadingWitness = record => {
 export const buildThresholdReading = ({
   question,
   tradition,
+  semanticConfig,
   deck = null,
   random = Math.random,
 } = {}) => {
   const normalizedQuestion = clean(question);
   if (!normalizedQuestion) throw new Error('The Threshold requires a question before the cards are drawn.');
+  const resolvedSemanticConfig = resolveSemanticBridgeConfig({ semanticConfig, tradition });
 
   const canonicalDeck = Array.isArray(deck) && deck.length
     ? validateCanonicalDeckGenesis(deck)
-    : validateCanonicalDeckGenesis(buildCanonicalDeckGenesis({ tradition }));
+    : validateCanonicalDeckGenesis(buildCanonicalDeckGenesis({ tradition: { id: resolvedSemanticConfig.tarotSystem } }));
 
   const prepared = prepareCanonicalOracleConsultation({
     deck: canonicalDeck,
@@ -76,8 +79,9 @@ export const buildThresholdReading = ({
     spreadSlots: [null, null, null],
     question: normalizedQuestion,
     tradition,
+    semanticConfig: resolvedSemanticConfig,
     author: '',
-    readingDepth: 'adept',
+    readingDepth: resolvedSemanticConfig.readingDepth,
     techContext: '',
     erosContext: '',
     random,
