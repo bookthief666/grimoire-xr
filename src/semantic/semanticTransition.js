@@ -1,4 +1,5 @@
 import { buildCanonicalDeckGenesis, validateCanonicalDeckGenesis } from '../tarotBridge/canonicalDeckGenesis.js';
+import { canonicalCardIdFromLegacyIndex } from '../tarotBridge/canonicalTarotBridge.js';
 import {
   SEMANTIC_CONFIG_SCHEMA_ID,
   createSemanticConfig,
@@ -26,7 +27,12 @@ const semanticConfigOf = input => (
     : semanticConfigFromLegacyTradition(input).config
 );
 
-const canonicalIdentityOf = card => card?.canonicalCardId || (typeof card?.id === 'string' ? card.id : null);
+const canonicalIdentityOf = card => {
+  if (card?.canonicalCardId) return card.canonicalCardId;
+  if (typeof card?.id === 'string') return card.id;
+  if (Number.isInteger(card?.id)) return canonicalCardIdFromLegacyIndex(card.id);
+  return null;
+};
 
 export const stripSystemAuthorityFromCard = card => {
   if (!card || typeof card !== 'object') return {};
