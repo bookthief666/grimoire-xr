@@ -18,6 +18,8 @@ const buildState = () => {
     exegesis: 'Generated reflection that should survive a system transition.',
     meta: { alchemical: 'SOLVE' },
     interpretiveMetaAuthority: 'MODEL_GENERATED_REFLECTION',
+    promptUsed: 'persistent visual prompt',
+    generation: { seed: 777, mode: 'preview' },
     patina: 7,
     canonicalExpression: { stale: true },
     canonicalCorrespondences: { stale: true },
@@ -48,6 +50,10 @@ describe('0.47 semantic transitions', () => {
     expect(card.nameSourceIds).toEqual([]);
     expect(card.imageUrl).toBe('data:image/png;base64,manifested');
     expect(card.exegesis).toMatch(/survive/);
+    expect(card.meta).toEqual({ alchemical: 'SOLVE' });
+    expect(card.interpretiveMetaAuthority).toBe('MODEL_GENERATED_REFLECTION');
+    expect(card.promptUsed).toBe('persistent visual prompt');
+    expect(card.generation).toEqual({ seed: 777, mode: 'preview' });
     expect(card.patina).toBe(7);
     expect(card).not.toHaveProperty('canonicalExpression');
     expect(card).not.toHaveProperty('canonicalCorrespondences');
@@ -63,6 +69,9 @@ describe('0.47 semantic transitions', () => {
       name: 'THE MAGUS',
       imageUrl: 'data:image/png;base64,legacy',
       exegesis: 'legacy numeric-only reflection',
+      meta: { legacy: true },
+      promptUsed: 'legacy prompt',
+      generation: { seed: 11 },
       patina: 9,
     }];
     const rws = rebuildDeckForSemanticConfig({
@@ -73,6 +82,9 @@ describe('0.47 semantic transitions', () => {
     expect(magician.name).toBe('THE MAGICIAN');
     expect(magician.imageUrl).toBe('data:image/png;base64,legacy');
     expect(magician.exegesis).toBe('legacy numeric-only reflection');
+    expect(magician.meta).toEqual({ legacy: true });
+    expect(magician.promptUsed).toBe('legacy prompt');
+    expect(magician.generation).toEqual({ seed: 11 });
     expect(magician.patina).toBe(9);
   });
 
