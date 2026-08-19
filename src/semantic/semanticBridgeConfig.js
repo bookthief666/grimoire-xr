@@ -1,5 +1,10 @@
 import {
+  CORRESPONDENCE_PROFILES,
+  INTERPRETIVE_LENSES,
+  RELATION_METHODS,
+  RITUAL_THEMES,
   SEMANTIC_CONFIG_SCHEMA_ID,
+  TAROT_SYSTEMS,
   createSemanticConfig,
   semanticConfigFromLegacyTradition,
   updateSemanticConfig,
@@ -8,6 +13,11 @@ import {
 const normalizeDepth = value => {
   const depth = String(value || '').trim().toLowerCase();
   return ['neophyte', 'adept', 'magus'].includes(depth) ? depth : null;
+};
+
+const supportedOr = (value, allowed, fallback) => {
+  const normalized = String(value || '').trim().toLowerCase();
+  return allowed.includes(normalized) ? normalized : fallback;
 };
 
 export const resolveSemanticBridgeConfig = ({
@@ -29,13 +39,30 @@ export const resolveSemanticBridgeConfig = ({
 
 export const semanticBridgeConfigFromReadingRecord = record => {
   const input = record?.input || {};
+  const tarotSystem = supportedOr(input.tarotSystem, TAROT_SYSTEMS, 'thoth');
+  const defaultCorrespondence = tarotSystem === 'thoth' ? 'thoth_native' : 'none';
+  const correspondenceProfile = supportedOr(
+    input.correspondenceProfile,
+    CORRESPONDENCE_PROFILES,
+    defaultCorrespondence,
+  );
+  const relationMethod = supportedOr(input.relationMethod, RELATION_METHODS, 'disabled');
+  const interpretiveLenses = Array.isArray(input.lenses)
+    ? input.lenses
+        .map(value => String(value || '').trim().toLowerCase())
+        .filter(value => INTERPRETIVE_LENSES.includes(value))
+    : [];
+  const ritualTheme = supportedOr(record?.presentationContext?.ritualTheme, RITUAL_THEMES, 'none');
+
   return createSemanticConfig({
-    tarotSystem: input.tarotSystem || 'thoth',
-    correspondenceProfile: input.correspondenceProfile,
-    relationMethod: input.relationMethod,
-    interpretiveLenses: Array.isArray(input.lenses) ? input.lenses : [],
-    ritualTheme: record?.presentationContext?.ritualTheme || 'none',
-    readingDepth: input.readingDepth || 'adept',
+    tarotSystem,
+    correspondenceProfile: correspondenceProfile === 'thoth_native' && tarotSystem !== 'thoth'
+      ? 'none'
+      : correspondenceProfile,
+    relationMethod,
+    interpretiveLenses,
+    ritualTheme,
+    readingDepth: normalizeDepth(input.readingDepth) || 'adept',
   });
 };
 
