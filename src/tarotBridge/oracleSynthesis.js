@@ -3,6 +3,7 @@ import {
   buildCanonicalTriadConsultation,
   chooseOracleCards,
 } from './canonicalTarotBridge.js';
+import { buildInterpretiveLensPromptContext } from '../semantic/interpretiveLensCatalog.js';
 
 const clean = value => String(value || '').replace(/\s+/g, ' ').trim();
 
@@ -30,6 +31,7 @@ export const buildCanonicalOracleSynthesisPrompt = ({
   cards,
 } = {}) => {
   const payload = buildCanonicalOraclePromptPayload({ record, cards });
+  const lensContext = buildInterpretiveLensPromptContext(payload.reading.lenses || []);
   const positionLines = payload.reading.positions.map(position => {
     const expression = position.canonicalCard?.canonicalExpression?.displayName?.value || position.cardId;
     const nativeTitle = position.canonicalCard?.canonicalExpression?.nativeTitle?.value;
@@ -48,7 +50,8 @@ export const buildCanonicalOracleSynthesisPrompt = ({
     'EPISTEMIC FIREWALL: The canonical record was computed before you were invoked. Do not recalculate, replace, complete, or contradict card identity, correspondence facts, relation types, reason codes, or provenance. UNSPECIFIED means the reviewed source does not authorize a relation; do not convert it into neutral, friendly, inimical, or a numeric score.',
     'GENERATIVE ROLE: You may synthesize prose, imagery, reflection, and question-sensitive interpretation from the supplied facts. Generated manifestation names are presentation/creative material and never replace canonical card identity.',
     `CANONICAL CONTRACT: ${payload.contract.contractId}@${payload.contract.contractVersion}; pinned upstream ${payload.contract.commit}.`,
-    `SEMANTIC CONFIG: tarotSystem=${payload.reading.tarotSystem}; correspondenceProfile=${payload.reading.correspondenceProfile}; relationMethod=${payload.reading.relationMethod}; spread=${payload.reading.spreadId}.`,
+    `SEMANTIC CONFIG: tarotSystem=${payload.reading.tarotSystem}; correspondenceProfile=${payload.reading.correspondenceProfile}; relationMethod=${payload.reading.relationMethod}; lenses=${(payload.reading.lenses || []).join('+') || 'none'}; ritualTheme=${payload.reading.ritualTheme || 'none'}; readingDepth=${payload.reading.readingDepth || 'adept'}; spread=${payload.reading.spreadId}.`,
+    lensContext,
     'POSITIONS:',
     ...positionLines,
     'SOURCE-QUALIFIED RELATIONS:',
@@ -67,8 +70,9 @@ export const prepareCanonicalOracleConsultation = ({
   spreadSlots,
   question,
   tradition,
+  semanticConfig,
   author,
-  readingDepth = 'adept',
+  readingDepth,
   techContext = '',
   erosContext = '',
   random = Math.random,
@@ -80,11 +84,12 @@ export const prepareCanonicalOracleConsultation = ({
     question,
     legacyIndexes: selection.cards.map(card => card.id),
     tradition,
+    semanticConfig,
     readingDepth,
   });
   const prompt = buildCanonicalOracleSynthesisPrompt({
     author,
-    traditionName: tradition?.name || tradition?.id || tradition,
+    traditionName: semanticConfig?.tarotSystem || tradition?.name || tradition?.id || tradition,
     techContext,
     erosContext,
     record,

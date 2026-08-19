@@ -1,7 +1,7 @@
 import { UPSTREAM_TAROT_CONTRACT } from './canonicalTarotBridge.js';
 
 export const GRIMOIRE_ARCHIVE_SCHEMA_ID = 'grimoire.xr.archive';
-export const GRIMOIRE_ARCHIVE_SCHEMA_VERSION = '2.0.0';
+export const GRIMOIRE_ARCHIVE_SCHEMA_VERSION = '2.1.0';
 
 const cloneJson = value => value == null ? value : JSON.parse(JSON.stringify(value));
 const cleanText = value => String(value ?? '').trim();
@@ -76,6 +76,7 @@ export const buildGrimoireArchiveEnvelope = ({ state, deck = state?.deck, export
       dossier: cleanText(state.dossier),
       selectedStyleId: state.selectedStyle?.id || null,
       selectedTraditionId: state.selectedTradition?.id || null,
+      semanticConfig: cloneJson(state.semanticConfig || null),
       erosLevel: Number.isInteger(state.erosLevel) ? state.erosLevel : 0,
       techLevel: Number.isInteger(state.techLevel) ? state.techLevel : 1,
       suggestedQuestions: cloneJson(Array.isArray(state.suggestedQuestions) ? state.suggestedQuestions : []),
@@ -109,6 +110,7 @@ const normalizeLegacyArchive = parsed => {
       dossier: cleanText(legacyState?.dossier),
       selectedStyleId: legacyState?.selectedStyle?.id || legacyState?.selectedStyleId || null,
       selectedTraditionId: legacyState?.selectedTradition?.id || legacyState?.selectedTraditionId || null,
+      semanticConfig: cloneJson(legacyState?.semanticConfig || null),
       erosLevel: Number.isInteger(legacyState?.erosLevel) ? legacyState.erosLevel : 0,
       techLevel: Number.isInteger(legacyState?.techLevel) ? legacyState.techLevel : 1,
       suggestedQuestions: cloneJson(Array.isArray(legacyState?.suggestedQuestions) ? legacyState.suggestedQuestions : []),
@@ -149,6 +151,7 @@ export const buildArchiveRestoreState = ({ envelope, styles = [], traditions = [
     author: archived.author || '',
     selectedStyle,
     selectedTradition,
+    semanticConfig: cloneJson(archived.semanticConfig || null),
     erosLevel: archived.erosLevel ?? 0,
     techLevel: archived.techLevel ?? 1,
     dossier: archived.dossier || null,

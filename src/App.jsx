@@ -46,6 +46,16 @@ import RelicWorkspace from './tarotBridge/RelicWorkspace.jsx';
 import LivingRelicSurface from './tarotBridge/LivingRelicSurface.jsx';
 import { buildThresholdReading } from './tarotBridge/thresholdReading.js';
 import ThresholdLanding from './ThresholdLanding.jsx';
+import SemanticConfigurationPanel from './semantic/SemanticConfigurationPanel.jsx';
+import CodexStyleLibrary from './codex/CodexStyleLibrary.jsx';
+import { buildInterpretiveLensPromptContext } from './semantic/interpretiveLensCatalog.js';
+import {
+  applySemanticPatchToAppState,
+  createInitialSemanticConfig,
+  migrateAppStateSemanticConfig,
+  readingDepthFromTechLevel,
+  semanticSystemPresentationName,
+} from './semantic/semanticRuntimeAdapter.js';
 import ContinuityReturnDialog from './ContinuityReturnDialog.jsx';
 import AestheticField from './aesthetic/AestheticField.jsx';
 import AestheticCurrentControl from './aesthetic/AestheticCurrentControl.jsx';
@@ -162,6 +172,7 @@ export const initialState = {
   author: '',
   selectedStyle: ART_STYLES.find(s => s.id === 'pixel') || ART_STYLES[0],
   selectedTradition: TRADITIONS[0], 
+  semanticConfig: createInitialSemanticConfig({ selectedTradition: TRADITIONS[0], techLevel: 1 }),
   erosLevel: 0,
   techLevel: 1, 
   dossier: null,
@@ -199,7 +210,7 @@ export function grimoireReducer(state, action) {
         ...state, 
         phase: 'SCRIPTORIUM', 
         dossier: action.payload.dossier, 
-        deck: validateCanonicalDeckGenesis(buildCanonicalDeckGenesis({ tradition: state.selectedTradition })),
+        deck: validateCanonicalDeckGenesis(buildCanonicalDeckGenesis({ tradition: { id: state.semanticConfig.tarotSystem } })),
         portrait: action.payload.portrait,
         suggestedQuestions: action.payload.questions || [],
         status: 'SYSTEM ONLINE',
@@ -208,9 +219,13 @@ export function grimoireReducer(state, action) {
     case 'RITUAL_FAILURE': return { ...state, phase: 'LANDING', status: 'CONNECTION SEVERED', error: action.payload };
     case 'SET_AUTHOR': return { ...state, author: action.payload };
     case 'SET_STYLE': return { ...state, selectedStyle: action.payload };
-    case 'SET_TRADITION': return { ...state, selectedTradition: action.payload };
+    case 'SET_TRADITION':
+      return applySemanticPatchToAppState({ state, patch: { tarotSystem: action.payload?.id }, traditions: TRADITIONS }).nextState;
+    case 'PATCH_SEMANTIC_CONFIG':
+      return applySemanticPatchToAppState({ state, patch: action.payload || {}, traditions: TRADITIONS }).nextState;
     case 'SET_EROS_LEVEL': return { ...state, erosLevel: action.payload };
-    case 'SET_TECH_LEVEL': return { ...state, techLevel: action.payload };
+    case 'SET_TECH_LEVEL':
+      return applySemanticPatchToAppState({ state, patch: { readingDepth: readingDepthFromTechLevel(action.payload) }, traditions: TRADITIONS }).nextState;
     case 'FORGE_CARD_START': return { ...state, focusedCard: action.payload, isForging: true, reforgeStatus: 'INSCRIBING INTERPRETATION...' };
     case 'FORGE_CARD_SUCCESS': return { 
         ...state, 
@@ -261,7 +276,7 @@ export function grimoireReducer(state, action) {
     case 'ARCHIVE_READY': return { ...state, archiveState: 'READY', archiveProgress: { current: 100, total: 100, msg: 'ARCHIVE MANIFESTED' } };
     case 'RESET_ARCHIVE': return { ...state, archiveState: 'IDLE' };
     case 'RETURN_TO_SCRIPTORIUM': return { ...state, phase: 'SCRIPTORIUM', reading: null, isConsulting: false };
-    case 'RETURN_TO_LANDING': return { ...initialState, selectedStyle: state.selectedStyle, selectedTradition: state.selectedTradition };
+    case 'RETURN_TO_LANDING': return { ...initialState, selectedStyle: state.selectedStyle, selectedTradition: state.selectedTradition, semanticConfig: state.semanticConfig, techLevel: state.techLevel };
     case 'CLOSE_CARD': return { ...state, focusedCard: null, isForging: false, reforgeStatus: '' };
     case 'SET_STATUS': return { ...state, status: action.payload };
     case 'SET_DECK': return { ...state, deck: action.payload };
@@ -287,7 +302,13 @@ export function grimoireReducer(state, action) {
       const clrSlots = [...state.spreadSlots];
       clrSlots[action.payload] = null;
       return { ...state, spreadSlots: clrSlots };
-    case 'RESTORE_ARCHIVE': return { ...initialState, ...action.payload };
+    case 'RESTORE_ARCHIVE': {
+      const restored = migrateAppStateSemanticConfig({
+        state: { ...initialState, ...action.payload },
+        traditions: TRADITIONS,
+      });
+      return restored.state;
+    }
     default: return state;
   }
 }
@@ -954,9 +975,10 @@ export default function App() {
   const handleRestoreReliquaryMemory = useCallback(entry => {
     if (!entry?.state) return;
     const rebound = rebindSessionCatalogState(entry.state, { styles: ART_STYLES, traditions: TRADITIONS });
-    const savedReadingCards = Array.isArray(rebound.reading?.cards) ? rebound.reading.cards : [];
+    const migrated = migrateAppStateSemanticConfig({ state: rebound, traditions: TRADITIONS }).state;
+    const savedReadingCards = Array.isArray(migrated.reading?.cards) ? migrated.reading.cards : [];
     const savedByCanonicalId = new Map(savedReadingCards.map(card => [card.canonicalCardId || card.id, card]));
-    const canonicalDeck = validateCanonicalDeckGenesis(buildCanonicalDeckGenesis({ tradition: rebound.selectedTradition }));
+    const canonicalDeck = validateCanonicalDeckGenesis(buildCanonicalDeckGenesis({ tradition: { id: migrated.semanticConfig.tarotSystem } }));
     const restoredDeck = canonicalDeck.map(card => {
       const saved = savedByCanonicalId.get(card.canonicalCardId) || savedByCanonicalId.get(card.id);
       return saved ? { ...card, ...saved } : card;
@@ -964,7 +986,7 @@ export default function App() {
     dispatch({
       type: 'RESTORE_ARCHIVE',
       payload: {
-        ...rebound,
+        ...migrated,
         phase: 'ORACLE',
         deck: restoredDeck,
         isOffline: typeof navigator !== 'undefined' ? !navigator.onLine : false,
@@ -1111,13 +1133,14 @@ export default function App() {
       const prepared = buildThresholdReading({
         question,
         tradition: state.selectedTradition,
+        semanticConfig: state.semanticConfig,
       });
       oracleBuzz();
       dispatch({ type: 'THRESHOLD_READING_READY', payload: prepared });
     } catch (error) {
       dispatch({ type: 'SET_ERROR_MESSAGE', payload: `Threshold Draw Failed: ${error.message || 'Unable to construct the canonical reading.'}` });
     }
-  }, [state.oracleQuestion, state.selectedTradition, oracleBuzz]);
+  }, [state.oracleQuestion, state.selectedTradition, state.semanticConfig, oracleBuzz]);
 
   const handleThresholdInterpretation = useCallback(async () => {
     const reading = state.reading;
@@ -1126,7 +1149,7 @@ export default function App() {
     try {
       const canonicalPrompt = buildCanonicalOracleSynthesisPrompt({
         author: state.author,
-        traditionName: state.selectedTradition.name,
+        traditionName: semanticSystemPresentationName(state.semanticConfig),
         techContext: TECH_LEVELS[state.techLevel].instruction,
         erosContext: getErosContext(state.erosLevel),
         record: reading.readingRecord,
@@ -1144,11 +1167,13 @@ export default function App() {
 
   const generateCardData = async (card, setStatusCb = null, imageOptions = {}) => {
     const erosContext = getErosContext(state.erosLevel);
+    const activeLensContext = buildInterpretiveLensPromptContext(state.semanticConfig.interpretiveLenses);
     const erosPrompt = getErosPrompt(state.erosLevel);
     const techContext = TECH_LEVELS[state.techLevel].instruction;
     const canonicalContext = getCanonicalCardPromptContext({
       card,
       tradition: state.selectedTradition,
+      semanticConfig: state.semanticConfig,
     });
     const canonicalFacts = canonicalContext?.sourceQualification === 'SOURCE_QUALIFIED'
       ? JSON.stringify({
@@ -1164,12 +1189,12 @@ export default function App() {
     if (reusingStoredInterpretation) {
         data = { exegesis: card.exegesis, meta: card.meta, visual: card.visual }; 
     } else {
-        data = await fetchGemini(`Role: Grand Master of ${state.selectedTradition.name}. Task: Card interpretation for "${card.name}" linked to "${state.author}". Instructions: - Exegesis: 200-word analysis. - Meta: Hebrew Letter, Astrological Ruler, Alchemical Stage, Grimoire Spirit. - Visual: Description for art generation (${state.selectedStyle.name}). - CANONICAL SOURCE CONTEXT: ${canonicalFacts}. Preserve these facts exactly. The requested Meta fields are generated interpretive reflection only; do not present them as historical source facts. - TONE: ${techContext} ${erosContext} Return JSON: {"exegesis": "string", "meta": { "hebrew": "string", "planet": "string", "alchemical": "string", "daimon": "string", "gematria": number }, "visual": "string"}`, true, 'card');
+        data = await fetchGemini(`Role: Grand Master of ${state.selectedTradition.name}. Task: Card interpretation for "${card.name}" linked to "${state.author}". Instructions: - Exegesis: 200-word analysis. - Meta: Hebrew Letter, Astrological Ruler, Alchemical Stage, Grimoire Spirit. - Visual: Description for art generation (${state.selectedStyle.name}). - CANONICAL SOURCE CONTEXT: ${canonicalFacts}. Preserve these facts exactly. ${activeLensContext} The requested Meta fields are generated interpretive reflection only; do not present them as historical source facts. - TONE: ${techContext} ${erosContext} Return JSON: {"exegesis": "string", "meta": { "hebrew": "string", "planet": "string", "alchemical": "string", "daimon": "string", "gematria": number }, "visual": "string"}`, true, 'card');
     }
     const compiledPrompt = compileTarotImagePrompt({
       cardName: card.name,
       invocationSubject: state.author,
-      traditionName: state.selectedTradition.name,
+      traditionName: semanticSystemPresentationName(state.semanticConfig),
       styleName: state.selectedStyle.name,
       stylePrompt: state.selectedStyle.prompt,
       visual: data.visual,
@@ -1300,8 +1325,8 @@ export default function App() {
         spreadSlots: state.spreadSlots,
         question: state.oracleQuestion,
         tradition: state.selectedTradition,
+        semanticConfig: state.semanticConfig,
         author: state.author,
-        readingDepth: 'adept',
         techContext,
         erosContext,
       });
@@ -1326,7 +1351,7 @@ export default function App() {
     try {
       const canonicalPrompt = buildCanonicalOracleSynthesisPrompt({
         author: state.author,
-        traditionName: state.selectedTradition.name,
+        traditionName: semanticSystemPresentationName(state.semanticConfig),
         techContext,
         erosContext,
         record: prepared.record,
@@ -1354,6 +1379,7 @@ export default function App() {
     state.deck,
     state.author,
     state.selectedTradition,
+    state.semanticConfig,
     state.erosLevel,
     state.techLevel,
     state.activeSpread,
@@ -1585,7 +1611,7 @@ export default function App() {
       <LivingBackground mousePosition={mousePosition} reducedMotion={reducedMotion} />
       <AestheticField current={aestheticCurrent} enchantment={enchantmentLevel} reducedMotion={reducedMotion} />
       <div className="scanlines" />
-      <AudioController />
+      {!isMenuOpen && <AudioController />}
       <ContinuityReturnDialog
         open={landingConfirmOpen}
         onCancel={() => setLandingConfirmOpen(false)}
@@ -1648,8 +1674,8 @@ export default function App() {
 
       <AnimatePresence>
         {isMenuOpen && (
-          <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} className="grimoire-codex-drawer fixed inset-y-0 right-0 w-full max-w-80 bg-black border-l-2 border-red-600 z-[60] pt-[calc(1.5rem+env(safe-area-inset-top))] pr-[max(1.5rem,env(safe-area-inset-right))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] pl-6 shadow-[0_0_50px_#ff000033] overflow-y-auto native-scroll">
-            <div className="flex justify-between items-center mb-8 pb-4 border-b border-red-600/30">
+          <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} className="grimoire-codex-drawer fixed inset-y-0 right-0 w-[min(94vw,30rem)] sm:w-[min(72vw,34rem)] max-w-none bg-black border-l-2 border-red-600 z-[70] pt-[calc(1rem+env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[calc(1.5rem+env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] shadow-[0_0_50px_#ff000033] overflow-y-auto native-scroll">
+            <div className="sticky top-0 z-20 -mx-2 px-2 py-3 mb-6 flex justify-between items-center border-b border-red-600/30 bg-black/95 backdrop-blur-md">
               <h2 className="grimoire-codex-title font-header text-red-600 neon-text">CODEX</h2>
               <button onClick={() => setIsMenuOpen(false)}><X/></button>
             </div>
@@ -1664,13 +1690,13 @@ export default function App() {
               onCurrentChange={setAestheticCurrent}
               onEnchantmentChange={setEnchantmentLevel}
             />
-            <div className="p-4 border border-[#b8860b]/50 bg-[#b8860b]/10 mb-8">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-xs font-header text-[#b8860b] flex items-center gap-2"><Brain size={12}/> INTELLECT</span>
-                <span className="text-xs font-header text-white">{TECH_LEVELS[state.techLevel].label}</span>
-              </div>
-              <input type="range" min="0" max="2" step="1" value={state.techLevel} onChange={(e) => dispatch({ type: 'SET_TECH_LEVEL', payload: parseInt(e.target.value) })} className="w-full accent-[#b8860b]" />
-              <p className="text-[10px] mt-2 text-[#b8860b]/60 font-body">{TECH_LEVELS[state.techLevel].desc}</p>
+            <div className="mb-8">
+              <SemanticConfigurationPanel
+                config={state.semanticConfig}
+                hasActiveReading={Boolean(state.reading)}
+                disabled={state.isConsulting || state.isForging}
+                onPatch={(patch) => dispatch({ type: 'PATCH_SEMANTIC_CONFIG', payload: patch })}
+              />
             </div>
             <div className="p-4 border border-[#b8860b]/50 bg-[#b8860b]/10 mb-8">
               <div className="flex justify-between items-center mb-2">
@@ -1679,18 +1705,13 @@ export default function App() {
               </div>
               <input type="range" min="0" max="5" step="1" value={state.erosLevel} onChange={(e) => dispatch({ type: 'SET_EROS_LEVEL', payload: parseInt(e.target.value) })} className="w-full accent-[#b8860b]" />
             </div>
-            <div className="mb-6">
-              <h3 className="font-header text-xs mb-2 opacity-50 text-[#b8860b]">TRADITION</h3>
-              {TRADITIONS.map(t => (
-                <button key={t.id} onClick={() => dispatch({ type: 'SET_TRADITION', payload: t })} className={`block w-full text-left p-2 mb-2 border ${state.selectedTradition.id === t.id ? 'bg-[#b8860b] text-black border-[#b8860b]' : 'border-[#b8860b]/30 text-[#b8860b] hover:border-[#b8860b]'}`}>{t.name}</button>
-              ))}
-            </div>
-            <div className="mb-6">
-              <h3 className="font-header text-xs mb-2 opacity-50 text-[#b8860b]">STYLE ({ART_STYLES.length})</h3>
-              {ART_STYLES.map(s => (
-                <button key={s.id} onClick={() => dispatch({ type: 'SET_STYLE', payload: s })} className={`block w-full text-left p-2 mb-2 border ${state.selectedStyle.id === s.id ? 'bg-[#b8860b] text-black border-[#b8860b]' : 'border-[#b8860b]/30 text-[#b8860b] hover:border-[#b8860b]'}`}>{s.name}</button>
-              ))}
-            </div>
+
+            <CodexStyleLibrary
+              styles={ART_STYLES}
+              selectedStyle={state.selectedStyle}
+              disabled={state.isConsulting || state.isForging}
+              onSelect={(style) => dispatch({ type: 'SET_STYLE', payload: style })}
+            />
           </motion.div>
         )}
       </AnimatePresence>
@@ -1702,7 +1723,7 @@ export default function App() {
               question={state.oracleQuestion}
               onQuestionChange={(value) => dispatch({ type: 'SET_ORACLE_QUESTION', payload: value })}
               onDraw={handleThresholdDraw}
-              traditionName={state.selectedTradition.name}
+              traditionName={semanticSystemPresentationName(state.semanticConfig)}
               subject={state.author}
               onSubjectChange={(value) => dispatch({ type: 'SET_AUTHOR', payload: value })}
               styleName={state.selectedStyle.name}
@@ -1821,7 +1842,7 @@ export default function App() {
                     cardId,
                     deck: state.deck,
                     readingCards: state.reading?.cards || [],
-                    tradition: state.selectedTradition,
+                    tradition: { id: state.semanticConfig.tarotSystem },
                   });
                   if (card) dispatch({ type: 'OPEN_CARD', payload: card });
                   else dispatch({ type: 'SET_ERROR_MESSAGE', payload: `Relic Chamber could not resolve canonical card ${cardId}.` });
@@ -1844,7 +1865,7 @@ export default function App() {
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
-            <RelicChamberField card={state.focusedCard} tradition={state.selectedTradition} reducedMotion={reducedMotion} />
+            <RelicChamberField card={state.focusedCard} tradition={{ id: state.semanticConfig.tarotSystem }} reducedMotion={reducedMotion} />
             <motion.div 
               key={state.focusedCard.id} 
               initial={reducedMotion ? { opacity: 0, scale: 0.95 } : { rotateY: 180, scale: 0.8, opacity: 0 }}
@@ -1879,7 +1900,7 @@ export default function App() {
                 <div className="relic-chamber-card-frame flex-shrink-0 w-full md:w-80 aspect-[2/3] bg-black border-2 border-[#b8860b] relative overflow-hidden shadow-[0_0_30px_#b8860b44] mx-auto md:mx-0 md:sticky md:top-4 h-max">
                   <LivingRelicSurface
                     card={state.focusedCard}
-                    tradition={state.selectedTradition}
+                    tradition={{ id: state.semanticConfig.tarotSystem }}
                     reducedMotion={reducedMotion}
                     onAttuned={relicAttuneBuzz}
                   >
@@ -1903,7 +1924,7 @@ export default function App() {
                 <div className="flex-1 min-w-0">
                   <RelicWorkspace
                     card={state.focusedCard}
-                    tradition={state.selectedTradition}
+                    tradition={{ id: state.semanticConfig.tarotSystem }}
                     isForging={state.isForging}
                     forgeStatus={state.reforgeStatus}
                     canFinalize={canFinalizeCard(state.focusedCard)}

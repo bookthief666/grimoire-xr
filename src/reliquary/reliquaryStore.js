@@ -106,6 +106,7 @@ export const buildReliquarySnapshot = state => {
     author: normalized.author || '',
     selectedStyle: normalized.selectedStyle || null,
     selectedTradition: normalized.selectedTradition || null,
+    semanticConfig: normalized.semanticConfig || null,
     erosLevel: normalized.erosLevel ?? 0,
     techLevel: normalized.techLevel ?? 1,
     oracleQuestion: reading.readingRecord?.input?.question || normalized.oracleQuestion || '',
