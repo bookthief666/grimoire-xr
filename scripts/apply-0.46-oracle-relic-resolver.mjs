@@ -20,9 +20,9 @@ app = replaceOnce(
   'Oracle relic resolver import',
 );
 
-const oldHandler = `                onOpenCard={(cardId) => {\n                  const liveDeckCard = state.deck.find(entry => entry.id === cardId || entry.canonicalCardId === cardId);\n                  const readingCard = state.reading?.cards?.find(entry => entry.id === cardId || entry.canonicalCardId === cardId);\n                  const regeneratedCard = (!liveDeckCard && !readingCard)\n                    ? validateCanonicalDeckGenesis(buildCanonicalDeckGenesis({ tradition: state.selectedTradition }))\n                      .find(entry => entry.id === cardId || entry.canonicalCardId === cardId)\n                    : null;\n                  const card = liveDeckCard || readingCard || regeneratedCard;\n                  if (card) dispatch({ type: 'OPEN_CARD', payload: card });\n                }}`;
+const oldHandler = `                onOpenCard={(cardId) => {\n                  const liveDeckCard = state.deck.find(entry => entry.id === cardId || entry.canonicalCardId === cardId);\n                  const readingCard = state.reading?.cards?.find(entry => entry?.id === cardId || entry?.canonicalCardId === cardId) || null;\n                  const regeneratedCard = (!liveDeckCard && !readingCard)\n                    ? validateCanonicalDeckGenesis(buildCanonicalDeckGenesis({ tradition: state.selectedTradition }))\n                        .find(entry => entry.id === cardId || entry.canonicalCardId === cardId)\n                    : null;\n                  const card = liveDeckCard || readingCard || regeneratedCard;\n                  if (card) dispatch({ type: 'OPEN_CARD', payload: card });\n                  else dispatch({ type: 'SET_ERROR_MESSAGE', payload: \`Relic Chamber could not resolve canonical card \${cardId}.\` });\n                }}`;
 
-const newHandler = `                onOpenCard={(cardId) => {\n                  const card = resolveOracleRelicCard({\n                    cardId,\n                    deck: state.deck,\n                    readingCards: state.reading?.cards || [],\n                    tradition: state.selectedTradition,\n                  });\n                  if (card) dispatch({ type: 'OPEN_CARD', payload: card });\n                }}`;
+const newHandler = `                onOpenCard={(cardId) => {\n                  const card = resolveOracleRelicCard({\n                    cardId,\n                    deck: state.deck,\n                    readingCards: state.reading?.cards || [],\n                    tradition: state.selectedTradition,\n                  });\n                  if (card) dispatch({ type: 'OPEN_CARD', payload: card });\n                  else dispatch({ type: 'SET_ERROR_MESSAGE', payload: \`Relic Chamber could not resolve canonical card \${cardId}.\` });\n                }}`;
 
 app = replaceOnce(app, oldHandler, newHandler, 'Oracle relic resolver handler');
 
@@ -31,6 +31,7 @@ for (const marker of [
   'const card = resolveOracleRelicCard({',
   'readingCards: state.reading?.cards || [],',
   "dispatch({ type: 'OPEN_CARD', payload: card })",
+  'Relic Chamber could not resolve canonical card',
 ]) {
   if (!app.includes(marker)) fail(`required resolver runtime marker missing: ${marker}`);
 }
