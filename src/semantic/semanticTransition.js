@@ -45,6 +45,25 @@ export const stripSystemAuthorityFromCard = card => {
   }));
 };
 
+const mergeRegeneratedCardWithCreativeHistory = ({ canonicalCard, currentCard }) => {
+  if (!currentCard) return canonicalCard;
+  const preservedCreativeLayer = stripSystemAuthorityFromCard(currentCard);
+  return {
+    // Canonical identity/authority is always regenerated from the target Tarot system.
+    ...canonicalCard,
+    // Creative/user-history fields survive the system transition. This intentionally
+    // overwrites genesis null placeholders such as imageUrl/exegesis/meta/promptUsed.
+    ...preservedCreativeLayer,
+    // Re-assert identity fields so a future creative-layer field cannot mask authority.
+    id: canonicalCard.id,
+    canonicalCardId: canonicalCard.canonicalCardId,
+    name: canonicalCard.name,
+    nameAuthority: canonicalCard.nameAuthority,
+    nameSourceIds: [...(canonicalCard.nameSourceIds || [])],
+    patina: Math.max(Number(currentCard.patina || 0), Number(canonicalCard.patina || 0)),
+  };
+};
+
 export const rebuildDeckForSemanticConfig = ({ deck = [], semanticConfig } = {}) => {
   const config = semanticConfigOf(semanticConfig);
   const regenerated = validateCanonicalDeckGenesis(buildCanonicalDeckGenesis({ tradition: { id: config.tarotSystem } }));
@@ -54,15 +73,10 @@ export const rebuildDeckForSemanticConfig = ({ deck = [], semanticConfig } = {})
       .filter(([cardId]) => Boolean(cardId)),
   );
 
-  return regenerated.map(canonicalCard => {
-    const current = currentByCanonicalId.get(canonicalCard.canonicalCardId);
-    if (!current) return canonicalCard;
-    return {
-      ...stripSystemAuthorityFromCard(current),
-      ...canonicalCard,
-      patina: Math.max(Number(current.patina || 0), Number(canonicalCard.patina || 0)),
-    };
-  });
+  return regenerated.map(canonicalCard => mergeRegeneratedCardWithCreativeHistory({
+    canonicalCard,
+    currentCard: currentByCanonicalId.get(canonicalCard.canonicalCardId),
+  }));
 };
 
 export const planSemanticTransition = ({ current, next } = {}) => {
