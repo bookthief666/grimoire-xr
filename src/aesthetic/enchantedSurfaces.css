@@ -1,0 +1,395 @@
+.threshold-surface,
+.oracle-enchanted-surface {
+  position: relative;
+  isolation: isolate;
+}
+
+.threshold-ritual-field,
+.oracle-relation-field {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: -1;
+}
+
+.threshold-ritual-field {
+  inset: 4rem -8vw -3rem;
+  opacity: .88;
+}
+
+.threshold-seal {
+  position: absolute;
+  width: min(94vw, 720px);
+  aspect-ratio: 1;
+  left: 50%;
+  top: 45%;
+  transform: translate(-50%, -50%);
+  overflow: visible;
+  filter: drop-shadow(0 0 18px color-mix(in srgb, var(--grimoire-current) 22%, transparent));
+}
+
+.threshold-seal-ring,
+.threshold-seal-line,
+.threshold-seal-axis {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+  transform-origin: 300px 300px;
+}
+
+.threshold-seal-ring {
+  stroke: var(--grimoire-brass);
+  stroke-width: .7;
+  opacity: .22;
+}
+
+.threshold-seal-ring.ring-a { stroke-dasharray: 8 7 2 12; animation: threshold-orbit 42s linear infinite; }
+.threshold-seal-ring.ring-b { stroke-dasharray: 2 5; animation: threshold-orbit-reverse 31s linear infinite; }
+.threshold-seal-ring.ring-c { stroke: var(--grimoire-current); opacity: .18; stroke-dasharray: 1 8; animation: threshold-orbit 19s linear infinite; }
+.threshold-seal-line { stroke: var(--grimoire-brass); stroke-width: .65; opacity: .13; }
+.threshold-seal-line.is-reverse { stroke: var(--grimoire-current); opacity: .09; }
+.threshold-seal-axis { stroke: var(--grimoire-muted); stroke-width: .45; opacity: .08; stroke-dasharray: 1 10; }
+
+.threshold-glyph-orbit {
+  position: absolute;
+  width: min(78vw, 600px);
+  aspect-ratio: 1;
+  left: 50%;
+  top: 45%;
+  transform: translate(-50%, -50%);
+}
+
+.threshold-orbit-glyph {
+  position: absolute;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(15px, 3vw, 24px);
+  color: var(--grimoire-brass);
+  opacity: .3;
+  text-shadow: 0 0 12px color-mix(in srgb, var(--grimoire-gold) 35%, transparent);
+}
+.threshold-orbit-glyph.glyph-1 { left: 47%; top: 0; }
+.threshold-orbit-glyph.glyph-2 { right: 8%; top: 21%; }
+.threshold-orbit-glyph.glyph-3 { right: 2%; top: 60%; }
+.threshold-orbit-glyph.glyph-4 { left: 47%; bottom: 0; }
+.threshold-orbit-glyph.glyph-5 { left: 7%; bottom: 18%; }
+.threshold-orbit-glyph.glyph-6 { left: 1%; top: 33%; }
+.threshold-orbit-glyph.glyph-7 { left: 24%; top: 7%; }
+
+.threshold-dormant-relics {
+  position: absolute;
+  left: 50%;
+  top: 47%;
+  width: min(82vw, 650px);
+  height: min(42vw, 300px);
+  transform: translate(-50%, -50%);
+}
+
+.threshold-dormant-relic {
+  position: absolute;
+  width: clamp(52px, 13vw, 94px);
+  aspect-ratio: 2 / 3.1;
+  border: 1px solid color-mix(in srgb, var(--grimoire-brass) 35%, transparent);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--grimoire-current) 7%, transparent), transparent 45%),
+    rgba(3, 2, 2, .46);
+  box-shadow: inset 0 0 24px rgba(0, 0, 0, .7), 0 0 24px rgba(0, 0, 0, .35);
+  opacity: .22;
+  transition: opacity .35s ease, transform .5s cubic-bezier(.22,.75,.2,1), border-color .35s ease, box-shadow .35s ease;
+}
+.threshold-dormant-relic.relic-1 { left: 3%; top: 34%; transform: rotate(-12deg); }
+.threshold-dormant-relic.relic-2 { left: 50%; top: 5%; transform: translateX(-50%); }
+.threshold-dormant-relic.relic-3 { right: 3%; top: 34%; transform: rotate(12deg); }
+.threshold-relic-mark,
+.threshold-relic-index {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--grimoire-gold);
+  font-family: Georgia, 'Times New Roman', serif;
+}
+.threshold-relic-mark { top: 34%; font-size: clamp(18px, 5vw, 34px); opacity: .7; }
+.threshold-relic-index { bottom: 15%; font-size: clamp(9px, 2vw, 13px); letter-spacing: .22em; opacity: .48; }
+.threshold-relic-corner { position: absolute; width: 12px; height: 12px; border-color: var(--grimoire-brass); opacity: .45; }
+.threshold-relic-corner.corner-a { left: 6px; top: 6px; border-left: 1px solid; border-top: 1px solid; }
+.threshold-relic-corner.corner-b { right: 6px; bottom: 6px; border-right: 1px solid; border-bottom: 1px solid; }
+
+.threshold-ritual-field.is-inscribed .threshold-dormant-relic { opacity: .5; border-color: color-mix(in srgb, var(--grimoire-brass) 62%, transparent); }
+.threshold-ritual-field.is-inscribed .threshold-seal-ring { opacity: .34; }
+.threshold-ritual-field.is-inscribed .threshold-orbit-glyph { opacity: .46; }
+
+.threshold-opening-flare {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--grimoire-gold);
+  box-shadow: 0 0 30px var(--grimoire-gold), 0 0 100px color-mix(in srgb, var(--grimoire-current) 70%, transparent);
+  opacity: 0;
+}
+.threshold-ritual-field.is-opening .threshold-opening-flare { animation: threshold-flare .6s ease-out forwards; }
+.threshold-ritual-field.is-opening .threshold-dormant-relic { opacity: .95; box-shadow: 0 0 25px color-mix(in srgb, var(--grimoire-gold) 25%, transparent), inset 0 0 30px rgba(0,0,0,.7); }
+.threshold-ritual-field.is-opening .relic-1 { transform: translate(138%, -8%) rotate(-2deg); }
+.threshold-ritual-field.is-opening .relic-2 { transform: translateX(-50%) scale(1.08); }
+.threshold-ritual-field.is-opening .relic-3 { transform: translate(-138%, -8%) rotate(2deg); }
+
+.threshold-inscription-panel {
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+}
+.threshold-inscription-panel::before,
+.threshold-inscription-panel::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+}
+.threshold-inscription-panel::before {
+  inset: 9px;
+  border: 1px solid color-mix(in srgb, var(--grimoire-brass) 16%, transparent);
+}
+.threshold-inscription-panel::after {
+  width: 52%;
+  height: 1px;
+  left: 24%;
+  top: 0;
+  background: linear-gradient(90deg, transparent, var(--grimoire-gold), transparent);
+  box-shadow: 0 0 15px color-mix(in srgb, var(--grimoire-gold) 30%, transparent);
+}
+.threshold-question-input {
+  position: relative;
+  box-shadow: inset 0 0 44px rgba(0,0,0,.35);
+  transition: border-color .25s ease, box-shadow .25s ease, background .25s ease;
+}
+.threshold-question-input:focus {
+  box-shadow: inset 0 0 50px rgba(0,0,0,.45), 0 0 28px color-mix(in srgb, var(--grimoire-current) 12%, transparent);
+}
+.threshold-draw-button {
+  position: relative;
+  overflow: hidden;
+}
+.threshold-draw-button::before {
+  content: '';
+  position: absolute;
+  width: 24%;
+  height: 240%;
+  top: -70%;
+  left: -30%;
+  transform: rotate(18deg);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--grimoire-gold) 20%, transparent), transparent);
+}
+.threshold-draw-button:not(:disabled):hover::before { animation: threshold-sweep 1.15s ease; }
+.threshold-draw-button.is-opening { letter-spacing: .22em; box-shadow: 0 0 26px color-mix(in srgb, var(--grimoire-current) 24%, transparent); }
+
+.oracle-spread-stage {
+  position: relative;
+  isolation: isolate;
+  margin-bottom: 2.5rem;
+}
+.oracle-relation-field {
+  z-index: 0;
+  inset: -10% -3% -8%;
+  opacity: .74;
+}
+.oracle-relation-field svg { width: 100%; height: 100%; overflow: visible; }
+.oracle-spread-ring,
+.oracle-spread-axis,
+.oracle-current-line,
+.oracle-current-shadow,
+.oracle-outer-current,
+.oracle-center-mark circle,
+.oracle-center-mark path {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+.oracle-spread-ring { stroke: var(--grimoire-brass); stroke-width: .35; opacity: .12; stroke-dasharray: 1.5 4; transform-origin: 50px 52px; }
+.oracle-spread-ring.ring-a { animation: oracle-ring 38s linear infinite; }
+.oracle-spread-ring.ring-b { animation: oracle-ring-reverse 27s linear infinite; }
+.oracle-spread-axis { stroke: var(--grimoire-muted); stroke-width: .3; opacity: .1; stroke-dasharray: 1 8; }
+.oracle-current-shadow { stroke: #000; stroke-width: 4; opacity: .7; }
+.oracle-current-line { stroke-width: 1.4; stroke-linecap: round; stroke-dasharray: 4 2; animation: oracle-current-flow 2.8s linear infinite; animation-delay: var(--relation-delay, 0s); }
+.oracle-current.is-supportive .oracle-current-line { stroke: var(--grimoire-gold); filter: drop-shadow(0 0 4px color-mix(in srgb, var(--grimoire-gold) 70%, transparent)); }
+.oracle-current.is-contrary .oracle-current-line { stroke: var(--grimoire-current); stroke-dasharray: 1 2; filter: drop-shadow(0 0 5px color-mix(in srgb, var(--grimoire-current) 72%, transparent)); }
+.oracle-current.is-unresolved .oracle-current-line { stroke: var(--grimoire-muted); stroke-dasharray: 1 5; opacity: .55; animation: none; }
+.oracle-outer-current { stroke-width: 1; stroke-dasharray: 2 3; opacity: .6; }
+.oracle-outer-current.is-supportive { stroke: var(--grimoire-gold); }
+.oracle-outer-current.is-contrary { stroke: var(--grimoire-current); filter: drop-shadow(0 0 4px color-mix(in srgb, var(--grimoire-current) 55%, transparent)); }
+.oracle-outer-current.is-unresolved { stroke: var(--grimoire-muted); opacity: .32; }
+.oracle-center-mark circle,
+.oracle-center-mark path { stroke: var(--grimoire-gold); stroke-width: .75; opacity: .65; filter: drop-shadow(0 0 3px color-mix(in srgb, var(--grimoire-gold) 55%, transparent)); }
+
+.oracle-card-grid { position: relative; z-index: 2; }
+.oracle-position-card { position: relative; }
+.oracle-position-seal {
+  width: 28px;
+  height: 28px;
+  margin: 0 auto .55rem;
+  border: 1px solid color-mix(in srgb, var(--grimoire-brass) 55%, transparent);
+  display: grid;
+  place-items: center;
+  transform: rotate(45deg);
+  color: var(--grimoire-gold);
+  background: color-mix(in srgb, var(--grimoire-panel) 80%, transparent);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--grimoire-brass) 13%, transparent);
+}
+.oracle-position-seal > span { transform: rotate(-45deg); font-family: Georgia, 'Times New Roman', serif; font-size: 14px; }
+.oracle-position-card:nth-child(2) .oracle-position-seal { border-radius: 50%; transform: none; }
+.oracle-position-card:nth-child(2) .oracle-position-seal > span { transform: none; }
+.oracle-relic-frame {
+  position: relative;
+  transition: transform .3s ease, box-shadow .3s ease, border-color .3s ease;
+}
+.oracle-relic-frame::before,
+.oracle-relic-frame::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  pointer-events: none;
+  z-index: 4;
+}
+.oracle-relic-frame::before { border: 1px solid color-mix(in srgb, var(--grimoire-brass) 18%, transparent); }
+.oracle-relic-frame::after {
+  inset: 0;
+  background:
+    linear-gradient(135deg, var(--grimoire-gold) 0 1px, transparent 1px) top left / 18px 18px no-repeat,
+    linear-gradient(225deg, var(--grimoire-gold) 0 1px, transparent 1px) top right / 18px 18px no-repeat,
+    linear-gradient(45deg, var(--grimoire-gold) 0 1px, transparent 1px) bottom left / 18px 18px no-repeat,
+    linear-gradient(315deg, var(--grimoire-gold) 0 1px, transparent 1px) bottom right / 18px 18px no-repeat;
+  opacity: .5;
+}
+.oracle-relic-frame:hover { transform: translateY(-3px); box-shadow: 0 18px 50px rgba(0,0,0,.55), 0 0 20px color-mix(in srgb, var(--grimoire-brass) 12%, transparent); }
+.oracle-unmanifested-mark { position: relative; }
+.oracle-unmanifested-mark::before {
+  content: '';
+  position: absolute;
+  width: 66px;
+  height: 66px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(45deg);
+  border: 1px solid color-mix(in srgb, var(--grimoire-brass) 18%, transparent);
+  border-radius: 8px;
+}
+
+.oracle-witness-folio {
+  position: relative;
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--grimoire-brass) 58%, transparent) !important;
+  background:
+    radial-gradient(circle at 50% -15%, color-mix(in srgb, var(--grimoire-gold) 8%, transparent), transparent 45%),
+    linear-gradient(90deg, color-mix(in srgb, var(--grimoire-current) 3%, transparent), transparent 35%, color-mix(in srgb, var(--grimoire-brass) 4%, transparent)),
+    color-mix(in srgb, var(--grimoire-panel) 94%, transparent) !important;
+  box-shadow: 0 22px 75px rgba(0,0,0,.42), inset 0 0 60px rgba(0,0,0,.28);
+}
+.oracle-witness-folio::before,
+.oracle-witness-folio::after {
+  content: '✦';
+  position: absolute;
+  color: var(--grimoire-brass);
+  opacity: .24;
+  font-size: 34px;
+  line-height: 1;
+}
+.oracle-witness-folio::before { left: 14px; top: 13px; }
+.oracle-witness-folio::after { right: 14px; bottom: 13px; transform: rotate(180deg); }
+.oracle-witness-seal {
+  width: 44px;
+  height: 44px;
+  border: 1px solid color-mix(in srgb, var(--grimoire-brass) 45%, transparent);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--grimoire-gold);
+  font-size: 20px;
+  box-shadow: inset 0 0 14px rgba(0,0,0,.5), 0 0 18px color-mix(in srgb, var(--grimoire-gold) 12%, transparent);
+}
+.oracle-relation-note {
+  position: relative;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--grimoire-panel) 80%, transparent), transparent);
+}
+.oracle-relation-note::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 18%;
+  bottom: 18%;
+  width: 2px;
+  background: currentColor;
+  box-shadow: 0 0 9px currentColor;
+  opacity: .45;
+}
+.oracle-wider-pattern { position: relative; overflow: hidden; }
+.oracle-wider-pattern::before {
+  content: '';
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  right: -64px;
+  top: -72px;
+  border: 1px solid color-mix(in srgb, var(--grimoire-brass) 14%, transparent);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 18px transparent, inset 0 0 0 19px color-mix(in srgb, var(--grimoire-current) 7%, transparent);
+}
+
+.grimoire-shell[data-aesthetic-current="arcane-os"] .threshold-seal-ring,
+.grimoire-shell[data-aesthetic-current="arcane-os"] .threshold-seal-line,
+.grimoire-shell[data-aesthetic-current="arcane-os"] .oracle-spread-ring {
+  stroke: #ef233c;
+}
+.grimoire-shell[data-aesthetic-current="arcane-os"] .threshold-dormant-relic,
+.grimoire-shell[data-aesthetic-current="arcane-os"] .oracle-relic-frame {
+  border-color: rgba(239,35,60,.55);
+  box-shadow: inset 0 0 24px rgba(50,0,0,.45), 0 0 14px rgba(239,35,60,.09);
+}
+.grimoire-shell[data-aesthetic-current="arcane-os"] .oracle-position-seal { border-color: rgba(239,35,60,.7); color: #ef233c; border-radius: 0; }
+.grimoire-shell[data-aesthetic-current="arcane-os"] .oracle-witness-folio { background: rgba(8,0,1,.9) !important; border-color: rgba(239,35,60,.4) !important; }
+
+.grimoire-shell[data-aesthetic-current="living-book"] .threshold-seal,
+.grimoire-shell[data-aesthetic-current="living-book"] .oracle-relation-field { filter: sepia(.2); }
+.grimoire-shell[data-aesthetic-current="living-book"] .threshold-dormant-relic,
+.grimoire-shell[data-aesthetic-current="living-book"] .oracle-relic-frame { background-color: rgba(13,10,5,.66); }
+.grimoire-shell[data-aesthetic-current="living-book"] .oracle-current-line { animation-duration: 4.8s; opacity: .68; }
+.grimoire-shell[data-aesthetic-current="living-book"] .oracle-witness-folio { box-shadow: 0 18px 58px rgba(0,0,0,.35), inset 0 0 40px rgba(120,88,32,.03); }
+
+.grimoire-shell[data-enchantment="veiled"] .threshold-ritual-field,
+.grimoire-shell[data-enchantment="veiled"] .oracle-relation-field { opacity: .32; }
+.grimoire-shell[data-enchantment="balanced"] .threshold-ritual-field,
+.grimoire-shell[data-enchantment="balanced"] .oracle-relation-field { opacity: .58; }
+.grimoire-shell[data-enchantment="vivid"] .threshold-ritual-field,
+.grimoire-shell[data-enchantment="vivid"] .oracle-relation-field { opacity: .78; }
+.grimoire-shell[data-enchantment="exalted"] .threshold-ritual-field,
+.grimoire-shell[data-enchantment="exalted"] .oracle-relation-field { opacity: .94; }
+
+@keyframes threshold-orbit { to { transform: rotate(360deg); } }
+@keyframes threshold-orbit-reverse { to { transform: rotate(-360deg); } }
+@keyframes threshold-flare { 0% { opacity: 0; transform: translate(-50%,-50%) scale(.5); } 28% { opacity: .95; } 100% { opacity: 0; transform: translate(-50%,-50%) scale(26); } }
+@keyframes threshold-sweep { from { left: -30%; } to { left: 120%; } }
+@keyframes oracle-ring { to { transform: rotate(360deg); } }
+@keyframes oracle-ring-reverse { to { transform: rotate(-360deg); } }
+@keyframes oracle-current-flow { to { stroke-dashoffset: -18; } }
+
+@media (max-width: 640px) {
+  .threshold-ritual-field { inset: 4rem -22vw -2rem; }
+  .threshold-seal { top: 42%; width: 118vw; }
+  .threshold-glyph-orbit { top: 42%; width: 100vw; }
+  .threshold-dormant-relics { top: 43%; width: 100%; }
+  .threshold-ritual-field.is-opening .relic-1 { transform: translate(82%, 0) rotate(-2deg); }
+  .threshold-ritual-field.is-opening .relic-3 { transform: translate(-82%, 0) rotate(2deg); }
+  .oracle-relation-field { inset: 5% -5% -4%; opacity: .6; }
+  .oracle-position-seal { width: 23px; height: 23px; margin-bottom: .4rem; }
+  .oracle-position-seal > span { font-size: 11px; }
+  .oracle-witness-seal { width: 36px; height: 36px; font-size: 17px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .threshold-seal-ring,
+  .oracle-spread-ring,
+  .oracle-current-line,
+  .threshold-opening-flare,
+  .threshold-draw-button::before {
+    animation: none !important;
+  }
+  .threshold-dormant-relic { transition-duration: .01ms !important; }
+}
