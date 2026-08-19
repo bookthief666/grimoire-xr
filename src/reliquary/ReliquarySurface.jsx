@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   Archive,
   BookOpen,
@@ -23,8 +23,8 @@ const formatSavedAt = value => {
   }
 };
 
-const MemoryCard = ({ memory, onRestore, onForget }) => (
-  <article className="reliquary-memory-card">
+const MemoryCard = ({ memory, onRestore, onForget, confirmingForget = false, onRequestForget, onCancelForget }) => (
+  <article className={`reliquary-memory-card ${confirmingForget ? 'is-releasing' : ''}`}>
     <div className="reliquary-memory-topline">
       <span>{formatSavedAt(memory.savedAt)}</span>
       <span>{memory.spreadId}</span>
@@ -44,13 +44,27 @@ const MemoryCard = ({ memory, onRestore, onForget }) => (
       {memory.interpretationPresent && <span>INTERPRETATION</span>}
       {memory.artworkCount > 0 && <span>{memory.artworkCount} ARTWORK</span>}
     </div>
+    {confirmingForget && (
+      <div className="mt-3 border border-red-900/45 bg-red-950/10 p-3 font-header text-[7px] leading-relaxed text-red-300/75">
+        RELEASE THIS MEMORY? THE ACTIVE SESSION IS NOT CHANGED.
+      </div>
+    )}
     <div className="reliquary-memory-actions">
       <button type="button" onClick={() => onRestore?.(memory.rawEntry)}>
         <RotateCcw size={14} /> OPEN MEMORY
       </button>
-      <button type="button" className="is-forget" onClick={() => onForget?.(memory.entryId)}>
-        <Trash2 size={13} /> FORGET
-      </button>
+      {confirmingForget ? (
+        <div className="grid grid-cols-2 gap-1">
+          <button type="button" className="is-forget" onClick={() => onForget?.(memory.entryId)}>
+            <Trash2 size={13} /> RELEASE
+          </button>
+          <button type="button" onClick={onCancelForget}>KEEP</button>
+        </div>
+      ) : (
+        <button type="button" className="is-forget" onClick={onRequestForget}>
+          <Trash2 size={13} /> FORGET
+        </button>
+      )}
     </div>
   </article>
 );
@@ -74,10 +88,16 @@ export default function ReliquarySurface({
   onGrandForge,
 }) {
   const model = useMemo(() => buildReliquaryPresentation(entries), [entries]);
+  const [forgetCandidate, setForgetCandidate] = useState(null);
   const hasCurrentReading = Boolean(currentReading?.readingRecord);
   const progress = archiveProgress.total > 0
     ? Math.max(0, Math.min(100, (archiveProgress.current / archiveProgress.total) * 100))
     : 0;
+
+  const confirmForget = entryId => {
+    onForgetMemory?.(entryId);
+    setForgetCandidate(null);
+  };
 
   return (
     <div className="reliquary-overlay">
@@ -121,7 +141,7 @@ export default function ReliquarySurface({
             {hasCurrentReading ? (
               <>
                 <blockquote>“{currentQuestion || currentReading.readingRecord?.input?.question || 'Untitled inquiry'}”</blockquote>
-                <p>Seal the exact current session state, including its canonical ReadingRecord and any manifested artwork available locally.</p>
+                <p>Seal the exact current reading state, including its canonical ReadingRecord and any manifested relic layers available locally.</p>
               </>
             ) : (
               <p>No active canonical reading is open. Browse the memories below or use the scribe tools.</p>
@@ -165,7 +185,10 @@ export default function ReliquarySurface({
                   key={memory.entryId}
                   memory={memory}
                   onRestore={onRestoreMemory}
-                  onForget={onForgetMemory}
+                  confirmingForget={forgetCandidate === memory.entryId}
+                  onRequestForget={() => setForgetCandidate(memory.entryId)}
+                  onCancelForget={() => setForgetCandidate(null)}
+                  onForget={confirmForget}
                 />
               ))}
             </div>
