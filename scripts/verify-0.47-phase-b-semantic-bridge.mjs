@@ -23,6 +23,8 @@ expect(bridge.includes("      ritualTheme: record.presentationContext?.ritualThe
 expect(bridge.includes('getCanonicalCardPromptContext({ card: cards[index], semanticConfig: recordSemanticConfig })'), 'Oracle payload uses ReadingRecord semantic authority');
 expect(!bridge.includes("getCanonicalCardPromptContext({ card: cards[index], tradition: { id: record.input.tarotSystem } })"), 'legacy tarotSystem-to-tradition reconstruction removed from payload');
 
+expect(oracle.includes("import { buildInterpretiveLensPromptContext } from '../semantic/interpretiveLensCatalog.js';"), 'Oracle imports project-authored lens prompt catalog');
+expect(oracle.includes('const lensContext = buildInterpretiveLensPromptContext(payload.reading.lenses || []);'), 'Oracle builds lens prompt context only after ReadingRecord payload exists');
 expect(oracle.includes('  semanticConfig,\n  author,'), 'Oracle preparation accepts semanticConfig');
 expect(oracle.includes('  readingDepth,'), 'Oracle preparation leaves depth optional for explicit config');
 expect(!oracle.includes("  readingDepth = 'adept',"), 'Oracle preparation does not overwrite explicit semantic reading depth');
@@ -31,6 +33,7 @@ expect(oracle.includes("traditionName: semanticConfig?.tarotSystem || tradition?
 expect(oracle.includes('lenses=${(payload.reading.lenses || []).join'), 'Oracle synthesis prompt discloses semantic lenses');
 expect(oracle.includes('ritualTheme=${payload.reading.ritualTheme'), 'Oracle synthesis prompt discloses ritual theme');
 expect(oracle.includes('readingDepth=${payload.reading.readingDepth'), 'Oracle synthesis prompt discloses reading depth');
+expect(oracle.includes('    lensContext,'), 'Oracle places lens firewall into synthesis prompt before positions');
 
 expect(threshold.includes("import { resolveSemanticBridgeConfig } from '../semantic/semanticBridgeConfig.js';"), 'Threshold imports semantic config resolver');
 expect(threshold.includes('  semanticConfig,\n  deck = null,'), 'Threshold accepts semanticConfig');
