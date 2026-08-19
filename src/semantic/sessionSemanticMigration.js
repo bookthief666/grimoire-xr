@@ -7,8 +7,29 @@ import {
 import { semanticBridgeConfigFromReadingRecord } from './semanticBridgeConfig.js';
 
 const depthFromTechLevel = techLevel => ['neophyte', 'adept', 'magus'][Number(techLevel)] || 'adept';
-
+const hasOwn = (value, key) => Boolean(value && Object.prototype.hasOwnProperty.call(value, key));
 const readingRecordFromState = state => state?.reading?.readingRecord || null;
+
+const mergeReadingRecordWithLegacyInterpretiveFallback = ({ state, readingRecord }) => {
+  const projected = semanticBridgeConfigFromReadingRecord(readingRecord);
+  const legacy = semanticConfigFromLegacyTradition(state.selectedTradition, {
+    readingDepth: depthFromTechLevel(state.techLevel),
+  }).config;
+  const input = readingRecord?.input || {};
+  const presentation = readingRecord?.presentationContext || {};
+
+  return createSemanticConfig({
+    // Canonical-reading axes come from the immutable ReadingRecord whenever present.
+    tarotSystem: projected.tarotSystem,
+    correspondenceProfile: projected.correspondenceProfile,
+    relationMethod: projected.relationMethod,
+    // Older records predate these interpretive fields; only those missing fields may
+    // fall back to legacy session controls.
+    interpretiveLenses: hasOwn(input, 'lenses') ? projected.interpretiveLenses : legacy.interpretiveLenses,
+    ritualTheme: hasOwn(presentation, 'ritualTheme') ? projected.ritualTheme : legacy.ritualTheme,
+    readingDepth: hasOwn(input, 'readingDepth') ? projected.readingDepth : legacy.readingDepth,
+  });
+};
 
 export const migrateSessionSemanticConfig = state => {
   if (!state || typeof state !== 'object') {
@@ -30,15 +51,15 @@ export const migrateSessionSemanticConfig = state => {
 
   const readingRecord = readingRecordFromState(state);
   if (readingRecord?.input?.tarotSystem) {
-    const projected = semanticBridgeConfigFromReadingRecord(readingRecord);
+    const config = mergeReadingRecordWithLegacyInterpretiveFallback({ state, readingRecord });
     return Object.freeze({
       state: {
         ...state,
-        semanticConfig: projected,
+        semanticConfig: config,
       },
       migrated: true,
       source: 'READING_RECORD_SEMANTIC_PROJECTION',
-      migrationNotes: ['active_semantic_config_recovered_from_immutable_reading_record'],
+      migrationNotes: ['active_semantic_config_recovered_from_immutable_reading_record_with_field_aware_legacy_fallback'],
     });
   }
 
