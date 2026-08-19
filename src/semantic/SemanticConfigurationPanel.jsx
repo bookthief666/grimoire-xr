@@ -57,9 +57,9 @@ const DisclosureSection = ({ id, title, summary, warning = null, open, onToggle,
 
 const SemanticConfigurationPanel = ({ config, onPatch, hasActiveReading = false, disabled = false }) => {
   const [openSections, setOpenSections] = useState(() => new Set(['system', 'lenses']));
+  const selectedLenses = useMemo(() => new Set(config?.interpretiveLenses || []), [config?.interpretiveLenses]);
   if (!config) return null;
 
-  const selectedLenses = useMemo(() => new Set(config.interpretiveLenses || []), [config.interpretiveLenses]);
   const toggleSection = id => {
     setOpenSections(current => {
       const next = new Set(current);
