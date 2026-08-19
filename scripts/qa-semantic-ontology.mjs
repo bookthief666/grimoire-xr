@@ -5,6 +5,7 @@ import {
   semanticConfigFromLegacyTradition,
   updateSemanticConfig,
 } from '../src/semantic/semanticConfig.js';
+import { buildInterpretiveLensPromptContext } from '../src/semantic/interpretiveLensCatalog.js';
 import {
   buildSemanticStateTransition,
   rebuildDeckForSemanticConfig,
@@ -35,6 +36,20 @@ const brunoThoth = updateSemanticConfig(thoth, {
 assert.equal(brunoThoth.tarotSystem, 'thoth');
 assert.equal(brunoThoth.relationMethod, 'crowley_lxxviii_dignities');
 pass('Bruno lens/theme remains orthogonal to Tarot system and relation method');
+
+const philosophicalThoth = updateSemanticConfig(thoth, {
+  interpretiveLenses: ['bataille_eroticism', 'nietzsche_dionysian', 'neoplatonic_theurgy', 'thelemic_hga'],
+});
+assert.equal(philosophicalThoth.tarotSystem, 'thoth');
+assert.equal(philosophicalThoth.correspondenceProfile, 'thoth_native');
+assert.equal(philosophicalThoth.relationMethod, 'crowley_lxxviii_dignities');
+const lensPrompt = buildInterpretiveLensPromptContext(philosophicalThoth.interpretiveLenses);
+assert.match(lensPrompt, /Georges Bataille/);
+assert.match(lensPrompt, /Nietzsche/);
+assert.match(lensPrompt, /Neoplatonic Theurgy/);
+assert.match(lensPrompt, /Thelemic Will & HGA/);
+assert.match(lensPrompt, /MUST NOT recalculate, replace, contradict or invent canonical Tarot/);
+pass('Bataille/Nietzsche/Theurgy/Thelema lenses remain interpretation-only with an explicit authority firewall');
 
 const thothDeck = buildCanonicalDeckGenesis({ tradition: { id: 'thoth' } });
 const magus = thothDeck.find(card => card.canonicalCardId === 'major.magician');
