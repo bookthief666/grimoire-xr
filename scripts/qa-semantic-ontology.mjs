@@ -117,11 +117,12 @@ const legacyState = {
   reading: { readingRecord: historicalRecord },
 };
 const migrated = migrateSessionSemanticConfig(legacyState);
-assert.equal(migrated.state.semanticConfig.tarotSystem, 'rws');
+assert.equal(migrated.source, 'READING_RECORD_SEMANTIC_PROJECTION');
+assert.equal(migrated.state.semanticConfig.tarotSystem, 'thoth');
 assert.deepEqual(migrated.state.semanticConfig.interpretiveLenses, ['bruno_mnemonic']);
 assert.equal(migrated.state.semanticConfig.ritualTheme, 'giordano_bruno');
 assert.equal(migrated.state.semanticConfig.readingDepth, 'magus');
 assert.equal(readingRecordWasPreserved(legacyState, migrated.state), true);
-pass('legacy session migration adds orthogonal config without rewriting ReadingRecord history');
+pass('ReadingRecord Tarot truth outranks legacy Bruno label while missing lens/theme/depth fields fall back safely');
 
 console.log('0.47 semantic ontology QA: PASS');
