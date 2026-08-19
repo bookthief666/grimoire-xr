@@ -90,8 +90,8 @@ oracle = replaceOnce(
 
 oracle = replaceOnce(
   oracle,
-  "  <div className={`border-l px-4 py-4 sm:px-5 ${toneClass(relation.tone)}` }>",
-  "  <div className={`oracle-relation-note is-${relation.tone} border-l px-4 py-4 sm:px-5 ${toneClass(relation.tone)}` }>",
+  "  <div className={`border-l px-4 py-4 sm:px-5 ${toneClass(relation.tone)}`}>",
+  "  <div className={`oracle-relation-note is-${relation.tone} border-l px-4 py-4 sm:px-5 ${toneClass(relation.tone)}`}>",
   'Oracle relation note class',
 );
 
