@@ -57,6 +57,25 @@ describe('0.47 semantic transitions', () => {
     expect(result.nextState.focusedCard).toBeNull();
   });
 
+  it('preserves creative layers from a truly old numeric-only deck record', () => {
+    const oldDeck = [{
+      id: 1,
+      name: 'THE MAGUS',
+      imageUrl: 'data:image/png;base64,legacy',
+      exegesis: 'legacy numeric-only reflection',
+      patina: 9,
+    }];
+    const rws = rebuildDeckForSemanticConfig({
+      deck: oldDeck,
+      semanticConfig: createSemanticConfig({ tarotSystem: 'rws' }),
+    });
+    const magician = rws.find(card => card.canonicalCardId === magusId);
+    expect(magician.name).toBe('THE MAGICIAN');
+    expect(magician.imageUrl).toBe('data:image/png;base64,legacy');
+    expect(magician.exegesis).toBe('legacy numeric-only reflection');
+    expect(magician.patina).toBe(9);
+  });
+
   it('the same canonical IDs survive a full Thoth -> RWS deck rebuild', () => {
     const thoth = buildCanonicalDeckGenesis({ tradition: { id: 'thoth' } });
     const rws = rebuildDeckForSemanticConfig({
