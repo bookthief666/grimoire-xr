@@ -14,6 +14,9 @@ const checks = [
   ['canonical cardId enables Oracle opening', oracle.includes('onOpen={onOpenCard && position.cardId ? () => onOpenCard(position.cardId) : null}')],
   ['legacyCard no longer gates opening', !oracle.includes('position.legacyCard ? () => onOpenCard')],
   ['legacy inline resolver removed', !app.includes('const liveDeckCard = state.deck.find')],
+  ['Reliquary restore indexes canonical identity first', app.includes('const savedByCanonicalId = new Map(savedReadingCards.map(card => [card.canonicalCardId || card.id, card]));')],
+  ['Reliquary restore lookup prefers canonical identity', app.includes('savedByCanonicalId.get(card.canonicalCardId) || savedByCanonicalId.get(card.id)')],
+  ['legacy-first Reliquary restore index removed', !app.includes('savedReadingCards.map(card => [card.id || card.canonicalCardId')],
 ];
 
 let failed = false;
