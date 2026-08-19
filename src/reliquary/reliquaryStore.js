@@ -76,6 +76,17 @@ export const buildReliquaryMetadata = state => {
 export const buildReliquarySnapshot = state => {
   const normalized = normalizePersistedState(clonePlain(state));
   if (!normalized.reading?.readingRecord) throw new Error('A kept reading requires a canonical ReadingRecord.');
+
+  const deckById = new Map((Array.isArray(normalized.deck) ? normalized.deck : []).map(card => [card?.id || card?.canonicalCardId, card]));
+  const readingCards = (Array.isArray(normalized.reading.cards) ? normalized.reading.cards : []).map(card => {
+    const current = deckById.get(card?.id || card?.canonicalCardId);
+    return current ? { ...card, ...current } : card;
+  });
+  const reading = {
+    ...normalized.reading,
+    cards: readingCards,
+  };
+
   return normalizePersistedState({
     phase: 'ORACLE',
     author: normalized.author || '',
@@ -83,8 +94,8 @@ export const buildReliquarySnapshot = state => {
     selectedTradition: normalized.selectedTradition || null,
     erosLevel: normalized.erosLevel ?? 0,
     techLevel: normalized.techLevel ?? 1,
-    oracleQuestion: normalized.reading.readingRecord?.input?.question || normalized.oracleQuestion || '',
-    reading: normalized.reading,
+    oracleQuestion: reading.readingRecord?.input?.question || normalized.oracleQuestion || '',
+    reading,
     activeSpread: normalized.activeSpread || 'TRIAD',
     spreadSlots: [null, null, null],
     placementCardId: null,
