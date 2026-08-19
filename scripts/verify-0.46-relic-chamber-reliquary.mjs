@@ -12,13 +12,17 @@ const pass = message => console.log(`PASS ${message}`);
 const appRequired = [
   "import ReliquarySurface from './reliquary/ReliquarySurface.jsx'",
   "import RelicChamberField from './reliquary/RelicChamberField.jsx'",
+  "import { resolveOracleRelicCard } from './reliquary/oracleRelicResolver.js'",
   'const [reliquaryEntries, setReliquaryEntries]',
   'void loadReliquary().then',
   'saveReliquaryReading({ state })',
   'removeReliquaryEntry({ entryId })',
   'const canonicalDeck = validateCanonicalDeckGenesis(buildCanonicalDeckGenesis',
   'onArchive={() => void handleSealCurrentReading()}',
-  'const card = state.deck.find(entry => entry.id === cardId || entry.canonicalCardId === cardId) || fallbackCard;',
+  'const card = resolveOracleRelicCard({',
+  'deck: state.deck,',
+  'readingCards: state.reading?.cards || [],',
+  'tradition: state.selectedTradition,',
   '<span className="hidden md:inline">RELIQUARY</span>',
   '<RelicChamberField card={state.focusedCard}',
   'RELIC HISTORY · {state.focusedCard.patina || 0} ENCOUNTER',
@@ -37,7 +41,7 @@ const oracleRequired = [
   'role={onOpen ? \'button\' : undefined}',
   'aria-label={onOpen ? `Open relic chamber for ${position.title}` : undefined}',
   'oracle-open-relic-hint',
-  'onOpen={onOpenCard && position.legacyCard ? () => onOpenCard(position.cardId, position.legacyCard) : null}',
+  'onOpen={onOpenCard && position.cardId ? () => onOpenCard(position.cardId) : null}',
 ];
 
 for (const marker of oracleRequired) {
@@ -45,11 +49,24 @@ for (const marker of oracleRequired) {
   else fail(`missing Oracle runtime marker: ${marker}`);
 }
 
-for (const forbidden of [
+const appForbidden = [
   '>ARCHIVE OPTIONS</h3>',
   'PATINA FACTOR: {state.focusedCard.patina || 0}',
-]) {
-  if (app.includes(forbidden)) fail(`legacy surface still active: ${forbidden}`);
+  'const card = state.deck.find(entry => entry.id === cardId || entry.canonicalCardId === cardId) || fallbackCard;',
+  'const liveDeckCard = state.deck.find',
+];
+for (const forbidden of appForbidden) {
+  if (app.includes(forbidden)) fail(`legacy App behavior still active: ${forbidden}`);
+  else pass(`legacy App behavior absent: ${forbidden}`);
+}
+
+const oracleForbidden = [
+  'position.legacyCard ? () => onOpenCard',
+  'onOpenCard(position.cardId, position.legacyCard)',
+];
+for (const forbidden of oracleForbidden) {
+  if (oracle.includes(forbidden)) fail(`legacy Oracle opening dependency still active: ${forbidden}`);
+  else pass(`legacy Oracle dependency absent: ${forbidden}`);
 }
 
 if (!process.exitCode) console.log('0.46 relic chamber + reliquary integration gate: PASS');
