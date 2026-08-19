@@ -50,6 +50,10 @@ import ContinuityReturnDialog from './ContinuityReturnDialog.jsx';
 import AestheticField from './aesthetic/AestheticField.jsx';
 import AestheticCurrentControl from './aesthetic/AestheticCurrentControl.jsx';
 import { persistAestheticPreferences, restoreAestheticPreferences } from './aesthetic/aestheticCurrents.js';
+import ReliquarySurface from './reliquary/ReliquarySurface.jsx';
+import RelicChamberField from './reliquary/RelicChamberField.jsx';
+import { loadReliquary, removeReliquaryEntry, saveReliquaryReading } from './reliquary/reliquaryStore.js';
+import { resolveOracleRelicCard } from './reliquary/oracleRelicResolver.js';
 import './aesthetic/aestheticShell.css';
 import {
   persistGrimoireSession,
@@ -873,6 +877,9 @@ export default function App() {
   const [continuityNotice, setContinuityNotice] = useState('');
   const [landingConfirmOpen, setLandingConfirmOpen] = useState(false);
   const [isThresholdInterpreting, setIsThresholdInterpreting] = useState(false);
+  const [reliquaryEntries, setReliquaryEntries] = useState([]);
+  const [reliquaryBusy, setReliquaryBusy] = useState(false);
+  const [reliquaryNotice, setReliquaryNotice] = useState('');
   const initialAesthetic = useMemo(restoreAestheticPreferences, []);
   const [aestheticCurrent, setAestheticCurrent] = useState(initialAesthetic.current);
   const [enchantmentLevel, setEnchantmentLevel] = useState(initialAesthetic.enchantment);
@@ -885,6 +892,24 @@ export default function App() {
     persistAestheticPreferences({ current: aestheticCurrent, enchantment: enchantmentLevel });
   }, [aestheticCurrent, enchantmentLevel]);
 
+  useEffect(() => {
+    let cancelled = false;
+    void loadReliquary().then(result => {
+      if (cancelled) return;
+      setReliquaryEntries(result.entries || []);
+      if (result.status === 'RESTORED_WITH_MISSING_IMAGES') {
+        setReliquaryNotice(`RELIQUARY RESTORED · ${result.missingImages.length} ARTWORK FILE${result.missingImages.length === 1 ? '' : 'S'} MISSING · READING RECORDS PRESERVED`);
+      } else if (result.status === 'CORRUPT') {
+        setReliquaryNotice('RELIQUARY INDEX COULD NOT BE READ · CURRENT SESSION IS UNAFFECTED');
+      }
+    }).catch(error => {
+      if (cancelled) return;
+      console.warn('Reliquary restore failed.', error);
+      setReliquaryNotice('RELIQUARY STORAGE IS UNAVAILABLE · FILE EXPORTS REMAIN AVAILABLE');
+    });
+    return () => { cancelled = true; };
+  }, []);
+
   const isEgregoreActive = state.erosLevel >= 3;
 
   const handleReturnToLanding = useCallback(() => {
@@ -896,6 +921,67 @@ export default function App() {
     setLandingConfirmOpen(false);
     dispatch({ type: 'RETURN_TO_LANDING' });
   }, []);
+
+  const refreshReliquary = useCallback(async () => {
+    const result = await loadReliquary();
+    setReliquaryEntries(result.entries || []);
+    return result;
+  }, []);
+
+  const handleSealCurrentReading = useCallback(async ({ openAfter = true } = {}) => {
+    if (!state.reading?.readingRecord) {
+      setReliquaryNotice('NO CANONICAL READING IS OPEN TO SEAL');
+      if (openAfter) dispatch({ type: 'OPEN_ARCHIVE_PROMPT' });
+      return;
+    }
+    setReliquaryBusy(true);
+    try {
+      const saved = await saveReliquaryReading({ state });
+      if (!saved.saved) throw new Error(saved.error || 'Unable to save the reading.');
+      const restored = await refreshReliquary();
+      setReliquaryNotice(saved.status === 'SAVED_WITH_WARNINGS' || restored.status === 'RESTORED_WITH_MISSING_IMAGES'
+        ? 'READING SEALED · SOME ARTWORK COULD NOT BE CACHED · CANONICAL MEMORY PRESERVED'
+        : 'READING SEALED INTO THE RELIQUARY');
+      if (openAfter) dispatch({ type: 'OPEN_ARCHIVE_PROMPT' });
+    } catch (error) {
+      setReliquaryNotice(`RELIQUARY SEAL FAILED · ${error.message || 'LOCAL STORAGE UNAVAILABLE'}`);
+      if (openAfter) dispatch({ type: 'OPEN_ARCHIVE_PROMPT' });
+    } finally {
+      setReliquaryBusy(false);
+    }
+  }, [state, refreshReliquary]);
+
+  const handleRestoreReliquaryMemory = useCallback(entry => {
+    if (!entry?.state) return;
+    const rebound = rebindSessionCatalogState(entry.state, { styles: ART_STYLES, traditions: TRADITIONS });
+    const savedReadingCards = Array.isArray(rebound.reading?.cards) ? rebound.reading.cards : [];
+    const savedByCanonicalId = new Map(savedReadingCards.map(card => [card.canonicalCardId || card.id, card]));
+    const canonicalDeck = validateCanonicalDeckGenesis(buildCanonicalDeckGenesis({ tradition: rebound.selectedTradition }));
+    const restoredDeck = canonicalDeck.map(card => {
+      const saved = savedByCanonicalId.get(card.canonicalCardId) || savedByCanonicalId.get(card.id);
+      return saved ? { ...card, ...saved } : card;
+    });
+    dispatch({
+      type: 'RESTORE_ARCHIVE',
+      payload: {
+        ...rebound,
+        phase: 'ORACLE',
+        deck: restoredDeck,
+        isOffline: typeof navigator !== 'undefined' ? !navigator.onLine : false,
+      },
+    });
+    setReliquaryNotice('');
+  }, []);
+
+  const handleForgetReliquaryMemory = useCallback(async entryId => {
+    const result = await removeReliquaryEntry({ entryId });
+    if (result.status === 'FAILED') {
+      setReliquaryNotice(`COULD NOT FORGET MEMORY · ${result.error || 'LOCAL STORAGE UNAVAILABLE'}`);
+      return;
+    }
+    await refreshReliquary();
+    setReliquaryNotice(result.removed ? 'MEMORY RELEASED FROM THE RELIQUARY' : 'MEMORY WAS ALREADY ABSENT');
+  }, [refreshReliquary]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1547,13 +1633,13 @@ export default function App() {
                 <Eye size={14} /> <span className="hidden md:inline">ORACLE</span>
               </button>
               <button onClick={() => dispatch({ type: 'OPEN_ARCHIVE_PROMPT' })} className="grimoire-shell-button flex items-center gap-2 px-3 py-2 bg-black border border-red-600 text-xs font-header hover:bg-red-600 hover:text-black transition-all shadow-[0_0_10px_#ff000033]">
-                <Download size={14} /> <span className="hidden md:inline">ARCHIVE</span>
+                <Download size={14} /> <span className="hidden md:inline">RELIQUARY</span>
               </button>
             </>
           )}
           {currentView === 'oracle' && state.reading && (
             <button onClick={() => dispatch({ type: 'OPEN_ARCHIVE_PROMPT' })} className="grimoire-shell-button flex items-center gap-2 px-3 py-2 bg-black border border-red-600 text-xs font-header hover:bg-red-600 hover:text-black transition-all shadow-[0_0_10px_#ff000033]">
-              <Download size={14} /> <span className="hidden md:inline">ARCHIVE</span>
+              <Download size={14} /> <span className="hidden md:inline">RELIQUARY</span>
             </button>
           )}
           <button onClick={() => setIsMenuOpen(true)} className="grimoire-shell-button flex items-center gap-2 px-3 py-2 bg-black border border-red-600 text-xs font-header hover:bg-red-600 hover:text-black transition-all shadow-[0_0_10px_#ff000033]"><Menu size={14} /></button>
@@ -1729,7 +1815,17 @@ export default function App() {
                 reading={state.reading}
                 onCopy={copyToClipboard}
                 copied={copied}
-                onArchive={() => dispatch({ type: 'OPEN_ARCHIVE_PROMPT' })}
+                onArchive={() => void handleSealCurrentReading()}
+                onOpenCard={(cardId) => {
+                  const card = resolveOracleRelicCard({
+                    cardId,
+                    deck: state.deck,
+                    readingCards: state.reading?.cards || [],
+                    tradition: state.selectedTradition,
+                  });
+                  if (card) dispatch({ type: 'OPEN_CARD', payload: card });
+                  else dispatch({ type: 'SET_ERROR_MESSAGE', payload: `Relic Chamber could not resolve canonical card ${cardId}.` });
+                }}
                 onNewReading={() => dispatch({ type: 'OPEN_THRESHOLD' })}
                 onInterpret={handleThresholdInterpretation}
                 isInterpreting={isThresholdInterpreting}
@@ -1743,11 +1839,12 @@ export default function App() {
         {state.focusedCard && (
           <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[80] bg-black/95 backdrop-blur-xl overflow-y-auto native-scroll flex items-start justify-center pt-[calc(4rem+env(safe-area-inset-top))] sm:pt-[calc(6rem+env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[calc(6rem+env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))]"
+            className="relic-chamber-overlay fixed inset-0 z-[80] bg-black/95 backdrop-blur-xl overflow-y-auto native-scroll flex items-start justify-center pt-[calc(4rem+env(safe-area-inset-top))] sm:pt-[calc(6rem+env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[calc(6rem+env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))]"
             style={{ perspective: '1200px' }}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
           >
+            <RelicChamberField card={state.focusedCard} tradition={state.selectedTradition} reducedMotion={reducedMotion} />
             <motion.div 
               key={state.focusedCard.id} 
               initial={reducedMotion ? { opacity: 0, scale: 0.95 } : { rotateY: 180, scale: 0.8, opacity: 0 }}
@@ -1755,7 +1852,7 @@ export default function App() {
               exit={reducedMotion ? { opacity: 0, scale: 0.95 } : { rotateY: -180, scale: 0.8, opacity: 0 }}
               transition={{ duration: reducedMotion ? 0.3 : 1.0, type: 'spring', bounce: 0.4 }}
               style={{ transformStyle: 'preserve-3d' }}
-              className="relative w-full max-w-4xl bg-black border-4 border-red-600 shadow-[0_0_100px_rgba(255,0,0,0.3)] p-6 sm:p-10 flex flex-col mb-auto"
+              className="relic-chamber-panel relative w-full max-w-4xl bg-black border-4 border-red-600 shadow-[0_0_100px_rgba(255,0,0,0.3)] p-6 sm:p-10 flex flex-col mb-auto"
             >
                <div className="hidden sm:flex absolute top-1/2 -left-16 -translate-y-1/2 cursor-pointer text-red-600/30 hover:text-red-600 transition-colors p-4" onClick={(e) => { e.stopPropagation(); handleSwipePrev(); }}>
                  <ChevronLeft size={64} />
@@ -1767,7 +1864,7 @@ export default function App() {
               <div className="flex justify-between items-start mb-6 sm:mb-10 border-b-2 border-red-600/30 pb-4">
                 <div className="flex-1 pr-4">
                   <h3 className="text-xl sm:text-4xl font-header text-[#e5c158] leading-tight uppercase neon-text break-words whitespace-normal">{state.focusedCard.name}</h3>
-                  <p className="text-[8px] sm:text-[10px] font-header text-[#b8860b] mt-2 tracking-widest">PATINA FACTOR: {state.focusedCard.patina || 0}</p>
+                  <p className="relic-chamber-history-line text-[8px] sm:text-[10px] font-header text-[#b8860b] mt-2 tracking-widest">RELIC HISTORY · {state.focusedCard.patina || 0} ENCOUNTER{(state.focusedCard.patina || 0) === 1 ? '' : 'S'}</p>
                 </div>
                 <button onClick={() => dispatch({ type: 'CLOSE_CARD' })} className="hover:text-white text-red-600 flex-shrink-0"><X size={32}/></button>
               </div>
@@ -1779,7 +1876,7 @@ export default function App() {
               </div>
 
               <div className="flex flex-col md:flex-row gap-6 sm:gap-10">
-                <div className="flex-shrink-0 w-full md:w-80 aspect-[2/3] bg-black border-2 border-[#b8860b] relative overflow-hidden shadow-[0_0_30px_#b8860b44] mx-auto md:mx-0 md:sticky md:top-4 h-max">
+                <div className="relic-chamber-card-frame flex-shrink-0 w-full md:w-80 aspect-[2/3] bg-black border-2 border-[#b8860b] relative overflow-hidden shadow-[0_0_30px_#b8860b44] mx-auto md:mx-0 md:sticky md:top-4 h-max">
                   <LivingRelicSurface
                     card={state.focusedCard}
                     tradition={state.selectedTradition}
@@ -1908,52 +2005,24 @@ export default function App() {
       </AnimatePresence>
 
       {state.archiveState !== 'IDLE' && (
-        <div className="fixed inset-0 z-[200] bg-black/98 flex flex-col items-center justify-center pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] text-center overflow-y-auto native-scroll">
-           <div className="bg-black border-4 border-[#b8860b] p-6 sm:p-8 max-w-md w-full shadow-[0_0_50px_rgba(184,134,11,0.3)] relative my-auto">
-             {state.archiveState === 'PROMPT' && (
-               <>
-                 <h3 className="text-xl sm:text-2xl font-header text-[#e5c158] mb-4">ARCHIVE OPTIONS</h3>
-                 <p className="font-body text-[#b8860b] mb-8">{forgedCount} / 78 Cards Forged.</p>
-                 <button onClick={handleHtmlArchive} className="w-full py-4 bg-[#b8860b] text-black font-header text-[10px] sm:text-sm hover:bg-white transition-colors mb-4 shadow-[0_0_15px_#b8860b]">
-                   QUICK HTML ARCHIVE
-                 </button>
-                 <button onClick={handleJsonArchive} className="w-full py-4 border-2 border-[#b8860b] text-[#e5c158] font-header text-[10px] sm:text-sm hover:bg-[#b8860b] hover:text-black transition-colors mb-4">
-                   EXPORT RESTORABLE JSON
-                 </button>
-                 <button onClick={handleRestoreJsonArchive} className="w-full py-4 border border-red-600/70 text-red-500 font-header text-[10px] sm:text-sm hover:bg-red-600 hover:text-black transition-colors mb-4">
-                   RESTORE JSON ARCHIVE
-                 </button>
-                 <button onClick={handleGrandForge} className="w-full py-4 border-2 border-[#b8860b] text-[#e5c158] font-header text-[10px] sm:text-sm hover:bg-[#b8860b] hover:text-black transition-colors mb-4">
-                   GRAND FORGE (Generate Missing)
-                 </button>
-                 <button onClick={() => dispatch({ type: 'RESET_ARCHIVE' })} className="font-header text-xs text-[#b8860b]/50 hover:text-red-600 uppercase mt-4">[ CANCEL ]</button>
-               </>
-             )}
-             {state.archiveState === 'COMPILING' && (
-               <>
-                 <RefreshCw size={48} className="text-[#b8860b] mx-auto mb-6 animate-spin" />
-                 <h3 className="text-lg sm:text-xl font-header text-[#e5c158] mb-4">THE GRAND FORGE</h3>
-                 <div className="w-full h-4 border-2 border-[#b8860b] p-1 mb-4"><div className="h-full bg-[#b8860b] transition-all duration-300" style={{ width: `${(state.archiveProgress.current / (state.archiveProgress.total || 1)) * 100}%` }} /></div>
-                 <p className="font-header text-[8px] sm:text-xs text-[#b8860b]/80 mb-2 truncate px-2">{state.archiveProgress.msg}</p>
-                 <p className="font-header text-[10px] text-[#e5c158]">{state.archiveProgress.current} / {state.archiveProgress.total}</p>
-                 <p className="text-[10px] text-red-600/80 mt-4 animate-pulse">MANIFESTING ALL CARDS. DO NOT CLOSE.</p>
-               </>
-             )}
-             {state.archiveState === 'READY' && (
-               <>
-                 <FileDown size={64} className="text-[#e5c158] mx-auto mb-8 animate-bounce" />
-                 <h3 className="text-xl sm:text-2xl font-header text-[#e5c158] mb-8">ARTIFACT READY</h3>
-                 <button onClick={handleHtmlArchive} className="w-full py-4 bg-[#b8860b] text-black font-header text-sm hover:bg-white transition-colors mb-4 shadow-[0_0_15px_#b8860b]">
-                   DOWNLOAD HTML + READING PROVENANCE
-                 </button>
-                 <button onClick={handleJsonArchive} className="w-full py-4 border-2 border-[#b8860b] text-[#e5c158] font-header text-[10px] sm:text-sm hover:bg-[#b8860b] hover:text-black transition-colors mb-4">
-                   EXPORT RESTORABLE JSON
-                 </button>
-                 <button onClick={() => dispatch({ type: 'RESET_ARCHIVE' })} className="font-header text-xs text-[#b8860b]/50 hover:text-red-600 uppercase">[ CLOSE ]</button>
-               </>
-             )}
-           </div>
-        </div>
+        <ReliquarySurface
+          entries={reliquaryEntries}
+          currentReading={state.reading}
+          currentQuestion={state.oracleQuestion}
+          archiveState={state.archiveState}
+          archiveProgress={state.archiveProgress}
+          forgedCount={forgedCount}
+          busy={reliquaryBusy}
+          notice={reliquaryNotice}
+          onClose={() => dispatch({ type: 'RESET_ARCHIVE' })}
+          onSealCurrent={() => void handleSealCurrentReading({ openAfter: false })}
+          onRestoreMemory={handleRestoreReliquaryMemory}
+          onForgetMemory={handleForgetReliquaryMemory}
+          onHtmlArchive={handleHtmlArchive}
+          onJsonArchive={handleJsonArchive}
+          onRestoreJsonArchive={handleRestoreJsonArchive}
+          onGrandForge={handleGrandForge}
+        />
       )}
     </div>
   );

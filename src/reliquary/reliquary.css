@@ -1,0 +1,532 @@
+.relic-chamber-overlay,
+.reliquary-overlay {
+  position: fixed;
+  inset: 0;
+  isolation: isolate;
+}
+
+.relic-chamber-overlay {
+  background:
+    radial-gradient(circle at 50% 36%, rgba(184, 134, 11, 0.08), transparent 32%),
+    rgba(0, 0, 0, 0.95);
+}
+
+.relic-chamber-field {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.relic-chamber-veil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 48%, rgba(184, 134, 11, 0.08), transparent 27%),
+    radial-gradient(circle at 50% 48%, transparent 0 30%, rgba(123, 13, 30, 0.05) 31%, transparent 58%);
+}
+
+.relic-chamber-rings {
+  position: absolute;
+  width: min(88vw, 920px);
+  aspect-ratio: 1;
+  left: 50%;
+  top: 48%;
+  transform: translate(-50%, -50%);
+}
+
+.relic-chamber-ring {
+  --ring-index: 0;
+  position: absolute;
+  inset: calc(6% + (var(--ring-index) * 6%));
+  border: 1px solid color-mix(in srgb, var(--grimoire-brass, #b8860b) calc(18% + (var(--ring-index) * 4%)), transparent);
+  border-radius: 50%;
+  box-shadow: inset 0 0 24px rgba(184, 134, 11, 0.025);
+  animation: relic-chamber-turn calc(38s + (var(--ring-index) * 9s)) linear infinite;
+}
+
+.relic-chamber-ring::before,
+.relic-chamber-ring::after {
+  content: '';
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  border: 1px solid var(--grimoire-current, #d3223c);
+  transform: rotate(45deg);
+  opacity: .35;
+}
+
+.relic-chamber-ring::before { top: -4px; left: 50%; }
+.relic-chamber-ring::after { bottom: -4px; right: 50%; }
+
+.relic-chamber-axis {
+  position: absolute;
+  left: 50%;
+  top: 9%;
+  bottom: 7%;
+  width: 1px;
+  background: linear-gradient(transparent, rgba(184, 134, 11, .2), rgba(184, 134, 11, .05), transparent);
+}
+
+.relic-chamber-history-mark {
+  position: absolute;
+  left: 50%;
+  bottom: 3.5rem;
+  transform: translateX(-50%);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  letter-spacing: .24em;
+  color: color-mix(in srgb, var(--grimoire-brass, #b8860b) 55%, transparent);
+}
+
+.relic-chamber-inscriptions {
+  position: absolute;
+  inset: 0;
+}
+
+.relic-chamber-inscription {
+  --inscription-index: 0;
+  position: absolute;
+  top: calc(24% + (var(--inscription-index) * 13%));
+  left: 1.5rem;
+  display: grid;
+  gap: .35rem;
+  max-width: 9rem;
+  opacity: .38;
+}
+
+.relic-chamber-inscription:nth-child(even) {
+  left: auto;
+  right: 1.5rem;
+  text-align: right;
+}
+
+.relic-chamber-inscription span {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  letter-spacing: .18em;
+  color: var(--grimoire-brass, #b8860b);
+}
+
+.relic-chamber-inscription strong {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 400;
+  font-size: 1rem;
+  color: var(--grimoire-bone, #efe4cc);
+}
+
+.relic-chamber-panel {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(184, 134, 11, .035), transparent 24%),
+    rgba(3, 1, 2, .94) !important;
+  border-color: color-mix(in srgb, var(--grimoire-current, #d3223c) 72%, var(--grimoire-brass, #b8860b)) !important;
+}
+
+.relic-chamber-panel::before,
+.relic-chamber-panel::after {
+  content: '';
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.relic-chamber-panel::before {
+  inset: 10px;
+  border: 1px solid color-mix(in srgb, var(--grimoire-brass, #b8860b) 24%, transparent);
+}
+
+.relic-chamber-panel::after {
+  width: 180px;
+  height: 180px;
+  right: -70px;
+  top: -70px;
+  border: 1px solid color-mix(in srgb, var(--grimoire-current, #d3223c) 22%, transparent);
+  transform: rotate(45deg);
+}
+
+.relic-chamber-panel > * { position: relative; z-index: 1; }
+.relic-chamber-card-frame { box-shadow: 0 0 0 1px rgba(229, 193, 88, .15), 0 24px 80px rgba(0, 0, 0, .7) !important; }
+.relic-chamber-history-line { color: var(--grimoire-brass, #b8860b) !important; }
+
+.grimoire-shell[data-aesthetic-current="arcane-os"] .relic-chamber-panel {
+  background: rgba(0, 0, 0, .95) !important;
+  border-color: #ef233c !important;
+  box-shadow: 0 0 90px rgba(255, 0, 0, .3) !important;
+}
+.grimoire-shell[data-aesthetic-current="arcane-os"] .relic-chamber-ring { border-color: rgba(239, 35, 60, .18); }
+.grimoire-shell[data-aesthetic-current="arcane-os"] .relic-chamber-inscription span { color: #ef233c; }
+.grimoire-shell[data-aesthetic-current="living-book"] .relic-chamber-panel {
+  background: linear-gradient(135deg, rgba(159, 123, 56, .07), transparent 28%), rgba(10, 8, 5, .96) !important;
+}
+
+.reliquary-overlay {
+  z-index: 200;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: max(1rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(1.5rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  background:
+    radial-gradient(circle at 50% 5%, rgba(184, 134, 11, .10), transparent 30%),
+    radial-gradient(circle at 15% 70%, rgba(122, 10, 33, .08), transparent 30%),
+    rgba(0, 0, 0, .975);
+}
+
+.reliquary-atmosphere {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.reliquary-orbit {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  border: 1px solid rgba(184, 134, 11, .07);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: reliquary-orbit 52s linear infinite;
+}
+.orbit-one { width: 86vmax; height: 86vmax; }
+.orbit-two { width: 58vmax; height: 58vmax; animation-direction: reverse; animation-duration: 71s; }
+.orbit-three { width: 32vmax; height: 32vmax; animation-duration: 38s; }
+.reliquary-orbit::after {
+  content: '✦';
+  position: absolute;
+  left: 50%;
+  top: -8px;
+  color: rgba(229, 193, 88, .22);
+  font-size: 13px;
+}
+
+.reliquary-shell {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 1120px);
+  margin: 0 auto;
+  color: var(--grimoire-bone, #efe4cc);
+}
+
+.reliquary-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  align-items: flex-start;
+  padding: 1.5rem 0 1.25rem;
+  border-bottom: 1px solid rgba(184, 134, 11, .35);
+}
+.reliquary-kicker,
+.reliquary-section-label {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  letter-spacing: .18em;
+  color: var(--grimoire-gold, #e5c158);
+}
+.reliquary-header h2 {
+  margin-top: .85rem;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 400;
+  font-size: clamp(1.75rem, 4vw, 3.2rem);
+  line-height: 1.08;
+}
+.reliquary-header p,
+.reliquary-section-heading p,
+.reliquary-authority-note,
+.reliquary-current-reading p,
+.reliquary-scribe p,
+.reliquary-empty p {
+  font-family: Georgia, 'Times New Roman', serif;
+  color: color-mix(in srgb, var(--grimoire-bone, #efe4cc) 58%, transparent);
+  line-height: 1.55;
+}
+.reliquary-header p { margin-top: .65rem; }
+.reliquary-close {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(184, 134, 11, .45);
+  color: var(--grimoire-gold, #e5c158);
+  background: rgba(0, 0, 0, .35);
+}
+
+.reliquary-notice,
+.reliquary-ready-state,
+.reliquary-forge-state {
+  margin-top: 1rem;
+  border: 1px solid rgba(184, 134, 11, .35);
+  background: rgba(184, 134, 11, .055);
+  padding: .85rem 1rem;
+  color: var(--grimoire-gold, #e5c158);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  line-height: 1.55;
+}
+.reliquary-forge-state { display: flex; align-items: center; gap: 1rem; }
+.reliquary-ready-state { display: flex; align-items: center; gap: .65rem; }
+
+.reliquary-current-reading {
+  position: relative;
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  border: 1px solid rgba(184, 134, 11, .36);
+  background: linear-gradient(90deg, rgba(184, 134, 11, .065), rgba(90, 8, 24, .035));
+  overflow: hidden;
+}
+.reliquary-current-reading::after {
+  content: '';
+  position: absolute;
+  width: 130px;
+  height: 130px;
+  right: -50px;
+  border: 1px solid rgba(184, 134, 11, .12);
+  transform: rotate(45deg);
+}
+.reliquary-current-seal {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(229, 193, 88, .45);
+  border-radius: 50%;
+  color: var(--grimoire-gold, #e5c158);
+  box-shadow: 0 0 24px rgba(229, 193, 88, .08);
+}
+.reliquary-current-reading blockquote {
+  margin-top: .55rem;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.15rem;
+  color: var(--grimoire-bone, #efe4cc);
+}
+.reliquary-seal-button {
+  position: relative;
+  z-index: 1;
+  min-height: 46px;
+  padding: .8rem 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  border: 1px solid var(--grimoire-brass, #b8860b);
+  color: var(--grimoire-gold, #e5c158);
+  background: rgba(184, 134, 11, .08);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+}
+.reliquary-seal-button:disabled { opacity: .45; }
+
+.reliquary-returning,
+.reliquary-memories { margin-top: 2.25rem; }
+.reliquary-authority-note { margin-top: .55rem; font-size: .9rem; }
+.reliquary-returning-grid {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: .7rem;
+}
+.reliquary-returning-relic {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  padding: .8rem;
+  border-left: 1px solid rgba(184, 134, 11, .45);
+  background: rgba(184, 134, 11, .035);
+}
+.reliquary-returning-relic span {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: var(--grimoire-current, #d3223c);
+}
+.reliquary-returning-relic strong {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-weight: 400;
+  color: var(--grimoire-bone, #efe4cc);
+}
+
+.reliquary-section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  padding-bottom: .8rem;
+  border-bottom: 1px solid rgba(184, 134, 11, .2);
+}
+.reliquary-section-heading p { margin-top: .45rem; font-size: .95rem; }
+.reliquary-memory-grid {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 310px), 1fr));
+  gap: 1rem;
+}
+.reliquary-memory-card {
+  position: relative;
+  padding: 1rem;
+  border: 1px solid rgba(184, 134, 11, .28);
+  background:
+    linear-gradient(145deg, rgba(184, 134, 11, .045), transparent 34%),
+    rgba(5, 3, 2, .76);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, .28);
+}
+.reliquary-memory-card::before {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border: 1px solid rgba(184, 134, 11, .08);
+  pointer-events: none;
+}
+.reliquary-memory-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: .8rem;
+  color: color-mix(in srgb, var(--grimoire-brass, #b8860b) 65%, transparent);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  line-height: 1.45;
+}
+.reliquary-memory-card blockquote {
+  margin: 1rem 0;
+  min-height: 3.2rem;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.15rem;
+  line-height: 1.38;
+  color: var(--grimoire-bone, #efe4cc);
+}
+.reliquary-memory-triad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: .4rem;
+}
+.reliquary-memory-triad div {
+  min-width: 0;
+  min-height: 82px;
+  padding: .6rem .4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border: 1px solid rgba(184, 134, 11, .20);
+  background: rgba(0, 0, 0, .34);
+}
+.reliquary-memory-triad span {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 1.2rem;
+  color: rgba(184, 134, 11, .45);
+}
+.reliquary-memory-triad strong {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: .78rem;
+  font-weight: 400;
+  color: color-mix(in srgb, var(--grimoire-bone, #efe4cc) 80%, transparent);
+  overflow-wrap: anywhere;
+}
+.reliquary-memory-signature {
+  margin-top: .8rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+}
+.reliquary-memory-signature span {
+  padding: .32rem .42rem;
+  border: 1px solid rgba(184, 134, 11, .20);
+  color: color-mix(in srgb, var(--grimoire-gold, #e5c158) 72%, transparent);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 5px;
+}
+.reliquary-memory-actions {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: .5rem;
+}
+.reliquary-memory-actions button,
+.reliquary-scribe-grid button {
+  min-height: 43px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem;
+  border: 1px solid rgba(184, 134, 11, .42);
+  background: rgba(184, 134, 11, .035);
+  color: var(--grimoire-gold, #e5c158);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+}
+.reliquary-memory-actions .is-forget { color: rgba(211, 34, 60, .7); border-color: rgba(211, 34, 60, .28); }
+
+.reliquary-empty {
+  margin-top: 1rem;
+  padding: 3rem 1rem;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  border: 1px dashed rgba(184, 134, 11, .22);
+}
+.reliquary-empty > span { font-size: 2rem; color: rgba(184, 134, 11, .35); }
+.reliquary-empty strong { margin-top: .8rem; font-family: 'Press Start 2P', monospace; font-size: 8px; color: var(--grimoire-gold, #e5c158); }
+.reliquary-empty p { margin-top: .7rem; max-width: 35rem; }
+
+.reliquary-scribe {
+  margin-top: 2.3rem;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(184, 134, 11, .22);
+  background: rgba(0, 0, 0, .25);
+}
+.reliquary-scribe summary {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  padding: .8rem 1rem;
+  cursor: pointer;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  letter-spacing: .12em;
+  color: color-mix(in srgb, var(--grimoire-gold, #e5c158) 68%, transparent);
+}
+.reliquary-scribe-body { padding: 1rem; border-top: 1px solid rgba(184, 134, 11, .16); }
+.reliquary-scribe-grid {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .6rem;
+}
+
+.grimoire-shell[data-aesthetic-current="arcane-os"] .reliquary-overlay {
+  background: radial-gradient(circle at 50% 5%, rgba(239, 35, 60, .08), transparent 26%), rgba(0,0,0,.98);
+}
+.grimoire-shell[data-aesthetic-current="arcane-os"] .reliquary-memory-card,
+.grimoire-shell[data-aesthetic-current="arcane-os"] .reliquary-current-reading { border-color: rgba(239, 35, 60, .28); }
+.grimoire-shell[data-aesthetic-current="arcane-os"] .reliquary-orbit { border-color: rgba(239, 35, 60, .07); }
+.grimoire-shell[data-aesthetic-current="living-book"] .reliquary-overlay {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(213, 184, 101, .10), transparent 32%),
+    #050403;
+}
+
+@keyframes relic-chamber-turn { to { transform: rotate(360deg); } }
+@keyframes reliquary-orbit { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .relic-chamber-ring,
+  .reliquary-orbit { animation: none !important; }
+}
+.relic-chamber-field.is-reduced-motion .relic-chamber-ring { animation: none !important; }
+
+@media (max-width: 700px) {
+  .relic-chamber-inscription { display: none; }
+  .relic-chamber-rings { width: 120vw; }
+  .reliquary-header { align-items: flex-start; }
+  .reliquary-current-reading { align-items: flex-start; flex-wrap: wrap; }
+  .reliquary-current-seal { width: 40px; height: 40px; }
+  .reliquary-seal-button { width: 100%; }
+  .reliquary-memory-grid { grid-template-columns: 1fr; }
+  .reliquary-scribe-grid { grid-template-columns: 1fr; }
+}

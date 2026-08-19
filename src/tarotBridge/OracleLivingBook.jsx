@@ -18,8 +18,19 @@ const compactPositionFunction = positionId => {
   return '';
 };
 
-const PositionCard = ({ position, ordinal, surfacePosition }) => (
-  <article className="oracle-position-card min-w-0">
+const PositionCard = ({ position, ordinal, surfacePosition, onOpen = null }) => (
+  <article
+    className={`oracle-position-card ${onOpen ? 'is-openable' : ''} min-w-0`}
+    onClick={onOpen || undefined}
+    onKeyDown={event => {
+      if (!onOpen || (event.key !== 'Enter' && event.key !== ' ')) return;
+      event.preventDefault();
+      onOpen();
+    }}
+    role={onOpen ? 'button' : undefined}
+    tabIndex={onOpen ? 0 : undefined}
+    aria-label={onOpen ? `Open relic chamber for ${position.title}` : undefined}
+  >
     <div className="oracle-position-seal"><span>{surfacePosition?.mark || '✦'}</span></div>
     <div className="mb-3 text-center">
       <div className="font-header text-[8px] sm:text-[9px] tracking-[0.18em] text-[#d6b45b]">{position.label}</div>
@@ -31,6 +42,7 @@ const PositionCard = ({ position, ordinal, surfacePosition }) => (
       </p>
     </div>
     <div className="oracle-relic-frame relative aspect-[2/3.35] overflow-hidden border border-[#9c7a32]/70 bg-[#080705] shadow-[0_16px_45px_rgba(0,0,0,0.55)]">
+      {onOpen && <div className="oracle-open-relic-hint" aria-hidden="true">OPEN RELIC</div>}
       {position.imageUrl ? (
         <img src={position.imageUrl} alt={`${position.label}: ${position.title}`} className="h-full w-full object-cover" />
       ) : (
@@ -66,6 +78,7 @@ export default function OracleLivingBook({
   copied = false,
   onNewReading,
   onArchive,
+  onOpenCard = null,
   onInterpret = null,
   isInterpreting = false,
 }) {
@@ -102,7 +115,15 @@ export default function OracleLivingBook({
       <div className="oracle-spread-stage">
         <OracleRelationField surface={surfaceModel} />
         <div className="oracle-card-grid grid grid-cols-3 gap-3 sm:gap-6 lg:gap-8 items-start">
-          {model.positions.map((position, index) => <PositionCard key={position.positionId} position={position} ordinal={index} surfacePosition={surfaceModel.positions[index]} />)}
+          {model.positions.map((position, index) => (
+            <PositionCard
+              key={position.positionId}
+              position={position}
+              ordinal={index}
+              surfacePosition={surfaceModel.positions[index]}
+              onOpen={onOpenCard && position.cardId ? () => onOpenCard(position.cardId) : null}
+            />
+          ))}
         </div>
       </div>
 
