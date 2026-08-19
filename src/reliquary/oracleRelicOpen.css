@@ -1,0 +1,58 @@
+.oracle-position-card.is-openable {
+  cursor: pointer;
+  border-radius: 2px;
+  outline: none;
+}
+
+.oracle-position-card.is-openable:focus-visible {
+  outline: 1px solid color-mix(in srgb, var(--grimoire-gold, #e5c158) 75%, transparent);
+  outline-offset: 7px;
+}
+
+.oracle-position-card.is-openable .oracle-relic-frame {
+  cursor: pointer;
+}
+
+.oracle-open-relic-hint {
+  position: absolute;
+  z-index: 8;
+  top: 9px;
+  right: 9px;
+  padding: 5px 6px;
+  border: 1px solid color-mix(in srgb, var(--grimoire-brass, #b8860b) 32%, transparent);
+  background: rgba(0, 0, 0, .68);
+  color: color-mix(in srgb, var(--grimoire-gold, #e5c158) 72%, transparent);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 5px;
+  letter-spacing: .08em;
+  opacity: .34;
+  pointer-events: none;
+  transition: opacity .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+
+.oracle-position-card.is-openable:hover .oracle-open-relic-hint,
+.oracle-position-card.is-openable:focus-visible .oracle-open-relic-hint {
+  opacity: .9;
+  border-color: color-mix(in srgb, var(--grimoire-gold, #e5c158) 60%, transparent);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--grimoire-gold, #e5c158) 12%, transparent);
+}
+
+.grimoire-shell[data-aesthetic-current="arcane-os"] .oracle-open-relic-hint {
+  color: #ff5368;
+  border-color: rgba(239, 35, 60, .45);
+}
+
+.grimoire-shell[data-aesthetic-current="living-book"] .oracle-open-relic-hint {
+  background: rgba(10, 8, 5, .82);
+  color: var(--grimoire-gold, #d5b865);
+}
+
+@media (max-width: 700px) {
+  .oracle-open-relic-hint {
+    top: 6px;
+    right: 6px;
+    padding: 4px;
+    font-size: 4px;
+    opacity: .42;
+  }
+}
