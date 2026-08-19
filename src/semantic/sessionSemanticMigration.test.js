@@ -3,7 +3,7 @@ import { createSemanticConfig } from './semanticConfig.js';
 import { migrateSessionSemanticConfig, readingRecordWasPreserved } from './sessionSemanticMigration.js';
 
 describe('0.47 persisted-session semantic migration', () => {
-  it('migrates a legacy Jungian Shadow session deterministically without rewriting its reading record', () => {
+  it('uses old ReadingRecord canonical axes while preserving a legacy Jungian lens when the record predates lens fields', () => {
     const readingRecord = {
       readingId: 'legacy-shadow-reading',
       input: { tarotSystem: 'rws', relationMethod: 'disabled' },
@@ -16,7 +16,7 @@ describe('0.47 persisted-session semantic migration', () => {
     };
     const result = migrateSessionSemanticConfig(before);
     expect(result.migrated).toBe(true);
-    expect(result.source).toBe('LEGACY_TRADITION:shadow');
+    expect(result.source).toBe('READING_RECORD_SEMANTIC_PROJECTION');
     expect(result.state.semanticConfig.tarotSystem).toBe('rws');
     expect(result.state.semanticConfig.correspondenceProfile).toBe('none');
     expect(result.state.semanticConfig.relationMethod).toBe('disabled');
@@ -24,6 +24,32 @@ describe('0.47 persisted-session semantic migration', () => {
     expect(result.state.semanticConfig.readingDepth).toBe('magus');
     expect(result.state.reading.readingRecord).toBe(readingRecord);
     expect(readingRecordWasPreserved(before, result.state)).toBe(true);
+  });
+
+  it('prefers explicit ReadingRecord lenses/theme/depth over conflicting legacy session controls', () => {
+    const readingRecord = {
+      readingId: 'bataille-reading',
+      input: {
+        tarotSystem: 'thoth',
+        correspondenceProfile: 'thoth_native',
+        relationMethod: 'crowley_lxxviii_dignities',
+        lenses: ['bataille_eroticism', 'nietzsche_dionysian'],
+        readingDepth: 'neophyte',
+      },
+      presentationContext: { ritualTheme: 'none' },
+    };
+    const before = {
+      selectedTradition: { id: 'bruno', name: 'Giordano Bruno' },
+      techLevel: 2,
+      reading: { readingRecord },
+    };
+    const result = migrateSessionSemanticConfig(before);
+    expect(result.state.semanticConfig.tarotSystem).toBe('thoth');
+    expect(result.state.semanticConfig.relationMethod).toBe('crowley_lxxviii_dignities');
+    expect(result.state.semanticConfig.interpretiveLenses).toEqual(['bataille_eroticism', 'nietzsche_dionysian']);
+    expect(result.state.semanticConfig.ritualTheme).toBe('none');
+    expect(result.state.semanticConfig.readingDepth).toBe('neophyte');
+    expect(result.state.reading.readingRecord).toBe(readingRecord);
   });
 
   it('does not remigrate a valid v1 semantic configuration', () => {
