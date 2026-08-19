@@ -22,6 +22,18 @@ describe('0.47 semantic bridge config resolver', () => {
     expect(resolved.ritualTheme).toBe('giordano_bruno');
   });
 
+  it('preserves the reading depth carried by explicit semanticConfig when no override is requested', () => {
+    const explicit = createSemanticConfig({ tarotSystem: 'thoth', readingDepth: 'magus' });
+    expect(resolveSemanticBridgeConfig({ semanticConfig: explicit }).readingDepth).toBe('magus');
+  });
+
+  it('allows a deliberate readingDepth override without mutating the original config', () => {
+    const explicit = createSemanticConfig({ tarotSystem: 'thoth', readingDepth: 'magus' });
+    const resolved = resolveSemanticBridgeConfig({ semanticConfig: explicit, readingDepth: 'neophyte' });
+    expect(resolved.readingDepth).toBe('neophyte');
+    expect(explicit.readingDepth).toBe('magus');
+  });
+
   it('keeps legacy compatibility through the deterministic migration layer', () => {
     const resolved = resolveSemanticBridgeConfig({ tradition: { id: 'bruno' }, readingDepth: 'magus' });
     expect(resolved.tarotSystem).toBe('rws');
@@ -51,5 +63,37 @@ describe('0.47 semantic bridge config resolver', () => {
       ritualTheme: 'giordano_bruno',
       readingDepth: 'magus',
     });
+  });
+
+  it('projects obsolete historical record vocabulary conservatively without rewriting the record', () => {
+    const record = {
+      input: {
+        tarotSystem: 'rws',
+        correspondenceProfile: 'golden_dawn',
+        relationMethod: 'crowley_lxxviii_dignities',
+        lenses: ['jungian_shadow', 'obsolete_private_lens'],
+        readingDepth: 'adept',
+      },
+      presentationContext: { ritualTheme: 'none' },
+    };
+    const snapshot = JSON.stringify(record);
+    const config = semanticBridgeConfigFromReadingRecord(record);
+    expect(config.correspondenceProfile).toBe('none');
+    expect(config.relationMethod).toBe('crowley_lxxviii_dignities');
+    expect(config.interpretiveLenses).toEqual(['jungian_shadow']);
+    expect(JSON.stringify(record)).toBe(snapshot);
+  });
+
+  it('fails conservative when a historical relation method is no longer supported', () => {
+    const config = semanticBridgeConfigFromReadingRecord({
+      input: {
+        tarotSystem: 'thoth',
+        correspondenceProfile: 'thoth_native',
+        relationMethod: 'thoth_native',
+      },
+    });
+    expect(config.tarotSystem).toBe('thoth');
+    expect(config.correspondenceProfile).toBe('thoth_native');
+    expect(config.relationMethod).toBe('disabled');
   });
 });
