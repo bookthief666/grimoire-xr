@@ -15,6 +15,10 @@ export const INTERPRETIVE_LENSES = Object.freeze([
   'alchemical',
   'bruno_mnemonic',
   'astarte_venus_devotional',
+  'bataille_eroticism',
+  'nietzsche_dionysian',
+  'neoplatonic_theurgy',
+  'thelemic_hga',
 ]);
 
 const asId = value => String(value || '').trim().toLowerCase();
