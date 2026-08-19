@@ -73,10 +73,29 @@ export const buildReliquaryMetadata = state => {
   });
 };
 
-export const buildReliquaryEntry = ({ state, savedAt = new Date().toISOString() } = {}) => {
+export const buildReliquarySnapshot = state => {
   const normalized = normalizePersistedState(clonePlain(state));
-  const metadata = buildReliquaryMetadata(normalized);
-  const extracted = extractEmbeddedImages(normalized);
+  if (!normalized.reading?.readingRecord) throw new Error('A kept reading requires a canonical ReadingRecord.');
+  return normalizePersistedState({
+    phase: 'ORACLE',
+    author: normalized.author || '',
+    selectedStyle: normalized.selectedStyle || null,
+    selectedTradition: normalized.selectedTradition || null,
+    erosLevel: normalized.erosLevel ?? 0,
+    techLevel: normalized.techLevel ?? 1,
+    oracleQuestion: normalized.reading.readingRecord?.input?.question || normalized.oracleQuestion || '',
+    reading: normalized.reading,
+    activeSpread: normalized.activeSpread || 'TRIAD',
+    spreadSlots: [null, null, null],
+    placementCardId: null,
+    scriptoriumMode: 'DECK',
+  });
+};
+
+export const buildReliquaryEntry = ({ state, savedAt = new Date().toISOString() } = {}) => {
+  const snapshot = buildReliquarySnapshot(state);
+  const metadata = buildReliquaryMetadata(snapshot);
+  const extracted = extractEmbeddedImages(snapshot);
   return {
     entry: Object.freeze({
       entryId: metadata.entryId,
