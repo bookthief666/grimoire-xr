@@ -25,6 +25,7 @@
     "qa:ontology": "node scripts/qa-semantic-ontology.mjs",
     "qa:ontology:bridge": "node scripts/qa-0.47-phase-b-semantic-bridge.mjs",
     "qa:ontology:runtime": "node scripts/qa-0.47-phase-c-semantic-runtime.mjs",
+    "qa:ontology:ux": "node scripts/qa-0.47-phase-d-codex-ux.mjs",
     "qa:ai:contracts": "node scripts/qa-local-ai.mjs --contracts-only",
     "qa:ai": "node scripts/qa-local-ai.mjs",
     "qa:ai:resume": "node scripts/qa-local-ai.mjs --resume-latest",
