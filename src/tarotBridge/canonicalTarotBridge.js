@@ -1,4 +1,5 @@
 import { resolveSemanticBridgeConfig, semanticBridgeConfigFromReadingRecord } from '../semantic/semanticBridgeConfig.js';
+import { AUTHORITATIVE_CARD_MANIFEST, AUTHORITATIVE_CARD_MANIFEST_META } from './authoritativeCardManifest.generated.js';
 
 export const UPSTREAM_TAROT_CONTRACT = Object.freeze({
   repository: 'bookthief666/tarot-archetype-vr',
@@ -209,7 +210,19 @@ const buildCanonicalCardManifest = () => {
   return deepFreeze([...majors, ...minors]);
 };
 
-export const CANONICAL_CARD_MANIFEST = buildCanonicalCardManifest();
+if (
+  AUTHORITATIVE_CARD_MANIFEST_META.contractId !== UPSTREAM_TAROT_CONTRACT.contractId
+  || AUTHORITATIVE_CARD_MANIFEST_META.contractVersion !== UPSTREAM_TAROT_CONTRACT.contractVersion
+  || AUTHORITATIVE_CARD_MANIFEST_META.authorityRepository !== UPSTREAM_TAROT_CONTRACT.repository
+  || AUTHORITATIVE_CARD_MANIFEST_META.authorityCommit !== UPSTREAM_TAROT_CONTRACT.commit
+) {
+  throw new Error('Authoritative Tarot card manifest does not match the pinned upstream contract.');
+}
+
+// 0.48 Phase B: source-qualified card doctrine is generated from the exact
+// authoritative VR contract snapshot. The legacy local builder remains only
+// as temporary rollback material until parity is frozen and de-duplication proceeds.
+export const CANONICAL_CARD_MANIFEST = deepFreeze(AUTHORITATIVE_CARD_MANIFEST);
 
 const CARD_BY_ID = new Map(CANONICAL_CARD_MANIFEST.map(card => [card.cardId, card]));
 
