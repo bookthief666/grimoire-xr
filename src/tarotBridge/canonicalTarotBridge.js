@@ -2,6 +2,7 @@ import { resolveSemanticBridgeConfig, semanticBridgeConfigFromReadingRecord } fr
 import { relationMethodSupportsTarotSystem } from '../semantic/semanticConfig.js';
 import { AUTHORITATIVE_CARD_MANIFEST, AUTHORITATIVE_CARD_MANIFEST_META } from './authoritativeCardManifest.generated.js';
 import { AUTHORITATIVE_RELATION_AUTHORITY, AUTHORITATIVE_RELATION_AUTHORITY_META } from './authoritativeRelationAuthority.generated.js';
+import { AUTHORITATIVE_SPREAD_MANIFEST, AUTHORITATIVE_SPREAD_MANIFEST_META } from './authoritativeSpreadManifest.generated.js';
 
 export const UPSTREAM_TAROT_CONTRACT = Object.freeze({
   repository: 'bookthief666/tarot-archetype-vr',
@@ -47,9 +48,16 @@ if (
   throw new Error('Authoritative Tarot relation authority does not match the pinned upstream contract.');
 }
 
-// 0.48 Phase B: source-qualified card doctrine is generated from the exact
-// authoritative VR contract snapshot. The legacy local builder remains only
-// as temporary rollback material until parity is frozen and de-duplication proceeds.
+if (
+  AUTHORITATIVE_SPREAD_MANIFEST_META.contractId !== UPSTREAM_TAROT_CONTRACT.contractId
+  || AUTHORITATIVE_SPREAD_MANIFEST_META.contractVersion !== UPSTREAM_TAROT_CONTRACT.contractVersion
+  || AUTHORITATIVE_SPREAD_MANIFEST_META.authorityRepository !== UPSTREAM_TAROT_CONTRACT.repository
+  || AUTHORITATIVE_SPREAD_MANIFEST_META.authorityCommit !== UPSTREAM_TAROT_CONTRACT.commit
+) {
+  throw new Error('Authoritative Tarot spread manifest does not match the pinned upstream contract.');
+}
+
+// 0.48: source-qualified card doctrine is generated from the exact pinned VR contract.
 export const CANONICAL_CARD_MANIFEST = deepFreeze(AUTHORITATIVE_CARD_MANIFEST);
 
 const CARD_BY_ID = new Map(CANONICAL_CARD_MANIFEST.map(card => [card.cardId, card]));
@@ -68,23 +76,8 @@ export const getCanonicalCardDescriptor = cardIdOrLegacyIndex => (
     : CARD_BY_ID.get(String(cardIdOrLegacyIndex || '')) || null
 );
 
-const TRADITION_CONFIGS = deepFreeze({
-  thoth: { tarotSystem: 'thoth', correspondenceProfile: 'thoth_native', relationMethod: 'crowley_lxxviii_dignities', lenses: [], ritualTheme: 'none' },
-  rws: { tarotSystem: 'rws', correspondenceProfile: 'golden_dawn', relationMethod: 'crowley_lxxviii_dignities', lenses: [], ritualTheme: 'none' },
-  marseille: { tarotSystem: 'marseille', correspondenceProfile: 'disabled', relationMethod: 'disabled', lenses: [], ritualTheme: 'none' },
-  hermetic: { tarotSystem: 'rws', correspondenceProfile: 'golden_dawn', relationMethod: 'crowley_lxxviii_dignities', lenses: [], ritualTheme: 'none' },
-  shadow: { tarotSystem: 'rws', correspondenceProfile: 'disabled', relationMethod: 'disabled', lenses: ['jungian_shadow'], ritualTheme: 'none' },
-  enochian: { tarotSystem: 'rws', correspondenceProfile: 'disabled', relationMethod: 'disabled', lenses: ['enochian'], ritualTheme: 'none' },
-  chaos: { tarotSystem: 'rws', correspondenceProfile: 'disabled', relationMethod: 'disabled', lenses: ['chaos_magick'], ritualTheme: 'none' },
-  voudon: { tarotSystem: 'rws', correspondenceProfile: 'disabled', relationMethod: 'disabled', lenses: ['bertiaux_nightside'], ritualTheme: 'none' },
-  alchemical: { tarotSystem: 'rws', correspondenceProfile: 'disabled', relationMethod: 'disabled', lenses: ['alchemical'], ritualTheme: 'none' },
-  bruno: { tarotSystem: 'rws', correspondenceProfile: 'disabled', relationMethod: 'disabled', lenses: ['bruno_mnemonic'], ritualTheme: 'giordano_bruno' },
-  astarte: { tarotSystem: 'rws', correspondenceProfile: 'disabled', relationMethod: 'disabled', lenses: ['astarte_venus_devotional'], ritualTheme: 'astarte_venus' },
-});
-
 const normalizeTraditionId = tradition => {
   const direct = String(tradition?.id || tradition || '').trim().toLowerCase();
-  if (TRADITION_CONFIGS[direct]) return direct;
   const name = String(tradition?.name || '').trim().toLowerCase();
   if (name.includes('thoth')) return 'thoth';
   if (name.includes('rider') || name.includes('waite')) return 'rws';
@@ -105,43 +98,7 @@ export const getCanonicalInterpretationConfig = ({ tradition, semanticConfig, re
   });
 };
 
-export const CANONICAL_SPREAD_MAP = deepFreeze({
-  TRIAD: {
-    spreadId: 'grimoire.triad.dialectic',
-    version: '1.0.0',
-    cardCount: 3,
-    semanticStatus: 'CANONICAL_PROJECT',
-    positions: [
-      { positionId: 'thesis', ordinal: 0, label: 'THESIS', questionFunction: 'the first articulated force or proposition in the question' },
-      { positionId: 'antithesis', ordinal: 1, label: 'ANTITHESIS', questionFunction: 'the force that resists, complicates, or qualifies the first' },
-      { positionId: 'synthesis', ordinal: 2, label: 'SYNTHESIS', questionFunction: 'what becomes visible when the first two are read in relation' },
-    ],
-    topology: {
-      orderedAdjacency: [['thesis', 'antithesis'], ['antithesis', 'synthesis']],
-      visualEdges: [['thesis', 'antithesis'], ['thesis', 'synthesis'], ['antithesis', 'synthesis']],
-    },
-  },
-  HEXAGRAM: {
-    spreadId: 'legacy.hexagram.v031',
-    version: '0.31.0',
-    cardCount: 6,
-    semanticStatus: 'PROVISIONAL',
-    positions: Array.from({ length: 6 }, (_, index) => ({
-      positionId: `p${index + 1}`, ordinal: index, label: `POSITION ${index + 1}`, questionFunction: null,
-    })),
-    topology: { orderedAdjacency: [], visualEdges: [] },
-  },
-  CROSS: {
-    spreadId: 'legacy.cross.v031',
-    version: '0.31.0',
-    cardCount: 10,
-    semanticStatus: 'PROVISIONAL',
-    positions: Array.from({ length: 10 }, (_, index) => ({
-      positionId: `p${index + 1}`, ordinal: index, label: `POSITION ${index + 1}`, questionFunction: null,
-    })),
-    topology: { orderedAdjacency: [], visualEdges: [] },
-  },
-});
+export const CANONICAL_SPREAD_MAP = deepFreeze(AUTHORITATIVE_SPREAD_MANIFEST);
 
 const relationFamilyOf = card => card?.suitFamilyId || 'major';
 const relationPairAuthority = (leftCard, rightCard, context = 'IMMEDIATE_NEIGHBOR') => {
@@ -393,6 +350,10 @@ export const validateCanonicalTarotBridge = () => {
     if (card.thoth.expressionCoverage !== 'FULL') errors.push(`Thoth expression not FULL: ${card.cardId}`);
   });
   if (new Set(CANONICAL_CARD_MANIFEST.map(card => card.cardId)).size !== 78) errors.push('canonical card ids are not unique');
-  if (Object.values(TRADITION_CONFIGS).some(config => config.relationMethod === 'thoth_native')) errors.push('thoth_native relation method must not exist');
+  if (JSON.stringify(Object.keys(CANONICAL_SPREAD_MAP)) !== JSON.stringify(AUTHORITATIVE_SPREAD_MANIFEST_META.spreadKeys)) errors.push('canonical spread legacy-key order drifted');
+  Object.entries(CANONICAL_SPREAD_MAP).forEach(([legacyId, spread]) => {
+    if (!spread?.spreadId || !Number.isInteger(spread?.cardCount) || spread.cardCount <= 0) errors.push(`invalid canonical spread ${legacyId}`);
+    if (!Array.isArray(spread?.positions) || spread.positions.length !== spread.cardCount) errors.push(`canonical spread position drift: ${legacyId}`);
+  });
   return errors;
 };
