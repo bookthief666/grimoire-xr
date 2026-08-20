@@ -51,7 +51,10 @@ const threeAces = bridge.buildCanonicalTriadConsultation({
   semanticConfig: thoth,
 });
 assert(JSON.stringify(threeAces.relations.map(entry => entry.relationType)) === JSON.stringify(['FRIENDLY', 'FRIENDLY']), 'Three-Aces immediate relation truth preserved');
+assert(JSON.stringify(threeAces.relations[0].claimIds) === JSON.stringify(['claim.l78.dignity.adjacency', 'claim.l78.dignity.friendly.swords-staffs']), 'left immediate claim ordering preserved');
+assert(JSON.stringify(threeAces.relations[1].claimIds) === JSON.stringify(['claim.l78.dignity.adjacency', 'claim.l78.dignity.friendly.swords-cups']), 'right immediate claim ordering preserved');
 assert(threeAces.spreadPatterns[0].relationType === 'INIMICAL' && threeAces.spreadPatterns[1].effectType === 'CENTER_BETWEEN_CONTRARIES', 'Three-Aces outer/center context preserved');
+assert(JSON.stringify(threeAces.spreadPatterns[1].claimIds) === JSON.stringify(['claim.l78.dignity.inimical.staffs-cups', 'claim.l78.dignity.center-between-contraries']), 'center-context claim ordering preserved');
 assert(threeAces.provenance.relationMethodAuthority === 'SOURCE_QUALIFIED_METHOD_INHERITANCE', 'Thoth ReadingRecord method authority preserved');
 assert(JSON.stringify(threeAces.provenance.sourceIds) === JSON.stringify(['src.primary.crowley.liber-lxxviii', 'src.primary.crowley.book-of-thoth.1944']), 'Thoth ReadingRecord source ordering preserved');
 assert(threeAces.provenance.claimIds.includes('claim.thoth1944.divination.method-source.equinox-i-8'), 'Thoth method-source claim preserved without local hardcoding');
