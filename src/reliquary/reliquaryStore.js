@@ -56,11 +56,12 @@ export const buildReliquaryMetadata = state => {
   const center = (record.spreadPatterns || []).find(pattern => pattern?.patternKind === 'CENTER_CONTEXT_EFFECT') || null;
   const contract = reading.semanticContract || null;
   const question = clean(record.input?.question || state.oracleQuestion);
+  const spreadId = clean(record.input?.spreadId || record.spreadId) || null;
   const positionCardIds = positions.map(position => position.cardId || null);
   const positionTitles = positions.map((position, index) => clean(cards[index]?.name || position.cardId || `Position ${index + 1}`));
   const fingerprint = JSON.stringify({
     question,
-    spreadId: record.spreadId || null,
+    spreadId,
     positionCardIds,
     orientation: positions.map(position => position.orientation || 'upright'),
     contract: contract?.commit || contract?.contractVersion || null,
@@ -70,7 +71,7 @@ export const buildReliquaryMetadata = state => {
     entryId: `reading-${fnvAddress(fingerprint)}`,
     question,
     author: clean(state.author),
-    spreadId: record.spreadId || null,
+    spreadId,
     tarotSystem: record.input?.tarotSystem || null,
     positionCardIds: Object.freeze([...positionCardIds]),
     positionTitles: Object.freeze([...positionTitles]),
