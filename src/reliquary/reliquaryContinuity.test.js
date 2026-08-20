@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { createSemanticConfig } from '../semantic/semanticConfig.js';
+import { buildThresholdReading } from '../tarotBridge/thresholdReading.js';
 import {
   RELIQUARY_MAX_ENTRIES,
   RELIQUARY_STORAGE_KEY,
@@ -22,84 +24,53 @@ const imagesOver = backing => ({
   },
 });
 
+const THOTH_CONFIG = createSemanticConfig({ tarotSystem: 'thoth' });
+const SEED_READING = buildThresholdReading({
+  question: 'Seed the 0.49 production deck',
+  semanticConfig: THOTH_CONFIG,
+  random: () => 0.314159,
+});
+const PRODUCTION_DECK = SEED_READING.deck;
+const identityOf = card => card?.canonicalCardId || card?.id || null;
+
 const readingState = ({
   question = 'Does the Grimoire remember?',
   answer = '',
   savedLayer = {},
   deckLayer = null,
 } = {}) => {
-  const readingRecord = {
-    recordVersion: '0.1.0',
-    readingId: `qa:${question}`,
-    spreadId: 'grimoire.triad.dialectic',
-    input: {
-      question,
-      tarotSystem: 'thoth',
-      correspondenceProfile: 'thoth_native',
-      relationMethod: 'crowley_lxxviii_dignities',
-      lenses: [],
-      readingDepth: 'adept',
-    },
-    positions: [
-      { positionId: 'thesis', cardId: 'minor.staffs.ace', orientation: 'upright' },
-      { positionId: 'antithesis', cardId: 'minor.swords.ace', orientation: 'upright' },
-      { positionId: 'synthesis', cardId: 'minor.cups.ace', orientation: 'upright' },
-    ],
-    relations: [
-      { relationType: 'FRIENDLY', status: 'SUPPORTED' },
-      { relationType: 'FRIENDLY', status: 'SUPPORTED' },
-    ],
-    spreadPatterns: [
-      { patternKind: 'OUTER_PAIR_CONTEXT', relationType: 'INIMICAL', status: 'SUPPORTED' },
-      { patternKind: 'CENTER_CONTEXT_EFFECT', applied: true, effectType: 'CENTER_BETWEEN_CONTRARIES' },
-    ],
-    provenance: {
-      sourceIds: ['src.primary.crowley.liber-lxxviii', 'src.primary.crowley.book-of-thoth.1944'],
-      claimIds: ['claim.qa.keep-order'],
-      unresolvedReasonCodes: [],
-      relationMethodAuthority: 'SOURCE_QUALIFIED_METHOD_INHERITANCE',
-    },
-  };
-  const cards = [
-    {
-      id: 22,
-      canonicalCardId: 'minor.staffs.ace',
-      name: 'Ace of Wands',
-      imageUrl: null,
-      patina: 1,
-      ...savedLayer,
-    },
-    { id: 50, canonicalCardId: 'minor.swords.ace', name: 'Ace of Swords', imageUrl: null, patina: 0 },
-    { id: 36, canonicalCardId: 'minor.cups.ace', name: 'Ace of Cups', imageUrl: null, patina: 0 },
-  ];
+  const built = buildThresholdReading({
+    question,
+    semanticConfig: THOTH_CONFIG,
+    deck: PRODUCTION_DECK,
+    random: () => 0.314159,
+  });
+  const readingCards = built.reading.cards.map((card, index) => ({
+    ...card,
+    ...(index === 0 ? savedLayer : {}),
+  }));
+  const firstIdentity = identityOf(readingCards[0]);
+  const deck = deckLayer
+    ? built.deck.map(card => identityOf(card) === firstIdentity ? { ...card, ...deckLayer } : card)
+    : built.deck;
 
   return {
     phase: 'ORACLE',
     author: 'QA',
     selectedStyle: { id: 'pixel', name: 'Pixel' },
     selectedTradition: { id: 'thoth', name: 'Thoth' },
-    semanticConfig: {
-      schemaId: 'grimoire.semantic.config',
-      schemaVersion: 1,
-      tarotSystem: 'thoth',
-      correspondenceProfile: 'thoth_native',
-      relationMethod: 'crowley_lxxviii_dignities',
-      interpretiveLenses: [],
-      ritualTheme: 'none',
-      readingDepth: 'adept',
-    },
-    deck: deckLayer ? [{ ...cards[0], ...deckLayer }] : [],
+    semanticConfig: THOTH_CONFIG,
+    deck,
     oracleQuestion: question,
     reading: {
-      cards,
+      ...built.reading,
+      cards: readingCards,
       answer,
-      semanticContract: {
-        contractId: 'grimoire.tarot.semantic.v1',
-        contractVersion: '1.0.0',
-        commit: 'f4534b4f92d88f3950ec0c9c211bfa4648cd08ea',
-      },
-      readingRecord,
     },
+    activeSpread: 'TRIAD',
+    spreadSlots: [null, null, null],
+    placementCardId: null,
+    scriptoriumMode: 'DECK',
     isForging: false,
     isConsulting: false,
     archiveState: 'IDLE',
@@ -108,11 +79,14 @@ const readingState = ({
 };
 
 describe('0.49 Reliquary continuity', () => {
-  it('survives a hard-refresh-equivalent reload with an exact historical ReadingRecord', async () => {
+  it('survives a hard-refresh-equivalent reload with an exact production ReadingRecord', async () => {
     const storageBacking = new Map();
     const imageBacking = new Map();
     const original = readingState({ savedLayer: { imageUrl: 'data:image/png;base64,QA49' } });
     const originalRecord = JSON.parse(JSON.stringify(original.reading.readingRecord));
+
+    expect(originalRecord.input.spreadId).toBe('grimoire.triad.dialectic');
+    expect(originalRecord.spreadId).toBeUndefined();
 
     const saved = await saveReliquaryReading({
       state: original,
@@ -131,11 +105,12 @@ describe('0.49 Reliquary continuity', () => {
 
     expect(restored.status).toBe('RESTORED');
     expect(restored.entries).toHaveLength(1);
+    expect(restored.entries[0].metadata.spreadId).toBe('grimoire.triad.dialectic');
     expect(restored.entries[0].state.reading.readingRecord).toEqual(originalRecord);
     expect(restored.entries[0].state.reading.cards[0].imageUrl).toBe('data:image/png;base64,QA49');
   });
 
-  it('reseals the same reading as one newer memory and preserves current live relic layers', async () => {
+  it('reseals the same production reading as one newer memory and preserves current live relic layers', async () => {
     const storageBacking = new Map();
     const imageBacking = new Map();
     const storage = storageOver(storageBacking);
@@ -196,7 +171,7 @@ describe('0.49 Reliquary continuity', () => {
     expect(restored.error).toContain('valid JSON');
   });
 
-  it('keeps the newest 64 distinct memories deterministically', async () => {
+  it('keeps the newest 64 distinct production memories deterministically', async () => {
     const storageBacking = new Map();
     const imageBacking = new Map();
     const storage = storageOver(storageBacking);
