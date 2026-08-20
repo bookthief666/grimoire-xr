@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { INTERPRETIVE_LENS_CATALOG } from './interpretiveLensCatalog.js';
 import { semanticSystemPresentationName } from './semanticRuntimeAdapter.js';
+import { relationMethodSupportsTarotSystem } from './semanticConfig.js';
 
 const SYSTEMS = Object.freeze([
   { id: 'thoth', label: 'BOOK OF THOTH', note: 'SOURCE-QUALIFIED THOTH PACK' },
@@ -153,17 +154,24 @@ const SemanticConfigurationPanel = ({ config, onPatch, hasActiveReading = false,
         onToggle={() => toggleSection('relation')}
       >
         <div className="grid grid-cols-1 gap-2">
-          {RELATIONS.map(method => (
-            <button
-              key={method.id}
-              type="button"
-              disabled={disabled}
-              onClick={() => onPatch?.({ relationMethod: method.id })}
-              className={`${smallButton(config.relationMethod === method.id)} text-left disabled:opacity-40`}
-            >
-              {method.label}
-            </button>
-          ))}
+          {RELATIONS.map(method => {
+            const methodSupported = relationMethodSupportsTarotSystem(method.id, config.tarotSystem);
+            return (
+              <button
+                key={method.id}
+                type="button"
+                disabled={disabled || !methodSupported}
+                title={!methodSupported ? `RELATION METHOD UNAVAILABLE FOR ${semanticSystemPresentationName(config)}` : undefined}
+                onClick={() => onPatch?.({ relationMethod: method.id })}
+                className={`${smallButton(config.relationMethod === method.id)} text-left disabled:opacity-35 disabled:cursor-not-allowed`}
+              >
+                <span className="block">{method.label}</span>
+                {!methodSupported ? (
+                  <span className="block mt-2 font-mono text-[8px] text-red-400/70">NOT AUTHORIZED FOR THIS TAROT SYSTEM</span>
+                ) : null}
+              </button>
+            );
+          })}
         </div>
       </DisclosureSection>
 
