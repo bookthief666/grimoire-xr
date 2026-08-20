@@ -15,7 +15,7 @@ const PIN = Object.freeze({
   authorityCommit: 'f4534b4f92d88f3950ec0c9c211bfa4648cd08ea',
 });
 const fail = message => { throw new Error(`0.48 D3 relation-authority activation refused: ${message}`); };
-const sortedUnique = values => [...new Set((values || []).filter(Boolean))].sort();
+const unique = values => [...new Set((values || []).filter(Boolean))];
 const canonicalize = value => {
   if (Array.isArray(value)) return value.map(canonicalize);
   if (!value || typeof value !== 'object') return value;
@@ -52,8 +52,8 @@ for (const fact of snapshot.pairFacts) {
     status: fact.status,
     relationType: fact.relationType,
     reasonCode: fact.reasonCode ?? null,
-    sourceIds: sortedUnique(fact.sourceIds),
-    claimIds: sortedUnique(fact.claimIds),
+    sourceIds: unique(fact.sourceIds),
+    claimIds: unique(fact.claimIds),
     kernelVersion: fact.kernelVersion,
     sourcePackVersion: fact.sourcePackVersion,
   });
@@ -68,22 +68,24 @@ for (const rule of snapshot.centerRules) {
     effectType: rule.effectType ?? null,
     effect: rule.effect ?? null,
     reasonCode: rule.reasonCode ?? null,
-    sourceIds: sortedUnique(rule.sourceIds),
-    claimIds: sortedUnique(rule.claimIds),
+    sourceIds: unique(rule.sourceIds),
+    claimIds: unique(rule.claimIds),
   });
 }
 if (Object.keys(pairFacts).length !== 50 || Object.keys(centerRules).length !== 25) fail('authority map cardinality drifted');
 if (pairFacts['IMMEDIATE_NEIGHBOR:staffs>cups']?.relationType !== 'INIMICAL') fail('staffs/cups authority drifted');
+if (JSON.stringify(pairFacts['IMMEDIATE_NEIGHBOR:staffs>cups']?.claimIds) !== JSON.stringify(['claim.l78.dignity.adjacency', 'claim.l78.dignity.inimical.staffs-cups'])) fail('immediate claim ordering drifted');
 if (pairFacts['IMMEDIATE_NEIGHBOR:cups>coins']?.reasonCode !== 'SOURCE_DOES_NOT_SPECIFY_PAIR') fail('cups/coins source gap drifted');
 if (pairFacts['IMMEDIATE_NEIGHBOR:major>staffs']?.reasonCode !== 'CARD_WITHOUT_SUIT_FAMILY') fail('Major source gap drifted');
 if (pairFacts['OUTER_PAIR_CONTEXT:staffs>swords']?.claimIds.includes('claim.l78.dignity.adjacency')) fail('outer authority leaked adjacency claim');
 if (centerRules['staffs>cups']?.effectType !== 'CENTER_BETWEEN_CONTRARIES') fail('center-between-contraries authority drifted');
+if (JSON.stringify(centerRules['staffs>cups']?.claimIds) !== JSON.stringify(['claim.l78.dignity.inimical.staffs-cups', 'claim.l78.dignity.center-between-contraries'])) fail('center-context claim ordering drifted');
 
 const generatedAuthority = canonicalize({
   relationMethod: {
     methodId: snapshot.relationMethod.methodId,
     semanticStatus: snapshot.relationMethod.semanticStatus,
-    doctrineSourceIds: sortedUnique(snapshot.relationMethod.doctrineSourceIds),
+    doctrineSourceIds: unique(snapshot.relationMethod.doctrineSourceIds),
     compatibleTarotSystems: [...snapshot.relationMethod.compatibleTarotSystems].sort(),
     selection: canonicalize(snapshot.relationMethod.selection),
   },
