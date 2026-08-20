@@ -4,6 +4,10 @@ export const SEMANTIC_CONFIG_SCHEMA_VERSION = 1;
 export const TAROT_SYSTEMS = Object.freeze(['thoth', 'rws', 'marseille']);
 export const CORRESPONDENCE_PROFILES = Object.freeze(['thoth_native', 'none']);
 export const RELATION_METHODS = Object.freeze(['crowley_lxxviii_dignities', 'disabled']);
+export const RELATION_METHOD_COMPATIBILITY = Object.freeze({
+  disabled: Object.freeze(['thoth', 'rws', 'marseille']),
+  crowley_lxxviii_dignities: Object.freeze(['thoth', 'rws']),
+});
 export const READING_DEPTHS = Object.freeze(['neophyte', 'adept', 'magus']);
 export const RITUAL_THEMES = Object.freeze(['none', 'giordano_bruno', 'astarte_venus']);
 export const INTERPRETIVE_LENSES = Object.freeze([
@@ -22,6 +26,9 @@ export const INTERPRETIVE_LENSES = Object.freeze([
 ]);
 
 const asId = value => String(value || '').trim().toLowerCase();
+export const relationMethodSupportsTarotSystem = (relationMethod, tarotSystem) => (
+  RELATION_METHOD_COMPATIBILITY[asId(relationMethod)]?.includes(asId(tarotSystem)) === true
+);
 const unique = values => [...new Set(values)];
 const deepFreeze = value => {
   if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
@@ -82,6 +89,10 @@ export const validateSemanticConfig = config => {
   if (!TAROT_SYSTEMS.includes(config.tarotSystem)) errors.push(`unsupported tarotSystem: ${String(config.tarotSystem)}`);
   if (!CORRESPONDENCE_PROFILES.includes(config.correspondenceProfile)) errors.push(`unsupported correspondenceProfile: ${String(config.correspondenceProfile)}`);
   if (!RELATION_METHODS.includes(config.relationMethod)) errors.push(`unsupported relationMethod: ${String(config.relationMethod)}`);
+  if (RELATION_METHODS.includes(config.relationMethod) && TAROT_SYSTEMS.includes(config.tarotSystem)
+    && !relationMethodSupportsTarotSystem(config.relationMethod, config.tarotSystem)) {
+    errors.push(`relationMethod ${config.relationMethod} is not compatible with tarotSystem=${config.tarotSystem}`);
+  }
   if (!READING_DEPTHS.includes(config.readingDepth)) errors.push(`unsupported readingDepth: ${String(config.readingDepth)}`);
   if (!RITUAL_THEMES.includes(config.ritualTheme)) errors.push(`unsupported ritualTheme: ${String(config.ritualTheme)}`);
   if (!Array.isArray(config.interpretiveLenses)) errors.push('interpretiveLenses must be an array');

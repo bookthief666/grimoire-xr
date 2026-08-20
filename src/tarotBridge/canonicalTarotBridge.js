@@ -1,4 +1,5 @@
 import { resolveSemanticBridgeConfig, semanticBridgeConfigFromReadingRecord } from '../semantic/semanticBridgeConfig.js';
+import { relationMethodSupportsTarotSystem } from '../semantic/semanticConfig.js';
 import { AUTHORITATIVE_CARD_MANIFEST, AUTHORITATIVE_CARD_MANIFEST_META } from './authoritativeCardManifest.generated.js';
 
 export const UPSTREAM_TAROT_CONTRACT = Object.freeze({
@@ -256,6 +257,9 @@ export const buildCanonicalTriadConsultation = ({
   };
 
   if (interpretation.relationMethod === 'disabled') return deepFreeze(baseRecord);
+  if (!relationMethodSupportsTarotSystem(interpretation.relationMethod, interpretation.tarotSystem)) {
+    throw new Error(`Relation method ${interpretation.relationMethod} is not authorized for Tarot system ${interpretation.tarotSystem}`);
+  }
   if (interpretation.relationMethod !== 'crowley_lxxviii_dignities') {
     throw new Error(`Unsupported canonical relation method: ${interpretation.relationMethod}`);
   }
