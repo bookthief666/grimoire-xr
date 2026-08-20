@@ -1,6 +1,7 @@
 import { resolveSemanticBridgeConfig, semanticBridgeConfigFromReadingRecord } from '../semantic/semanticBridgeConfig.js';
 import { relationMethodSupportsTarotSystem } from '../semantic/semanticConfig.js';
 import { AUTHORITATIVE_CARD_MANIFEST, AUTHORITATIVE_CARD_MANIFEST_META } from './authoritativeCardManifest.generated.js';
+import { AUTHORITATIVE_RELATION_AUTHORITY, AUTHORITATIVE_RELATION_AUTHORITY_META } from './authoritativeRelationAuthority.generated.js';
 
 export const UPSTREAM_TAROT_CONTRACT = Object.freeze({
   repository: 'bookthief666/tarot-archetype-vr',
@@ -15,15 +16,9 @@ export const CANONICAL_READING_RECORD_VERSION = '0.1.0';
 export const CANONICAL_READING_ENGINE_VERSION = 'canonical-tarot-0.34.5';
 export const CANONICAL_TRIAD_BINDING_VERSION = '0.2.0';
 export const CANONICAL_TRIAD_RELATION_VERSION = '0.1.0';
-export const CANONICAL_DIGNITY_KERNEL_VERSION = '0.1.0';
-export const CANONICAL_LXXVIII_PACK_VERSION = '0.1.0';
+export const CANONICAL_DIGNITY_KERNEL_VERSION = AUTHORITATIVE_RELATION_AUTHORITY_META.kernelVersion;
+export const CANONICAL_LXXVIII_PACK_VERSION = AUTHORITATIVE_RELATION_AUTHORITY_META.sourcePackVersion;
 
-const THOTH_BOOK_SOURCE = 'src.primary.crowley.book-of-thoth.1944';
-const LXXVIII_SOURCE = 'src.primary.crowley.liber-lxxviii';
-const THOTH_METHOD_CLAIM = 'claim.thoth1944.divination.method-source.equinox-i-8';
-const ADJACENCY_CLAIM = 'claim.l78.dignity.adjacency';
-const SAME_SUIT_CLAIM = 'claim.l78.dignity.same-suit-strengthens';
-const CENTER_CONTRARIES_CLAIM = 'claim.l78.dignity.center-between-contraries';
 
 const deepFreeze = value => {
   if (!value || typeof value !== 'object' || Object.isFrozen(value)) return value;
@@ -41,6 +36,15 @@ if (
   || AUTHORITATIVE_CARD_MANIFEST_META.authorityCommit !== UPSTREAM_TAROT_CONTRACT.commit
 ) {
   throw new Error('Authoritative Tarot card manifest does not match the pinned upstream contract.');
+}
+
+if (
+  AUTHORITATIVE_RELATION_AUTHORITY_META.contractId !== UPSTREAM_TAROT_CONTRACT.contractId
+  || AUTHORITATIVE_RELATION_AUTHORITY_META.contractVersion !== UPSTREAM_TAROT_CONTRACT.contractVersion
+  || AUTHORITATIVE_RELATION_AUTHORITY_META.authorityRepository !== UPSTREAM_TAROT_CONTRACT.repository
+  || AUTHORITATIVE_RELATION_AUTHORITY_META.authorityCommit !== UPSTREAM_TAROT_CONTRACT.commit
+) {
+  throw new Error('Authoritative Tarot relation authority does not match the pinned upstream contract.');
 }
 
 // 0.48 Phase B: source-qualified card doctrine is generated from the exact
@@ -139,42 +143,26 @@ export const CANONICAL_SPREAD_MAP = deepFreeze({
   },
 });
 
-const relationKey = (left, right) => [left, right].sort().join('|');
-const EXPLICIT_RELATIONS = new Map([
-  [relationKey('staffs', 'cups'), ['INIMICAL', 'claim.l78.dignity.inimical.staffs-cups']],
-  [relationKey('swords', 'coins'), ['INIMICAL', 'claim.l78.dignity.inimical.swords-coins']],
-  [relationKey('swords', 'cups'), ['FRIENDLY', 'claim.l78.dignity.friendly.swords-cups']],
-  [relationKey('swords', 'staffs'), ['FRIENDLY', 'claim.l78.dignity.friendly.swords-staffs']],
-  [relationKey('staffs', 'coins'), ['FRIENDLY', 'claim.l78.dignity.friendly.staffs-coins']],
-]);
-
-const analyzePair = (leftCard, rightCard, context = 'IMMEDIATE_NEIGHBOR') => {
-  if (!leftCard.suitFamilyId || !rightCard.suitFamilyId) {
-    return deepFreeze({
-      status: 'UNSPECIFIED', relationType: 'UNSPECIFIED', reasonCode: 'CARD_WITHOUT_SUIT_FAMILY',
-      sourceIds: [], claimIds: [],
-    });
-  }
-  if (leftCard.suitFamilyId === rightCard.suitFamilyId) {
-    return deepFreeze({
-      status: 'SUPPORTED', relationType: 'SAME_SUIT_STRONG', reasonCode: null,
-      sourceIds: [LXXVIII_SOURCE],
-      claimIds: context === 'IMMEDIATE_NEIGHBOR' ? [ADJACENCY_CLAIM, SAME_SUIT_CLAIM] : [SAME_SUIT_CLAIM],
-    });
-  }
-  const explicit = EXPLICIT_RELATIONS.get(relationKey(leftCard.suitFamilyId, rightCard.suitFamilyId));
-  if (explicit) {
-    return deepFreeze({
-      status: 'SUPPORTED', relationType: explicit[0], reasonCode: null,
-      sourceIds: [LXXVIII_SOURCE],
-      claimIds: context === 'IMMEDIATE_NEIGHBOR' ? [ADJACENCY_CLAIM, explicit[1]] : [explicit[1]],
-    });
-  }
-  return deepFreeze({
-    status: 'UNSPECIFIED', relationType: 'UNSPECIFIED', reasonCode: 'SOURCE_DOES_NOT_SPECIFY_PAIR',
-    sourceIds: [LXXVIII_SOURCE], claimIds: [],
-  });
+const relationFamilyOf = card => card?.suitFamilyId || 'major';
+const relationPairAuthority = (leftCard, rightCard, context = 'IMMEDIATE_NEIGHBOR') => {
+  const key = `${context}:${relationFamilyOf(leftCard)}>${relationFamilyOf(rightCard)}`;
+  const fact = AUTHORITATIVE_RELATION_AUTHORITY.pairFacts[key];
+  if (!fact) throw new Error(`Missing authoritative relation pair fact: ${key}`);
+  return deepFreeze({ ...fact, sourceIds: [...fact.sourceIds], claimIds: [...fact.claimIds] });
 };
+const centerContextAuthority = (leftCard, rightCard) => {
+  const key = `${relationFamilyOf(leftCard)}>${relationFamilyOf(rightCard)}`;
+  const rule = AUTHORITATIVE_RELATION_AUTHORITY.centerRules[key];
+  if (!rule) throw new Error(`Missing authoritative center-context rule: ${key}`);
+  return deepFreeze({ ...rule, sourceIds: [...rule.sourceIds], claimIds: [...rule.claimIds] });
+};
+const relationMethodSelectionAuthority = tarotSystem => {
+  const selection = AUTHORITATIVE_RELATION_AUTHORITY.relationMethod.selection[String(tarotSystem || '')];
+  if (!selection?.supported) throw new Error(`No authoritative relation-method selection for Tarot system ${tarotSystem}`);
+  return deepFreeze({ ...selection, sourceIds: [...selection.sourceIds], claimIds: [...selection.claimIds] });
+};
+
+const analyzePair = (leftCard, rightCard, context = 'IMMEDIATE_NEIGHBOR') => relationPairAuthority(leftCard, rightCard, context);
 
 const technicalRelation = ({ fact, from, to, ordinal }) => deepFreeze({
   relationId: `relation.dignity.${from.positionId}.${to.positionId}`,
@@ -193,8 +181,8 @@ const technicalRelation = ({ fact, from, to, ordinal }) => deepFreeze({
   reasonCode: fact.reasonCode,
   sourceIds: fact.sourceIds,
   claimIds: fact.claimIds,
-  kernelVersion: CANONICAL_DIGNITY_KERNEL_VERSION,
-  sourcePackVersion: CANONICAL_LXXVIII_PACK_VERSION,
+  kernelVersion: fact.kernelVersion,
+  sourcePackVersion: fact.sourcePackVersion,
 });
 
 export const buildCanonicalTriadConsultation = ({
@@ -280,20 +268,21 @@ export const buildCanonicalTriadConsultation = ({
     status: outer.status, relationType: outer.relationType, reasonCode: outer.reasonCode,
     sourceIds: outer.sourceIds, claimIds: outer.claimIds,
   });
-  const centerApplied = outer.relationType === 'INIMICAL';
+  const centerAuthority = centerContextAuthority(cards[0], cards[2]);
   const centerPattern = deepFreeze({
     patternId: 'center-context.antithesis',
     patternKind: 'CENTER_CONTEXT_EFFECT',
-    semanticAuthority: centerApplied ? 'SOURCE_QUALIFIED_CONTEXT_EFFECT' : 'NO_SUPPORTED_CONTEXT_EFFECT',
+    semanticAuthority: centerAuthority.applied ? 'SOURCE_QUALIFIED_CONTEXT_EFFECT' : 'NO_SUPPORTED_CONTEXT_EFFECT',
     targetPositionId: 'antithesis', targetCardId: cards[1].cardId,
-    applied: centerApplied,
-    status: centerApplied ? 'SUPPORTED' : 'UNSPECIFIED',
-    effectType: centerApplied ? 'CENTER_BETWEEN_CONTRARIES' : null,
-    effect: centerApplied ? 'CENTER_NOT_MUCH_AFFECTED_BY_EITHER_NEIGHBOR' : null,
-    reasonCode: centerApplied ? null : (outer.reasonCode || 'OUTER_NEIGHBORS_NOT_SOURCE_CLASSIFIED_AS_CONTRARY'),
-    sourceIds: outer.sourceIds,
-    claimIds: centerApplied ? unique([...outer.claimIds, CENTER_CONTRARIES_CLAIM]) : [],
+    applied: centerAuthority.applied,
+    status: centerAuthority.status,
+    effectType: centerAuthority.effectType,
+    effect: centerAuthority.effect,
+    reasonCode: centerAuthority.reasonCode,
+    sourceIds: centerAuthority.sourceIds,
+    claimIds: centerAuthority.claimIds,
   });
+  const centerApplied = centerPattern.applied;
   const supportingClaims = unique([
     ...relations.flatMap(relation => relation.status === 'SUPPORTED' ? relation.claimIds : []),
     ...(centerApplied ? centerPattern.claimIds : []),
@@ -303,7 +292,7 @@ export const buildCanonicalTriadConsultation = ({
     outer.status === 'UNSPECIFIED' ? outer.reasonCode : null,
     !centerApplied ? centerPattern.reasonCode : null,
   ]);
-  const thothSelection = interpretation.tarotSystem === 'thoth';
+  const methodSelection = relationMethodSelectionAuthority(interpretation.tarotSystem);
 
   return deepFreeze({
     ...baseRecord,
@@ -317,10 +306,16 @@ export const buildCanonicalTriadConsultation = ({
     relations,
     spreadPatterns: [outerPattern, centerPattern],
     provenance: {
-      sourceIds: thothSelection ? [LXXVIII_SOURCE, THOTH_BOOK_SOURCE] : [LXXVIII_SOURCE],
-      claimIds: unique([...supportingClaims, ...(thothSelection ? [THOTH_METHOD_CLAIM] : [])]),
+      sourceIds: unique([
+        ...AUTHORITATIVE_RELATION_AUTHORITY.relationMethod.doctrineSourceIds,
+        ...relations.flatMap(relation => relation.sourceIds),
+        ...outerPattern.sourceIds,
+        ...centerPattern.sourceIds,
+        ...methodSelection.sourceIds,
+      ]),
+      claimIds: unique([...supportingClaims, ...methodSelection.claimIds]),
       unresolvedReasonCodes,
-      relationMethodAuthority: thothSelection ? 'SOURCE_QUALIFIED_METHOD_INHERITANCE' : 'DIRECT_METHOD_SELECTION',
+      relationMethodAuthority: methodSelection.authority,
     },
   });
 };
