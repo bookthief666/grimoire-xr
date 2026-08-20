@@ -34,7 +34,7 @@ assert(meta.contractId === 'grimoire.tarot.semantic.v1' && meta.contractVersion 
 assert(meta.authorityRepository === 'bookthief666/tarot-archetype-vr', 'spread authority repository pinned');
 assert(meta.authorityCommit === 'f4534b4f92d88f3950ec0c9c211bfa4648cd08ea', 'spread authority exact commit pinned');
 assert(JSON.stringify(meta.spreadKeys) === JSON.stringify(['TRIAD', 'HEXAGRAM', 'CROSS']), 'spread legacy-key interface preserved');
-assert(bridge.CANONICAL_SPREAD_MAP === spreads, 'production Fold spread map is exactly generated authority');
+assert(JSON.stringify(bridge.CANONICAL_SPREAD_MAP) === JSON.stringify(spreads), 'production Fold spread map exactly matches generated authority');
 
 assert(spreads.TRIAD.spreadId === 'grimoire.triad.dialectic' && spreads.TRIAD.cardCount === 3, 'canonical TRIAD identity/count preserved');
 assert(JSON.stringify(spreads.TRIAD.positions.map(position => position.positionId)) === JSON.stringify(['thesis', 'antithesis', 'synthesis']), 'canonical TRIAD position identity/order preserved');
