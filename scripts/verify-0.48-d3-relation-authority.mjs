@@ -84,14 +84,15 @@ const majorGap = bridge.buildCanonicalTriadConsultation({
 assert(majorGap.relations.every(entry => entry.reasonCode === 'CARD_WITHOUT_SUIT_FAMILY'), 'Major/no-suit immediate gaps preserved');
 assert(majorGap.spreadPatterns[1].effectType === 'CENTER_BETWEEN_CONTRARIES', 'Major center does not erase source-qualified outer contraries effect');
 
-assert(() => {
+const marseilleFailsClosed = (() => {
   try {
     semantic.createSemanticConfig({ tarotSystem: 'marseille', relationMethod: 'crowley_lxxviii_dignities' });
     return false;
   } catch {
     return true;
   }
-}(), 'Marseille + Crowley/LXXVIII still fails closed');
+})();
+assert(marseilleFailsClosed, 'Marseille + Crowley/LXXVIII still fails closed');
 
 const generatedText = fs.readFileSync(generatedPath, 'utf8');
 for (const forbiddenPresentation of ['promptUsed', 'imageUrl', 'exegesis', 'visualCurrent', 'enchantment']) {
